@@ -1,8 +1,9 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
 
 const AdminSidebar = ({ activeRoute = 'dashboard', isSidebarOpen = true, setIsSidebarOpen }) => {
-  const navigate = useNavigate();
+  const router = useRouter();
   
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'dashboard', route: 'dashboard' },
@@ -17,7 +18,7 @@ const AdminSidebar = ({ activeRoute = 'dashboard', isSidebarOpen = true, setIsSi
   const isActive = (route) => activeRoute === route;
 
   const handleProfileClick = () => {
-    navigate('/admin/profile');
+    router.push('/admin/profile');
     if (setIsSidebarOpen) setIsSidebarOpen(false);
   };
 
@@ -59,7 +60,7 @@ const AdminSidebar = ({ activeRoute = 'dashboard', isSidebarOpen = true, setIsSi
           {menuItems.map((item) => (
             <Link
               key={item.id}
-              to={`/admin/${item.route}`}
+              href={`/admin/${item.route}`}
               className={`flex items-center gap-4 px-4 py-3 rounded-lg transition-colors ${
                 isActive(item.route)
                   ? 'bg-white/10 text-primary'

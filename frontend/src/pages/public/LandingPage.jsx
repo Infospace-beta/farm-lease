@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import Button from '../../components/common/Button';
@@ -20,12 +20,12 @@ const LandingPage = () => {
               Find verified agricultural land, lease with confidence, and get AI-powered crop recommendations.
             </p>
             <div className="flex justify-center space-x-4">
-              <Link to="/register">
+              <Link href="/register">
                 <Button size="lg" variant="secondary">
                   Get Started
                 </Button>
               </Link>
-              <Link to="/login">
+              <Link href="/login">
                 <Button size="lg" variant="outline" className="bg-white text-primary-600 hover:bg-gray-50">
                   Login
                 </Button>

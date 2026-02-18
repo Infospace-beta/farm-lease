@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/router';
 import { 
   IoDownloadOutline, 
   IoCheckboxOutline, 
@@ -13,7 +13,7 @@ import FarmOwnerSidebar from '../../components/layout/FarmOwnerSidebar';
 import LandCard from '../../components/Farm-Owner/LandCard';
 
 const MyLandsPage = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [soilTypeFilter, setSoilTypeFilter] = useState('All');
@@ -160,7 +160,7 @@ const MyLandsPage = () => {
             </button>
 
             <button 
-              onClick={() => navigate('/owner/lands/add')}
+              onClick={() => router.push('/owner/lands/add')}
               className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-primary/30 hover:bg-primary-dark transition-all"
             >
               <IoAdd className="text-lg" />
@@ -248,7 +248,7 @@ const MyLandsPage = () => {
                 Upload ownership documents, map coordinates, and soil reports to start earning.
               </p>
               <button 
-                onClick={() => navigate('/owner/lands/add')}
+                onClick={() => router.push('/owner/lands/add')}
                 className="mt-6 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-md shadow-primary/20 hover:bg-primary-dark transition-colors"
               >
                 Start Listing

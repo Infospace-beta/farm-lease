@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useRouter } from "next/router";
 import { useAuth } from '../../context/AuthContext';
 import LesseeSidebar from '../../components/layout/LesseeSidebar';
 import LesseeHeader from '../../components/layout/LesseeHeader';
@@ -17,8 +17,7 @@ import {  ArrowLeft,
 
 const CompareFarmAssets = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   // Sample notifications
@@ -131,9 +130,9 @@ const CompareFarmAssets = () => {
   };
 
   const handleBackToResults = () => {
-    // Preserve the inputMode state when navigating back
-    const inputMode = location.state?.inputMode || 'regional';
-    navigate('/lessee/recommendations', { state: { inputMode } });
+    // Preserve the inputMode query param when navigating back
+    const inputMode = router.query?.inputMode || 'regional';
+    router.push(`/lessee/recommendations?inputMode=${inputMode}`);
   };
 
   return (
@@ -163,7 +162,7 @@ const CompareFarmAssets = () => {
               n.id === id ? { ...n, read: true } : n
             ));
           }}
-          onViewAllNotifications={() => navigate('/lessee/notifications')}
+          onViewAllNotifications={() => router.push('/lessee/notifications')}
           rightContent={
             <button className="px-3 lg:px-5 py-2 lg:py-2.5 bg-forest-green text-white rounded-lg text-xs lg:text-sm font-bold shadow-lg shadow-forest-green/30 hover:bg-forest-light flex items-center gap-2">
               <Download className="w-4 h-4" />

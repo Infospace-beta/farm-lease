@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/router';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import FarmOwnerSidebar from '../../components/layout/FarmOwnerSidebar';
 
 const EscrowStatusPage = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const escrowTracks = [
     {
       id: 1,
@@ -89,7 +89,7 @@ const EscrowStatusPage = () => {
         {/* Action Button Row */}
         <div className="mb-6 flex gap-3 justify-end">
           <button 
-            onClick={() => navigate('/owner/financials')}
+            onClick={() => router.push('/owner/financials')}
             className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-surface-dark px-4 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all"
           >
             <span className="material-symbols-outlined text-[20px]">history</span>

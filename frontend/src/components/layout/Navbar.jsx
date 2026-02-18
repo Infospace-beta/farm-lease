@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { useAuth } from '../../context/AuthContext';
 import Button from '../common/Button';
 
@@ -26,7 +26,7 @@ const Navbar = () => {
         <div className="flex justify-between h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <Link to="/" className="flex items-center space-x-2">
+            <Link href="/" className="flex items-center space-x-2">
               <span className="text-2xl font-bold text-primary-600">🚜</span>
               <span className="text-xl font-bold text-gray-900">FarmLease</span>
             </Link>
@@ -50,10 +50,10 @@ const Navbar = () => {
               </>
             ) : (
               <>
-                <Link to="/login">
+                <Link href="/login">
                   <Button variant="ghost" size="sm">Login</Button>
                 </Link>
-                <Link to="/register">
+                <Link href="/register">
                   <Button variant="primary" size="sm">Get Started</Button>
                 </Link>
               </>

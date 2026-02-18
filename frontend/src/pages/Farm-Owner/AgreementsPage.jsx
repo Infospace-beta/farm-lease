@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/router';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import FarmOwnerSidebar from '../../components/layout/FarmOwnerSidebar';
 
 const AgreementsPage = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
@@ -355,7 +355,7 @@ const AgreementCard = ({ agreement }) => {
                 <button 
                   onClick={() => {
                     // Navigate to agreement details
-                    navigate(`/owner/agreements/${agreement.id}`);
+                    router.push(`/owner/agreements/${agreement.id}`);
                   }}
                   className="px-4 py-2 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 text-sm font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors whitespace-nowrap"
                 >
@@ -378,7 +378,7 @@ const AgreementCard = ({ agreement }) => {
                 <button 
                   onClick={() => {
                     // Navigate to draft view
-                    navigate(`/owner/agreements/${agreement.id}/draft`);
+                    router.push(`/owner/agreements/${agreement.id}/draft`);
                   }}
                   className="px-4 py-2 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 text-sm font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors whitespace-nowrap"
                 >

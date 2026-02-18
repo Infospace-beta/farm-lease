@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/router';
 import FarmOwnerSidebar from '../../components/layout/FarmOwnerSidebar';
 
 const FarmOwnerDashboard = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
 
   // Sample data - replace with actual API data
@@ -135,7 +135,7 @@ const FarmOwnerDashboard = () => {
                 Report
               </button>
               <button 
-                onClick={() => navigate('/owner/lands/add')}
+                onClick={() => router.push('/owner/lands/add')}
                 className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary/30 hover:bg-primary-dark transition-all"
               >
                 <span className="material-symbols-outlined text-[20px]">add_location_alt</span>
@@ -272,7 +272,7 @@ const FarmOwnerDashboard = () => {
 
                 {/* Add New Land Card */}
                 <div 
-                  onClick={() => navigate('/owner/lands/add')}
+                  onClick={() => router.push('/owner/lands/add')}
                   className="group relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-4 transition-all hover:border-primary hover:bg-primary/5 dark:border-slate-700 dark:bg-slate-800/30 cursor-pointer"
                 >
                   <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-sm dark:bg-slate-800 mb-4 group-hover:scale-110 transition-transform">
@@ -299,7 +299,7 @@ const FarmOwnerDashboard = () => {
 
                 <div className="space-y-8">
                   {activities.map((activity) => (
-                    <ActivityItem key={activity.id} activity={activity} navigate={navigate} />
+                    <ActivityItem key={activity.id} activity={activity} router={router} />
                   ))}
                 </div>
               </div>
@@ -313,6 +313,8 @@ const FarmOwnerDashboard = () => {
 
 // Land Card Component
 const DashboardLandCard = ({ land }) => {
+  const router = useRouter();
+  
   const statusColors = {
     emerald: 'bg-emerald-500/90',
     amber: 'bg-amber-500/90',
@@ -393,11 +395,11 @@ const DashboardLandCard = ({ land }) => {
           <button 
             onClick={() => {
               if (land.action === 'View Agreement') {
-                navigate(`/owner/agreements/${land.id}`);
+                router.push(`/owner/agreements/${land.id}`);
               } else if (land.action === 'View Offer') {
-                navigate(`/owner/lease-requests/${land.id}`);
+                router.push(`/owner/lease-requests/${land.id}`);
               } else if (land.action === 'View Docs') {
-                navigate(`/owner/lease-requests/${land.id}`);
+                router.push(`/owner/lease-requests/${land.id}`);
               }
             }}
             className="rounded bg-slate-900 px-3 py-1 text-xs font-semibold text-white hover:bg-slate-700 dark:bg-white dark:text-slate-900"
@@ -408,11 +410,11 @@ const DashboardLandCard = ({ land }) => {
           <button 
             onClick={() => {
               if (land.action === 'View Agreement') {
-                navigate(`/owner/agreements/${land.id}`);
+                router.push(`/owner/agreements/${land.id}`);
               } else if (land.action === 'View Offer') {
-                navigate(`/owner/lease-requests/${land.id}`);
+                router.push(`/owner/lease-requests/${land.id}`);
               } else if (land.action === 'View Docs') {
-                navigate(`/owner/lease-requests/${land.id}`);
+                router.push(`/owner/lease-requests/${land.id}`);
               }
             }}
             className="text-xs font-semibold text-primary hover:text-primary-dark hover:underline"
@@ -426,7 +428,7 @@ const DashboardLandCard = ({ land }) => {
 };
 
 // Activity Item Component
-const ActivityItem = ({ activity, navigate }) => {
+const ActivityItem = ({ activity, router }) => {
   const colorClasses = {
     primary: 'bg-primary',
     amber: 'bg-amber-500',
@@ -468,7 +470,7 @@ const ActivityItem = ({ activity, navigate }) => {
         <button 
           onClick={() => {
             if (activity.action === 'Review PDF') {
-              navigate('/owner/agreements');
+              router.push('/owner/agreements');
             }
           }}
           className="mt-2 text-xs font-bold text-primary hover:underline"

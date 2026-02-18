@@ -1,16 +1,51 @@
-import { Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useRouter } from 'next/router';
 import { useAuth } from '../../context/AuthContext';
 import Spinner from './Spinner';
 
 const ProtectedRoute = ({ children, allowedRoles = [], requireAdmin = false }) => {
   // Development mode bypass - allow all access
-  const isDev = true; // Set to false when backend is ready
+  const isDev = false; // Set to false when backend is ready
+  
+  const router = useRouter();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (isDev || loading) return;
+
+    // Redirect to login if not authenticated
+    if (!user) {
+      router.replace('/login');
+      return;
+    }
+
+    // If admin access is required, check is_staff flag
+    if (requireAdmin && !user.is_staff) {
+      const dashboardRoutes = {
+        landowner: '/owner/dashboard',
+        farmer: '/lessee/dashboard',
+        dealer: '/dealer/dashboard',
+        admin: '/admin/dashboard',
+      };
+      router.replace(dashboardRoutes[user.role] || '/');
+      return;
+    }
+
+    // Check role authorization (admins can access all roles)
+    if (allowedRoles.length > 0 && !allowedRoles.includes(user.role) && !user.is_staff) {
+      const dashboardRoutes = {
+        landowner: '/owner/dashboard',
+        farmer: '/lessee/dashboard',
+        dealer: '/dealer/dashboard',
+        admin: '/admin/dashboard',
+      };
+      router.replace(dashboardRoutes[user.role] || '/');
+    }
+  }, [user, loading, router, allowedRoles, requireAdmin, isDev]);
   
   if (isDev) {
     return children;
   }
-
-  const { user, loading } = useAuth();
 
   // Show loading spinner while checking authentication
   if (loading) {
@@ -21,33 +56,13 @@ const ProtectedRoute = ({ children, allowedRoles = [], requireAdmin = false }) =
     );
   }
 
-  // Redirect to login if not authenticated
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
+  // Only render children if authenticated and authorized
+  if (!user) return null;
 
-  // If admin access is required, check is_staff flag
-  if (requireAdmin && !user.is_staff) {
-    // Redirect to appropriate dashboard based on user role
-    const dashboardRoutes = {
-      landowner: '/owner/dashboard',
-      farmer: '/lessee/dashboard',
-      dealer: '/dealer/dashboard',
-      admin: '/admin/dashboard',
-    };
-    return <Navigate to={dashboardRoutes[user.role] || '/'} replace />;
-  }
+  if (requireAdmin && !user.is_staff) return null;
 
-  // Check role authorization (admins can access all roles)
   if (allowedRoles.length > 0 && !allowedRoles.includes(user.role) && !user.is_staff) {
-    // Redirect to appropriate dashboard based on user role
-    const dashboardRoutes = {
-      landowner: '/owner/dashboard',
-      farmer: '/lessee/dashboard',
-      dealer: '/dealer/dashboard',
-      admin: '/admin/dashboard',
-    };
-    return <Navigate to={dashboardRoutes[user.role] || '/'} replace />;
+    return null;
   }
 
   return children;

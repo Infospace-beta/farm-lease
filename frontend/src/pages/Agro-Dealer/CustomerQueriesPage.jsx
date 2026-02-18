@@ -1,25 +1,14 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import Link from 'next/link';
+import { CircleDot, MessageSquare, Send, Smile, Search } from 'lucide-react';
+import DealerSidebar from '../../components/layout/DealerSidebar';
+import DealerHeader from '../../components/layout/DealerHeader';
 
 const CustomerQueriesPage = () => {
-  const location = useLocation();
   const [activeTab, setActiveTab] = useState('queries');
   const [selectedConversation, setSelectedConversation] = useState('grace');
   const [filterTab, setFilterTab] = useState('all');
   const [messageInput, setMessageInput] = useState('');
-
-  const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: '📊', path: '/dealer/dashboard' },
-    { id: 'inventory', label: 'Inventory', icon: '📦', path: '/dealer/inventory' },
-    { id: 'orders', label: 'Orders', icon: '🛒', badge: 5, path: '/dealer/orders' },
-    { id: 'products', label: 'My Products', icon: '📋', path: '/dealer/products' },
-    { id: 'add-product', label: 'Add New Products', icon: '➕', path: '/dealer/products/add' },
-    { id: 'queries', label: 'Customer Queries', icon: '💬', path: '/dealer/queries' },
-    { id: 'transactions', label: 'Transactions', icon: '💳', path: '/dealer/transactions' },
-    { id: 'analytics', label: 'Sales Analytics', icon: '📈', path: '/dealer/analytics' },
-    { id: 'trends', label: 'Market Trends', icon: '📉', path: '/dealer/trends' },
-    { id: 'notifications', label: 'Notifications', icon: '🔔', path: '/dealer/notifications' },
-  ];
 
   const conversations = [
     {
@@ -190,92 +179,42 @@ const CustomerQueriesPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-800 to-emerald-900 flex">
-      {/* Sidebar */}
-      <div className="w-64 bg-gradient-to-b from-emerald-900 to-emerald-950 text-white p-6 flex flex-col shadow-2xl">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-emerald-100">FarmLease</h1>
-          <p className="text-emerald-300 text-sm">Agro-Dealer Hub</p>
-        </div>
-
-        <nav className="flex-1 space-y-2">
-          {menuItems.map((item) => (
-            <Link
-              key={item.id}
-              to={item.path}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 ${
-                location.pathname === item.path
-                  ? 'bg-emerald-700 text-white shadow-lg'
-                  : 'text-emerald-200 hover:bg-emerald-800/50'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-xl">{item.icon}</span>
-                <span className="font-medium text-sm">{item.label}</span>
-              </div>
-              {item.badge && (
-                <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                  {item.badge}
-                </span>
-              )}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="mt-8 pt-6 border-t border-emerald-700">
-          <Link
-            to="/dealer/profile"
-            className="flex items-center gap-3 cursor-pointer hover:bg-emerald-800/50 rounded-xl p-3 transition-colors"
-          >
-            <img
-              src="https://ui-avatars.com/api/?name=David+M&background=10b981&color=fff"
-              alt="User"
-              className="w-10 h-10 rounded-full"
-            />
-            <div className="flex-1">
-              <p className="font-medium text-sm text-emerald-100">David M.</p>
-              <p className="text-xs text-emerald-300">Store Manager</p>
-            </div>
-          </Link>
-          <button className="mt-3 w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors">
-            Logout
-          </button>
-        </div>
-      </div>
-
+    <div className="bg-background-light flex">
+      <DealerSidebar />
+      
       {/* Main Content */}
-      <div className="flex-1 flex flex-col bg-gray-50 overflow-hidden">
-        {/* Header */}
-        <div className="h-20 border-b border-gray-100 bg-white flex items-center justify-between px-8 shrink-0">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-800">Customer Queries</h2>
-            <p className="text-gray-500 text-xs">Manage farmer inquiries and product questions.</p>
-          </div>
-          <div className="flex items-center gap-4">
+      <main className="flex-1 h-screen overflow-hidden">
+        <DealerHeader 
+          title="Customer Queries"
+          subtitle="Manage farmer inquiries and product questions."
+          rightContent={
             <div className="relative hidden md:block">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                🔍
-              </span>
+              <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search conversations..."
-                className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none w-64"
+                className="pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none w-64"
               />
             </div>
-            <button className="p-2 text-gray-400 hover:text-emerald-700 transition bg-gray-50 rounded-lg border border-gray-200">
-              ⚙️
-            </button>
-            <button className="flex px-4 py-2 bg-emerald-700 text-white rounded-lg items-center gap-2 hover:bg-emerald-800 transition shadow-lg">
-              <span>➕</span>
-              <span className="font-medium text-sm">New Message</span>
-            </button>
-          </div>
-        </div>
+          }
+        />
+        
+        <div className="h-[calc(100vh-4rem)] flex overflow-hidden bg-gray-50">
+          {/* Conversations List Sidebar */}
+          <div className="w-96 bg-white border-r border-gray-200 flex flex-col shrink-0">
+            {/* Conversations Header */}
+            <div className="p-4 border-b border-gray-100">
+              <div className="relative">
+                <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search conversations..."
+                  className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
+                />
+              </div>
+            </div>
 
-        {/* Content Area */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* Conversations List */}
-          <div className="w-full md:w-80 lg:w-96 bg-white border-r border-gray-100 flex flex-col h-full shrink-0">
+            {/* Filter Tabs */}
             <div className="p-4 border-b border-gray-100">
               <div className="flex gap-2">
                 <button
@@ -408,7 +347,7 @@ const CustomerQueriesPage = () => {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <Link to="/dealer/orders" className="flex items-center gap-1 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 transition">
+                <Link href="/dealer/orders" className="flex items-center gap-1 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 transition">
                   <span>🛒</span>
                   View Orders
                 </Link>
@@ -587,7 +526,7 @@ const CustomerQueriesPage = () => {
             </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

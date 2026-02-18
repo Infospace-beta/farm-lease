@@ -1,9 +1,10 @@
-import { Link, useLocation } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { useAuth } from '../../context/AuthContext';
 import { X } from 'lucide-react';
 
 const Sidebar = ({ menuItems, isMobile, onClose }) => {
-  const location = useLocation();
+  const router = useRouter();
   const { user, logout } = useAuth();
 
   return (
@@ -38,11 +39,11 @@ const Sidebar = ({ menuItems, isMobile, onClose }) => {
       <nav className="p-4 flex-1 overflow-y-auto">
         <ul className="space-y-2">
           {menuItems.map((item, index) => {
-            const isActive = location.pathname === item.path;
+            const isActive = router.pathname === item.path;
             return (
               <li key={index}>
                 <Link
-                  to={item.path}
+                  href={item.path}
                   onClick={onClose}
                   className={`
                     flex items-center space-x-3 px-4 py-3 rounded-lg

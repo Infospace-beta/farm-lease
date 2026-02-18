@@ -1,10 +1,10 @@
  import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/router';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import FarmOwnerSidebar from '../../components/layout/FarmOwnerSidebar';
 
 const LeaseRequestsPage = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedRequest, setSelectedRequest] = useState(null);
@@ -286,7 +286,7 @@ const StatCard = ({ title, value, icon, iconColor }) => {
 
 // RequestRow Component
 const RequestRow = ({ request }) => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [showActions, setShowActions] = useState(false);
 
   const handleDecline = (requestId) => {
@@ -297,17 +297,17 @@ const RequestRow = ({ request }) => {
 
   const handleReview = (requestId) => {
     // Navigate to detailed review page
-    navigate(`/owner/lease-requests/${requestId}`);
+    router.push(`/owner/lease-requests/${requestId}`);
   };
 
   const handleContinueNegotiation = (requestId) => {
     // Navigate to negotiation page
-    navigate(`/owner/lease-requests/${requestId}/negotiate`);
+    router.push(`/owner/lease-requests/${requestId}/negotiate`);
   };
 
   const handleViewAgreement = (requestId) => {
     // Navigate to agreement page
-    navigate(`/owner/agreements/${requestId}`);
+    router.push(`/owner/agreements/${requestId}`);
   };
 
   const statusConfig = {

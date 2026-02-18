@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { useAuth } from '../../context/AuthContext';
 import LesseeSidebar from '../../components/layout/LesseeSidebar';
 import LesseeHeader from '../../components/layout/LesseeHeader';
@@ -18,7 +19,7 @@ import {
 
 const LesseeDashboard = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [portfolioView, setPortfolioView] = useState('grid'); // 'grid' or 'list'
   const displayName = user?.name || user?.username || 'User';
@@ -86,14 +87,14 @@ const LesseeDashboard = () => {
               n.id === id ? { ...n, read: true } : n
             ));
           }}
-          onViewAllNotifications={() => navigate('/lessee/notifications')}
+          onViewAllNotifications={() => router.push('/lessee/notifications')}
           rightContent={
             <>
               <button className="hidden sm:flex px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded-lg items-center gap-2 hover:bg-gray-50 transition shadow-sm">
                 <FileText size={18} />
                 <span className="font-medium text-sm">Report</span>
               </button>
-              <Link to="/lessee/browse" className="flex px-4 lg:px-5 py-2 lg:py-2.5 bg-forest-green text-white rounded-lg items-center gap-2 hover:bg-opacity-90 transition shadow-lg shadow-forest-green/20">
+              <Link href="/lessee/browse" className="flex px-4 lg:px-5 py-2 lg:py-2.5 bg-forest-green text-white rounded-lg items-center gap-2 hover:bg-opacity-90 transition shadow-lg shadow-forest-green/20">
                 <Search size={16} className="text-primary" />
                 <span className="font-medium text-sm hidden sm:inline">Find Land</span>
               </Link>

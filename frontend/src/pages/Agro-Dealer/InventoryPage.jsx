@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useRouter } from 'next/router';
+import { Package, DollarSign, AlertTriangle, XCircle, Download, Edit, Search, MoreVertical } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
+import DealerSidebar from '../../components/layout/DealerSidebar';
+import DealerHeader from '../../components/layout/DealerHeader';
 
 const InventoryPage = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('inventory');
   const [inventoryFilter, setInventoryFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -159,6 +161,7 @@ const InventoryPage = () => {
     { id: 'trends', label: 'Market Trends', icon: '📉', path: '/dealer/trends' },
     { id: 'notifications', label: 'Notifications', icon: '🔔', path: '/dealer/notifications' },
   ];
+
 
   // Generate SKU from category and id
   const generateSKU = (category, id) => {
@@ -376,79 +379,31 @@ const InventoryPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-800 to-emerald-900 flex">
-      {/* Sidebar */}
-      <div className="w-64 bg-gradient-to-b from-emerald-900 to-emerald-950 text-white p-6 flex flex-col shadow-2xl">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-emerald-100">FarmLease</h1>
-          <p className="text-emerald-300 text-sm">Agro-Dealer Hub</p>
-        </div>
-
-        <nav className="flex-1 space-y-2">
-          {menuItems.map((item) => (
-            <Link
-              key={item.id}
-              to={item.path}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 ${
-                location.pathname === item.path
-                  ? 'bg-emerald-700 text-white shadow-lg'
-                  : 'text-emerald-200 hover:bg-emerald-800/50'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-xl">{item.icon}</span>
-                <span className="font-medium text-sm">{item.label}</span>
-              </div>
-              {item.badge && (
-                <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                  {item.badge}
-                </span>
-              )}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="mt-8 pt-6 border-t border-emerald-700">
-          <Link
-            to="/dealer/profile"
-            className="flex items-center gap-3 cursor-pointer hover:bg-emerald-800/50 rounded-xl p-3 transition-colors"
-          >
-            <img
-              src="https://ui-avatars.com/api/?name=David+M&background=10b981&color=fff"
-              alt="User"
-              className="w-10 h-10 rounded-full"
-            />
-            <div className="flex-1">
-              <p className="font-medium text-sm text-emerald-100">David M.</p>
-              <p className="text-xs text-emerald-300">Store Manager</p>
-            </div>
-          </Link>
-          <button className="mt-3 w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors">
-            Logout
-          </button>
-        </div>
-      </div>
-
+    <div className="bg-background-light flex">
+      <DealerSidebar />
+      
       {/* Main Content */}
-      <div className="flex-1 p-8 overflow-y-auto bg-gray-50">
-        <div className="space-y-6">
-          {/* Header */}
-          <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-800 mb-1">Inventory Management</h2>
-              <p className="text-gray-600 text-sm">Track, organize, and manage your agro-products efficiently.</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <Button 
-                variant="outline" 
-                className="flex items-center gap-2 bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
-                onClick={exportToCSV}
-              >
-                <span>📥</span>
+      <main className="flex-1 h-screen overflow-hidden">
+        <DealerHeader 
+          title="Inventory"
+          subtitle="Track, organize, and manage your agro-products efficiently"
+        />
+        
+        <div className="h-[calc(100vh-4rem)] overflow-y-auto p-8">
+          <div className="space-y-6">
+            {/* Header Actions */}
+            <div className="flex flex-col md:flex-row md:justify-end md:items-end gap-4">
+              <div className="flex items-center gap-4">
+                <Button 
+                  variant="outline" 
+                  className="flex items-center gap-2 bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
+                  onClick={exportToCSV}
+                >
+                  <Download className="w-4 h-4" />
                 <span className="font-medium text-sm">Export CSV</span>
               </Button>
               <Button className="flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white shadow-md">
-                <span>✏️</span>
+                <Edit className="w-4 h-4" />
                 <span className="font-medium text-sm">Adjust Stock</span>
               </Button>
             </div>
@@ -460,7 +415,7 @@ const InventoryPage = () => {
               <div className="flex justify-between items-start mb-2">
                 <h3 className="text-gray-500 text-xs font-bold uppercase tracking-wider">Total Items</h3>
                 <div className="p-1.5 bg-emerald-100 rounded-lg">
-                  <span className="text-emerald-700 text-xl">📦</span>
+                  <Package className="w-5 h-5 text-emerald-700" />
                 </div>
               </div>
               <div className="flex items-baseline gap-1">
@@ -473,7 +428,7 @@ const InventoryPage = () => {
               <div className="flex justify-between items-start mb-2">
                 <h3 className="text-gray-500 text-xs font-bold uppercase tracking-wider">Stock Value</h3>
                 <div className="p-1.5 bg-emerald-100 rounded-lg">
-                  <span className="text-emerald-700 text-xl">💰</span>
+                  <DollarSign className="w-5 h-5 text-emerald-700" />
                 </div>
               </div>
               <div className="flex items-baseline gap-1">
@@ -487,7 +442,7 @@ const InventoryPage = () => {
               <div className="flex justify-between items-start mb-2">
                 <h3 className="text-gray-500 text-xs font-bold uppercase tracking-wider">Low Stock</h3>
                 <div className="p-1.5 bg-orange-100 rounded-lg">
-                  <span className="text-orange-600 text-xl">⚠️</span>
+                  <AlertTriangle className="w-5 h-5 text-orange-600" />
                 </div>
               </div>
               <div className="flex items-baseline gap-1">
@@ -502,7 +457,7 @@ const InventoryPage = () => {
               <div className="flex justify-between items-start mb-2">
                 <h3 className="text-gray-500 text-xs font-bold uppercase tracking-wider">Out of Stock</h3>
                 <div className="p-1.5 bg-red-100 rounded-lg">
-                  <span className="text-red-600 text-xl">🚫</span>
+                  <XCircle className="w-5 h-5 text-red-600" />
                 </div>
               </div>
               <div className="flex items-baseline gap-1">
@@ -584,7 +539,7 @@ const InventoryPage = () => {
           <Card className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
             <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
               <div className="relative w-full md:w-96">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">🔍</span>
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
                   value={searchQuery}
@@ -678,7 +633,7 @@ const InventoryPage = () => {
                       </td>
                       <td className="px-6 py-4 text-center">
                         <button className="text-gray-400 hover:text-emerald-700 transition-colors p-1.5 rounded-lg hover:bg-emerald-50">
-                          <span className="text-lg">⋮</span>
+                          <MoreVertical className="w-4 h-4" />
                         </button>
                       </td>
                     </tr>
@@ -715,7 +670,8 @@ const InventoryPage = () => {
           </div>
         </div>
       </div>
-    </div>
+    </main>
+  </div>
   );
 };
 

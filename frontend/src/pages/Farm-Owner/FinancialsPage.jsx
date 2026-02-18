@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/router';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import FarmOwnerSidebar from '../../components/layout/FarmOwnerSidebar';
 
 const FinancialsPage = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedYear, setSelectedYear] = useState('This Year');
 
