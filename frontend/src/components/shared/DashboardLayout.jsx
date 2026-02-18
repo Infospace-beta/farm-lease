@@ -1,14 +1,7 @@
-<<<<<<< HEAD
 'use client';
 
 import { cloneElement, isValidElement, useState } from 'react';
 import { Menu } from 'lucide-react';
-=======
-"use client";
-
-import { cloneElement, isValidElement, useState } from "react";
-import { Menu } from "lucide-react";
->>>>>>> 852c6e2d8755b6bb796c6dc5d3388b00af6b0fe9
 
 const DashboardLayout = ({ children, sidebar }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);

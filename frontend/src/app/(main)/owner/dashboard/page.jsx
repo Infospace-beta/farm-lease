@@ -6,7 +6,7 @@
 >>>>>>> 852c6e2d8755b6bb796c6dc5d3388b00af6b0fe9
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import FarmOwnerSidebar from '../../../../components/shared/FarmOwnerSidebar';
+import FarmOwnerSidebar from '../../components/layout/FarmOwnerSidebar';
 
 const FarmOwnerDashboard = () => {
   const router = useRouter();

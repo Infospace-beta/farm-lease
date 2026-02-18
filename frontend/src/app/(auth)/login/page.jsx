@@ -8,9 +8,9 @@ import { useAuth } from "../../context/AuthContext";
 =======
 import { useAuth } from "../../../providers/AuthProvider";
 >>>>>>> 852c6e2d8755b6bb796c6dc5d3388b00af6b0fe9
-import Input from "../../../components/ui/Input";
-import Button from "../../../components/ui/Button";
-import Card from "../../../components/ui/Card";
+import Input from "../../components/ui/Input";
+import Button from "../../components/ui/Button";
+import Card from "../../components/ui/Card";
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
