@@ -1,6 +1,7 @@
+"use client";
 import { useState } from 'react';
 import Link from 'next/link';
-import FarmOwnerSidebar from '../../components/layout/FarmOwnerSidebar';
+import FarmOwnerSidebar from '../../../../../components/shared/FarmOwnerSidebar';
 
 const AddLandPage = () => {
   const [currentStep, setCurrentStep] = useState(1);

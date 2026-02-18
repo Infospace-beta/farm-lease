@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { useRouter } from 'next/router';
-import { useAuth } from '../../context/AuthContext';
+import { usePathname, useRouter } from 'next/navigation';
+import { useAuth } from '../../providers/AuthProvider';
 import { 
   LayoutDashboard, 
   Map, 
@@ -17,10 +17,11 @@ import {
 const LesseeSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const displayName = user?.name || user?.username || 'User';
   const displayRole = user?.role || 'lessee';
 
-  const isActive = (path) => router.pathname === path;
+  const isActive = (path) => pathname === path;
 
   return (
     <aside className={`fixed lg:sticky top-0 w-64 bg-forest-green h-screen flex flex-col justify-between py-6 px-6 shadow-xl z-40 transition-transform duration-300 border-r border-white/5 ${

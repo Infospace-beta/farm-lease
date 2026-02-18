@@ -1,6 +1,8 @@
+"use client";
+
 import { useEffect } from "react";
-import { useRouter } from "next/router";
-import { useAuth } from "../../context/AuthContext";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../../providers/AuthProvider";
 import Spinner from "./Spinner";
 
 const ProtectedRoute = ({

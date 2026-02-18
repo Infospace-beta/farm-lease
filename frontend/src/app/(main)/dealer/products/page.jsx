@@ -1,9 +1,11 @@
+"use client";
+
 import { useState } from 'react';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
 import { Search, Plus, Settings, MoreVertical, Edit, Trash2 } from 'lucide-react';
-import Button from '../../components/common/Button';
-import DealerSidebar from '../../components/layout/DealerSidebar';
-import DealerHeader from '../../components/layout/DealerHeader';
+import Button from '../../../../components/ui/Button';
+import DealerSidebar from '../../../../components/layout/DealerSidebar';
+import DealerHeader from '../../../../components/layout/DealerHeader';
 
 const MyProductsPage = () => {
   const router = useRouter();

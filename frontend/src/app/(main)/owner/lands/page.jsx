@@ -1,5 +1,6 @@
+"use client";
 import React, { useState } from 'react';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
 import { 
   IoDownloadOutline, 
   IoCheckboxOutline, 
@@ -9,8 +10,8 @@ import {
   IoFilter
 } from 'react-icons/io5';
 import { MdAddLocationAlt } from 'react-icons/md';
-import FarmOwnerSidebar from '../../components/layout/FarmOwnerSidebar';
-import LandCard from '../../components/Farm-Owner/LandCard';
+import FarmOwnerSidebar from '../../../../components/shared/FarmOwnerSidebar';
+import LandCard from '../../../../components/shared/LandCard';
 
 const MyLandsPage = () => {
   const router = useRouter();

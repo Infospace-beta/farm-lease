@@ -1,6 +1,7 @@
+"use client";
 import { useState } from 'react';
-import { useRouter } from 'next/router';
-import FarmOwnerSidebar from '../../components/layout/FarmOwnerSidebar';
+import { useRouter } from 'next/navigation';
+import FarmOwnerSidebar from '../../../../components/shared/FarmOwnerSidebar';
 
 const FarmOwnerDashboard = () => {
   const router = useRouter();

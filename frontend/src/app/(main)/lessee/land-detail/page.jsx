@@ -1,20 +1,26 @@
-import { useRouter } from 'next/router';
-import DashboardLayout from '../../components/layout/DashboardLayout';
-import Sidebar from '../../components/layout/Sidebar';
-import Card from '../../components/common/Card';
-import Button from '../../components/common/Button';
+"use client";
+
+import { useRouter } from "next/navigation";
+import DashboardLayout from "../../../../components/shared/DashboardLayout";
+import Sidebar from "../../../../components/shared/Sidebar";
+import Card from "../../../../components/ui/Card";
+import Button from "../../../../components/ui/Button";
 
 const LandDetailPage = () => {
   const router = useRouter();
   const { id } = router.query;
-  
+
   const menuItems = [
-    { label: 'Dashboard', path: '/lessee/dashboard', icon: '📊' },
-    { label: 'Browse Lands', path: '/lessee/browse', icon: '🔍' },
-    { label: 'My Leases', path: '/lessee/leases', icon: '📄' },
-    { label: 'Crop Recommendations', path: '/lessee/recommendations', icon: '🌾' },
-    { label: 'Agro Products', path: '/lessee/products', icon: '🛒' },
-    { label: 'Profile', path: '/lessee/profile', icon: '👤' },
+    { label: "Dashboard", path: "/lessee/dashboard", icon: "📊" },
+    { label: "Browse Lands", path: "/lessee/browse", icon: "🔍" },
+    { label: "My Leases", path: "/lessee/leases", icon: "📄" },
+    {
+      label: "Crop Recommendations",
+      path: "/lessee/recommendations",
+      icon: "🌾",
+    },
+    { label: "Agro Products", path: "/lessee/products", icon: "🛒" },
+    { label: "Profile", path: "/lessee/profile", icon: "👤" },
   ];
 
   return (
@@ -28,7 +34,7 @@ const LandDetailPage = () => {
             Detailed land information will be displayed here.
           </p>
           {/* TODO: Implement land details view with images, specs, etc. */}
-          
+
           <div className="flex space-x-4">
             <Button className="flex-1">Lease This Land</Button>
             <Button variant="outline">Save for Later</Button>

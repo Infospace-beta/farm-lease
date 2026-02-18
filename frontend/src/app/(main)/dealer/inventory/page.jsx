@@ -1,30 +1,55 @@
-import { useState } from 'react';
-import { useRouter } from 'next/router';
-import { Package, DollarSign, AlertTriangle, XCircle, Download, Edit, Search, MoreVertical } from 'lucide-react';
-import Badge from '../../components/common/Badge';
-import Card from '../../components/common/Card';
-import Button from '../../components/common/Button';
-import DealerSidebar from '../../components/layout/DealerSidebar';
-import DealerHeader from '../../components/layout/DealerHeader';
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  Package,
+  DollarSign,
+  AlertTriangle,
+  XCircle,
+  Download,
+  Edit,
+  Search,
+  MoreVertical,
+} from "lucide-react";
+import Badge from "../../../../components/ui/Badge";
+import Card from "../../../../components/ui/Card";
+import Button from "../../../../components/ui/Button";
+import DealerSidebar from "../../../../components/layout/DealerSidebar";
+import DealerHeader from "../../../../components/layout/DealerHeader";
 
 const InventoryPage = () => {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('inventory');
-  const [inventoryFilter, setInventoryFilter] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
+  const [activeTab, setActiveTab] = useState("inventory");
+  const [inventoryFilter, setInventoryFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
 
   // Export as Printable Receipt
   const exportToCSV = () => {
-    const date = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-    const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const date = new Date().toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+    const time = new Date().toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
     const receiptNumber = `INV-${Date.now().toString().slice(-8)}`;
-    
+
     const totalItems = filteredInventoryItems.length;
-    const totalValue = filteredInventoryItems.reduce((sum, item) => sum + (item.price * item.stock), 0);
-    const lowStockItems = filteredInventoryItems.filter(item => item.status === 'low_stock').length;
-    const outOfStockItems = filteredInventoryItems.filter(item => item.status === 'out_of_stock').length;
-    
+    const totalValue = filteredInventoryItems.reduce(
+      (sum, item) => sum + item.price * item.stock,
+      0,
+    );
+    const lowStockItems = filteredInventoryItems.filter(
+      (item) => item.status === "low_stock",
+    ).length;
+    const outOfStockItems = filteredInventoryItems.filter(
+      (item) => item.status === "out_of_stock",
+    ).length;
+
     const receiptHTML = `
       <!DOCTYPE html>
       <html>
@@ -119,7 +144,9 @@ const InventoryPage = () => {
               </tr>
             </thead>
             <tbody>
-              ${filteredInventoryItems.map(item => `
+              ${filteredInventoryItems
+                .map(
+                  (item) => `
                 <tr>
                   <td><strong>${item.sku}</strong></td>
                   <td>${item.name}</td>
@@ -127,11 +154,13 @@ const InventoryPage = () => {
                   <td>${item.stock}</td>
                   <td>Ksh ${item.price.toLocaleString()}</td>
                   <td>Ksh ${(item.price * item.stock).toLocaleString()}</td>
-                  <td><span class="status status-${item.status === 'in_stock' ? 'in' : item.status === 'low_stock' ? 'low' : 'out'}">${item.status === 'in_stock' ? 'In Stock' : item.status === 'low_stock' ? 'Low Stock' : 'Out of Stock'}</span></td>
+                  <td><span class="status status-${item.status === "in_stock" ? "in" : item.status === "low_stock" ? "low" : "out"}">${item.status === "in_stock" ? "In Stock" : item.status === "low_stock" ? "Low Stock" : "Out of Stock"}</span></td>
                   <td>${item.views}</td>
                   <td>${item.inquiries}</td>
                 </tr>
-              `).join('')}
+              `,
+                )
+                .join("")}
             </tbody>
           </table>
           
@@ -143,44 +172,94 @@ const InventoryPage = () => {
       </body>
       </html>
     `;
-    
-    const printWindow = window.open('', '_blank');
+
+    const printWindow = window.open("", "_blank");
     printWindow.document.write(receiptHTML);
     printWindow.document.close();
   };
 
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: '📊', path: '/dealer/dashboard' },
-    { id: 'inventory', label: 'Inventory', icon: '📦', path: '/dealer/inventory' },
-    { id: 'orders', label: 'Orders', icon: '🛒', badge: 5, path: '/dealer/orders' },
-    { id: 'products', label: 'My Products', icon: '📋', path: '/dealer/products' },
-    { id: 'add-product', label: 'Add New Products', icon: '➕', path: '/dealer/products/add' },
-    { id: 'queries', label: 'Customer Queries', icon: '💬', path: '/dealer/queries' },
-    { id: 'transactions', label: 'Transactions', icon: '💳', path: '/dealer/transactions' },
-    { id: 'analytics', label: 'Sales Analytics', icon: '📈', path: '/dealer/analytics' },
-    { id: 'trends', label: 'Market Trends', icon: '📉', path: '/dealer/trends' },
-    { id: 'notifications', label: 'Notifications', icon: '🔔', path: '/dealer/notifications' },
+    {
+      id: "dashboard",
+      label: "Dashboard",
+      icon: "📊",
+      path: "/dealer/dashboard",
+    },
+    {
+      id: "inventory",
+      label: "Inventory",
+      icon: "📦",
+      path: "/dealer/inventory",
+    },
+    {
+      id: "orders",
+      label: "Orders",
+      icon: "🛒",
+      badge: 5,
+      path: "/dealer/orders",
+    },
+    {
+      id: "products",
+      label: "My Products",
+      icon: "📋",
+      path: "/dealer/products",
+    },
+    {
+      id: "add-product",
+      label: "Add New Products",
+      icon: "➕",
+      path: "/dealer/products/add",
+    },
+    {
+      id: "queries",
+      label: "Customer Queries",
+      icon: "💬",
+      path: "/dealer/queries",
+    },
+    {
+      id: "transactions",
+      label: "Transactions",
+      icon: "💳",
+      path: "/dealer/transactions",
+    },
+    {
+      id: "analytics",
+      label: "Sales Analytics",
+      icon: "📈",
+      path: "/dealer/analytics",
+    },
+    {
+      id: "trends",
+      label: "Market Trends",
+      icon: "📉",
+      path: "/dealer/trends",
+    },
+    {
+      id: "notifications",
+      label: "Notifications",
+      icon: "🔔",
+      path: "/dealer/notifications",
+    },
   ];
-
 
   // Generate SKU from category and id
   const generateSKU = (category, id) => {
     const categoryMap = {
-      'Seeds': 'SEED',
-      'Fertilizers': 'FERT',
-      'Pesticides': 'PEST',
-      'Tools & Equipment': 'TOOL',
-      'Machinery': 'MACH',
-      'Irrigation Systems': 'IRRI'
+      Seeds: "SEED",
+      Fertilizers: "FERT",
+      Pesticides: "PEST",
+      "Tools & Equipment": "TOOL",
+      Machinery: "MACH",
+      "Irrigation Systems": "IRRI",
     };
-    const prefix = categoryMap[category] || 'PROD';
-    return `${prefix}-${String(id).padStart(3, '0')}`;
+    const prefix = categoryMap[category] || "PROD";
+    return `${prefix}-${String(id).padStart(3, "0")}`;
   };
 
   // Extract product description from name or use category
   const getProductDescription = (name, category) => {
-    if (name.includes('-')) {
-      return name.split('-')[1]?.trim() || category;
+    if (name.includes("-")) {
+      return name.split("-")[1]?.trim() || category;
     }
     return category;
   };
@@ -189,188 +268,207 @@ const InventoryPage = () => {
   const products = [
     {
       id: 1,
-      name: 'Hybrid Maize Seeds - DH04',
-      category: 'Seeds',
+      name: "Hybrid Maize Seeds - DH04",
+      category: "Seeds",
       price: 4800,
       stock: 35,
       views: 189,
       inquiries: 42,
-      status: 'active',
-      image: 'https://assets.agropests.com/Products/1e64f0b4068a83031897b5f4f3ac2a4245c87adeb8e868f0f34e9a46ec00444c?format=auto&width=3840&quality=75'
+      status: "active",
+      image:
+        "https://assets.agropests.com/Products/1e64f0b4068a83031897b5f4f3ac2a4245c87adeb8e868f0f34e9a46ec00444c?format=auto&width=3840&quality=75",
     },
     {
       id: 2,
-      name: 'Tomato Seeds F1 Hybrid',
-      category: 'Seeds',
+      name: "Tomato Seeds F1 Hybrid",
+      category: "Seeds",
       price: 3500,
       stock: 0,
       views: 178,
       inquiries: 29,
-      status: 'out_of_stock',
-      image: 'https://storage.googleapis.com/stateless-lionfarm-co-ke/2022/03/0fb286ae-tropika_tomato-maxim-f1.jpg'
+      status: "out_of_stock",
+      image:
+        "https://storage.googleapis.com/stateless-lionfarm-co-ke/2022/03/0fb286ae-tropika_tomato-maxim-f1.jpg",
     },
     {
       id: 3,
-      name: 'NPK 17-17-17 Fertilizer 50kg',
-      category: 'Fertilizers',
+      name: "NPK 17-17-17 Fertilizer 50kg",
+      category: "Fertilizers",
       price: 2850,
       stock: 45,
       views: 234,
       inquiries: 18,
-      status: 'active',
-      image: 'https://agrijibu.co.ke/wp-content/uploads/2025/06/Falcon-NPK-17-17.webp'
+      status: "active",
+      image:
+        "https://agrijibu.co.ke/wp-content/uploads/2025/06/Falcon-NPK-17-17.webp",
     },
     {
       id: 4,
-      name: 'Organic Cattle Manure 25kg',
-      category: 'Fertilizers',
+      name: "Organic Cattle Manure 25kg",
+      category: "Fertilizers",
       price: 800,
       stock: 120,
       views: 312,
       inquiries: 47,
-      status: 'active',
-      image: 'https://greensouq.ae/cdn/shop/files/cow-manure-organic-100-natural-fertilizer-1016-25kg-smad-albkr-9807716.jpg?v=1763455024&width=800'
+      status: "active",
+      image:
+        "https://greensouq.ae/cdn/shop/files/cow-manure-organic-100-natural-fertilizer-1016-25kg-smad-albkr-9807716.jpg?v=1763455024&width=800",
     },
     {
       id: 5,
-      name: 'Dursban Insecticide 500ml',
-      category: 'Pesticides',
+      name: "Dursban Insecticide 500ml",
+      category: "Pesticides",
       price: 950,
       stock: 89,
       views: 267,
       inquiries: 22,
-      status: 'active',
-      image: 'https://agroorbit.s3.ap-south-1.amazonaws.com/uploads/all/wLO7umlUkcx0EETkamobiPCwFlH6NzqXxywikT7T.jpg'
+      status: "active",
+      image:
+        "https://agroorbit.s3.ap-south-1.amazonaws.com/uploads/all/wLO7umlUkcx0EETkamobiPCwFlH6NzqXxywikT7T.jpg",
     },
     {
       id: 6,
-      name: 'Herbicide Roundup 1L',
-      category: 'Pesticides',
+      name: "Herbicide Roundup 1L",
+      category: "Pesticides",
       price: 1200,
       stock: 56,
       views: 145,
       inquiries: 19,
-      status: 'active',
-      image: 'https://images.prismic.io/roundup/d1fea328-097d-4675-b28b-b583b330b74d_Roundup+1L+Herbicide+Concentrate+BOTTLE.jpg?auto=compress,format'
+      status: "active",
+      image:
+        "https://images.prismic.io/roundup/d1fea328-097d-4675-b28b-b583b330b74d_Roundup+1L+Herbicide+Concentrate+BOTTLE.jpg?auto=compress,format",
     },
     {
       id: 7,
-      name: 'Hand Tiller Cultivator',
-      category: 'Tools & Equipment',
+      name: "Hand Tiller Cultivator",
+      category: "Tools & Equipment",
       price: 5200,
       stock: 15,
       views: 92,
       inquiries: 14,
-      status: 'active',
-      image: 'https://images.thdstatic.com/productImages/77fc0efa-3e44-4a83-a982-a6bb67113f35/svn/walensee-cultivators-gt-ct007-64_600.jpg'
+      status: "active",
+      image:
+        "https://images.thdstatic.com/productImages/77fc0efa-3e44-4a83-a982-a6bb67113f35/svn/walensee-cultivators-gt-ct007-64_600.jpg",
     },
     {
       id: 8,
-      name: 'Greenhouse Net 4m x 50m',
-      category: 'Tools & Equipment',
+      name: "Greenhouse Net 4m x 50m",
+      category: "Tools & Equipment",
       price: 7200,
       stock: 3,
       views: 143,
       inquiries: 19,
-      status: 'low_stock',
-      image: 'https://instefast.com/wp-content/uploads/2024/02/shade-net-55-per.webp'
+      status: "low_stock",
+      image:
+        "https://instefast.com/wp-content/uploads/2024/02/shade-net-55-per.webp",
     },
     {
       id: 9,
-      name: 'Motorized Water Pump 3HP',
-      category: 'Machinery',
+      name: "Motorized Water Pump 3HP",
+      category: "Machinery",
       price: 18500,
       stock: 4,
       views: 124,
       inquiries: 22,
-      status: 'low_stock',
-      image: 'https://5.imimg.com/data5/MX/VX/MY-43999200/electric-three-phase-water-pump.jpg'
+      status: "low_stock",
+      image:
+        "https://5.imimg.com/data5/MX/VX/MY-43999200/electric-three-phase-water-pump.jpg",
     },
     {
       id: 10,
-      name: 'Power Tiller Machine',
-      category: 'Machinery',
+      name: "Power Tiller Machine",
+      category: "Machinery",
       price: 45000,
       stock: 2,
       views: 98,
       inquiries: 31,
-      status: 'low_stock',
-      image: 'https://www.yantailansu.com/uploads/202130757/diesel-mini-power-tiller25540667245.jpg'
+      status: "low_stock",
+      image:
+        "https://www.yantailansu.com/uploads/202130757/diesel-mini-power-tiller25540667245.jpg",
     },
     {
       id: 11,
-      name: 'Drip Irrigation Kit - 1 Acre',
-      category: 'Irrigation Systems',
+      name: "Drip Irrigation Kit - 1 Acre",
+      category: "Irrigation Systems",
       price: 12500,
       stock: 7,
       views: 156,
       inquiries: 31,
-      status: 'active',
-      image: 'https://www.aquahubkenya.co.ke/wp-content/uploads/2022/09/1-Acre-Drip-Irrigation-1-1024x1024.png'
+      status: "active",
+      image:
+        "https://www.aquahubkenya.co.ke/wp-content/uploads/2022/09/1-Acre-Drip-Irrigation-1-1024x1024.png",
     },
     {
       id: 12,
-      name: 'Sprinkler Irrigation System',
-      category: 'Irrigation Systems',
+      name: "Sprinkler Irrigation System",
+      category: "Irrigation Systems",
       price: 8900,
       stock: 12,
       views: 134,
       inquiries: 25,
-      status: 'active',
-      image: 'https://barnowl.tech/cdn/shop/articles/Sprinkler_Irrigation.png?v=1753899235'
+      status: "active",
+      image:
+        "https://barnowl.tech/cdn/shop/articles/Sprinkler_Irrigation.png?v=1753899235",
     },
   ];
 
   // Convert product status to inventory status format
-  const inventoryItems = products.map(product => ({
+  const inventoryItems = products.map((product) => ({
     ...product,
     sku: generateSKU(product.category, product.id),
     description: getProductDescription(product.name, product.category),
-    status: product.status === 'active' ? 'in_stock' : product.status
+    status: product.status === "active" ? "in_stock" : product.status,
   }));
 
   // Filter inventory items
-  const filteredInventoryItems = inventoryItems.filter(item => {
+  const filteredInventoryItems = inventoryItems.filter((item) => {
     // Status filter
-    const matchesStatus = inventoryFilter === 'all' || item.status === inventoryFilter;
-    
+    const matchesStatus =
+      inventoryFilter === "all" || item.status === inventoryFilter;
+
     // Category filter
-    const matchesCategory = categoryFilter === '' || item.category === categoryFilter;
-    
+    const matchesCategory =
+      categoryFilter === "" || item.category === categoryFilter;
+
     // Search filter
-    const matchesSearch = searchQuery === '' || 
+    const matchesSearch =
+      searchQuery === "" ||
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.category.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     return matchesStatus && matchesCategory && matchesSearch;
   });
 
   const filterCounts = {
     all: inventoryItems.length,
-    in_stock: inventoryItems.filter(i => i.status === 'in_stock').length,
-    low_stock: inventoryItems.filter(i => i.status === 'low_stock').length,
-    out_of_stock: inventoryItems.filter(i => i.status === 'out_of_stock').length
+    in_stock: inventoryItems.filter((i) => i.status === "in_stock").length,
+    low_stock: inventoryItems.filter((i) => i.status === "low_stock").length,
+    out_of_stock: inventoryItems.filter((i) => i.status === "out_of_stock")
+      .length,
   };
 
   const getStatusBadge = (status) => {
     switch (status) {
-      case 'in_stock':
+      case "in_stock":
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span> In Stock
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span> In
+            Stock
           </span>
         );
-      case 'low_stock':
+      case "low_stock":
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800 border border-orange-200">
-            <span className="w-1.5 h-1.5 rounded-full bg-orange-600"></span> Low Stock
+            <span className="w-1.5 h-1.5 rounded-full bg-orange-600"></span> Low
+            Stock
           </span>
         );
-      case 'out_of_stock':
+      case "out_of_stock":
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-200">
-            <span className="w-1.5 h-1.5 rounded-full bg-red-600"></span> Out of Stock
+            <span className="w-1.5 h-1.5 rounded-full bg-red-600"></span> Out of
+            Stock
           </span>
         );
       default:
@@ -381,297 +479,373 @@ const InventoryPage = () => {
   return (
     <div className="bg-background-light flex">
       <DealerSidebar />
-      
+
       {/* Main Content */}
       <main className="flex-1 h-screen overflow-hidden">
-        <DealerHeader 
+        <DealerHeader
           title="Inventory"
           subtitle="Track, organize, and manage your agro-products efficiently"
         />
-        
+
         <div className="h-[calc(100vh-4rem)] overflow-y-auto p-8">
           <div className="space-y-6">
             {/* Header Actions */}
             <div className="flex flex-col md:flex-row md:justify-end md:items-end gap-4">
               <div className="flex items-center gap-4">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="flex items-center gap-2 bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
                   onClick={exportToCSV}
                 >
                   <Download className="w-4 h-4" />
-                <span className="font-medium text-sm">Export CSV</span>
-              </Button>
-              <Button className="flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white shadow-md">
-                <Edit className="w-4 h-4" />
-                <span className="font-medium text-sm">Adjust Stock</span>
-              </Button>
+                  <span className="font-medium text-sm">Export CSV</span>
+                </Button>
+                <Button className="flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white shadow-md">
+                  <Edit className="w-4 h-4" />
+                  <span className="font-medium text-sm">Adjust Stock</span>
+                </Button>
+              </div>
             </div>
-          </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="text-gray-500 text-xs font-bold uppercase tracking-wider">Total Items</h3>
-                <div className="p-1.5 bg-emerald-100 rounded-lg">
-                  <Package className="w-5 h-5 text-emerald-700" />
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="text-gray-500 text-xs font-bold uppercase tracking-wider">
+                    Total Items
+                  </h3>
+                  <div className="p-1.5 bg-emerald-100 rounded-lg">
+                    <Package className="w-5 h-5 text-emerald-700" />
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-bold text-gray-800">{products.length}</span>
-                <span className="text-xs text-gray-500">SKUs</span>
-              </div>
-            </Card>
-
-            <Card className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="text-gray-500 text-xs font-bold uppercase tracking-wider">Stock Value</h3>
-                <div className="p-1.5 bg-emerald-100 rounded-lg">
-                  <DollarSign className="w-5 h-5 text-emerald-700" />
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-bold text-gray-800">
+                    {products.length}
+                  </span>
+                  <span className="text-xs text-gray-500">SKUs</span>
                 </div>
-              </div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-bold text-gray-800">
-                  Ksh {(products.reduce((sum, p) => sum + (p.price * p.stock), 0) / 1000000).toFixed(1)}M
-                </span>
-              </div>
-            </Card>
+              </Card>
 
-            <Card className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="text-gray-500 text-xs font-bold uppercase tracking-wider">Low Stock</h3>
-                <div className="p-1.5 bg-orange-100 rounded-lg">
-                  <AlertTriangle className="w-5 h-5 text-orange-600" />
+              <Card className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="text-gray-500 text-xs font-bold uppercase tracking-wider">
+                    Stock Value
+                  </h3>
+                  <div className="p-1.5 bg-emerald-100 rounded-lg">
+                    <DollarSign className="w-5 h-5 text-emerald-700" />
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-bold text-gray-800">
-                  {products.filter(p => p.status === 'low_stock').length}
-                </span>
-                <span className="text-xs text-orange-600 font-bold">Alerts</span>
-              </div>
-            </Card>
-
-            <Card className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="text-gray-500 text-xs font-bold uppercase tracking-wider">Out of Stock</h3>
-                <div className="p-1.5 bg-red-100 rounded-lg">
-                  <XCircle className="w-5 h-5 text-red-600" />
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-bold text-gray-800">
+                    Ksh{" "}
+                    {(
+                      products.reduce((sum, p) => sum + p.price * p.stock, 0) /
+                      1000000
+                    ).toFixed(1)}
+                    M
+                  </span>
                 </div>
-              </div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-bold text-gray-800">
-                  {products.filter(p => p.status === 'out_of_stock').length}
-                </span>
-                <span className="text-xs text-red-600 font-bold">Items</span>
-              </div>
-            </Card>
-          </div>
+              </Card>
 
-          {/* Filter Tabs */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-2">
-            <div className="flex items-center gap-2 flex-wrap">
-              <button
-                onClick={() => setInventoryFilter('all')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  inventoryFilter === 'all'
-                    ? 'bg-emerald-700 text-white shadow-md'
-                    : 'text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                <span>All Items</span>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-                  inventoryFilter === 'all' ? 'bg-emerald-800 text-emerald-100' : 'bg-gray-100 text-gray-600'
-                }`}>
-                  {filterCounts.all}
-                </span>
-              </button>
-              <button
-                onClick={() => setInventoryFilter('in_stock')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  inventoryFilter === 'in_stock'
-                    ? 'bg-emerald-700 text-white shadow-md'
-                    : 'text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                <span>In Stock</span>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-                  inventoryFilter === 'in_stock' ? 'bg-emerald-800 text-emerald-100' : 'bg-gray-100 text-gray-600'
-                }`}>
-                  {filterCounts.in_stock}
-                </span>
-              </button>
-              <button
-                onClick={() => setInventoryFilter('low_stock')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  inventoryFilter === 'low_stock'
-                    ? 'bg-emerald-700 text-white shadow-md'
-                    : 'text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                <span>Low Stock</span>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-                  inventoryFilter === 'low_stock' ? 'bg-emerald-800 text-emerald-100' : 'bg-gray-100 text-gray-600'
-                }`}>
-                  {filterCounts.low_stock}
-                </span>
-              </button>
-              <button
-                onClick={() => setInventoryFilter('out_of_stock')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  inventoryFilter === 'out_of_stock'
-                    ? 'bg-emerald-700 text-white shadow-md'
-                    : 'text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                <span>Out of Stock</span>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-                  inventoryFilter === 'out_of_stock' ? 'bg-emerald-800 text-emerald-100' : 'bg-gray-100 text-gray-600'
-                }`}>
-                  {filterCounts.out_of_stock}
-                </span>
-              </button>
+              <Card className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="text-gray-500 text-xs font-bold uppercase tracking-wider">
+                    Low Stock
+                  </h3>
+                  <div className="p-1.5 bg-orange-100 rounded-lg">
+                    <AlertTriangle className="w-5 h-5 text-orange-600" />
+                  </div>
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-bold text-gray-800">
+                    {products.filter((p) => p.status === "low_stock").length}
+                  </span>
+                  <span className="text-xs text-orange-600 font-bold">
+                    Alerts
+                  </span>
+                </div>
+              </Card>
+
+              <Card className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="text-gray-500 text-xs font-bold uppercase tracking-wider">
+                    Out of Stock
+                  </h3>
+                  <div className="p-1.5 bg-red-100 rounded-lg">
+                    <XCircle className="w-5 h-5 text-red-600" />
+                  </div>
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-bold text-gray-800">
+                    {products.filter((p) => p.status === "out_of_stock").length}
+                  </span>
+                  <span className="text-xs text-red-600 font-bold">Items</span>
+                </div>
+              </Card>
             </div>
-          </div>
 
-          {/* Search and Filters */}
-          <Card className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-            <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
-              <div className="relative w-full md:w-96">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by name, SKU, or category..."
-                  className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none bg-gray-50"
-                />
-              </div>
-              <div className="flex gap-3 w-full md:w-auto">
-                <select 
-                  value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="px-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none bg-white text-gray-600"
+            {/* Filter Tabs */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  onClick={() => setInventoryFilter("all")}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    inventoryFilter === "all"
+                      ? "bg-emerald-700 text-white shadow-md"
+                      : "text-gray-600 hover:bg-gray-50"
+                  }`}
                 >
-                  <option value="">All Categories</option>
-                  <option value="Seeds">Seeds</option>
-                  <option value="Fertilizers">Fertilizers</option>
-                  <option value="Pesticides">Pesticides</option>
-                  <option value="Tools & Equipment">Tools & Equipment</option>
-                  <option value="Machinery">Machinery</option>
-                  <option value="Irrigation Systems">Irrigation Systems</option>
-                </select>
+                  <span>All Items</span>
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                      inventoryFilter === "all"
+                        ? "bg-emerald-800 text-emerald-100"
+                        : "bg-gray-100 text-gray-600"
+                    }`}
+                  >
+                    {filterCounts.all}
+                  </span>
+                </button>
+                <button
+                  onClick={() => setInventoryFilter("in_stock")}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    inventoryFilter === "in_stock"
+                      ? "bg-emerald-700 text-white shadow-md"
+                      : "text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  <span>In Stock</span>
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                      inventoryFilter === "in_stock"
+                        ? "bg-emerald-800 text-emerald-100"
+                        : "bg-gray-100 text-gray-600"
+                    }`}
+                  >
+                    {filterCounts.in_stock}
+                  </span>
+                </button>
+                <button
+                  onClick={() => setInventoryFilter("low_stock")}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    inventoryFilter === "low_stock"
+                      ? "bg-emerald-700 text-white shadow-md"
+                      : "text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  <span>Low Stock</span>
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                      inventoryFilter === "low_stock"
+                        ? "bg-emerald-800 text-emerald-100"
+                        : "bg-gray-100 text-gray-600"
+                    }`}
+                  >
+                    {filterCounts.low_stock}
+                  </span>
+                </button>
+                <button
+                  onClick={() => setInventoryFilter("out_of_stock")}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    inventoryFilter === "out_of_stock"
+                      ? "bg-emerald-700 text-white shadow-md"
+                      : "text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  <span>Out of Stock</span>
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                      inventoryFilter === "out_of_stock"
+                        ? "bg-emerald-800 text-emerald-100"
+                        : "bg-gray-100 text-gray-600"
+                    }`}
+                  >
+                    {filterCounts.out_of_stock}
+                  </span>
+                </button>
               </div>
             </div>
-          </Card>
 
-          {/* Inventory Table */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-100">
-                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Product Name</th>
-                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Category</th>
-                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">SKU</th>
-                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Stock</th>
-                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Price (Ksh)</th>
-                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Status</th>
-                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50 text-sm">
-                  {filteredInventoryItems.length > 0 ? (
-                    filteredInventoryItems.map((item) => (
-                    <tr 
-                      key={item.id} 
-                      className={`hover:bg-emerald-50/30 transition-colors ${
-                        item.status === 'out_of_stock' ? 'bg-red-50/20' : ''
-                      }`}
-                    >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          {item.image ? (
-                            <img
-                              src={item.image}
-                              alt={item.name}
-                              className="w-10 h-10 rounded-lg object-cover bg-gray-50 p-1 border border-gray-100"
-                              onError={(e) => {
-                                e.target.style.display = 'none';
-                                e.target.nextSibling.style.display = 'flex';
-                              }}
-                            />
-                          ) : null}
-                          <div 
-                            className={`w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 items-center justify-center text-2xl ${
-                              item.image ? 'hidden' : 'flex'
+            {/* Search and Filters */}
+            <Card className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+              <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
+                <div className="relative w-full md:w-96">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search by name, SKU, or category..."
+                    className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none bg-gray-50"
+                  />
+                </div>
+                <div className="flex gap-3 w-full md:w-auto">
+                  <select
+                    value={categoryFilter}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
+                    className="px-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none bg-white text-gray-600"
+                  >
+                    <option value="">All Categories</option>
+                    <option value="Seeds">Seeds</option>
+                    <option value="Fertilizers">Fertilizers</option>
+                    <option value="Pesticides">Pesticides</option>
+                    <option value="Tools & Equipment">Tools & Equipment</option>
+                    <option value="Machinery">Machinery</option>
+                    <option value="Irrigation Systems">
+                      Irrigation Systems
+                    </option>
+                  </select>
+                </div>
+              </div>
+            </Card>
+
+            {/* Inventory Table */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-100">
+                      <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                        Product Name
+                      </th>
+                      <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                        Category
+                      </th>
+                      <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                        SKU
+                      </th>
+                      <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">
+                        Stock
+                      </th>
+                      <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">
+                        Price (Ksh)
+                      </th>
+                      <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">
+                        Status
+                      </th>
+                      <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50 text-sm">
+                    {filteredInventoryItems.length > 0 ? (
+                      filteredInventoryItems.map((item) => (
+                        <tr
+                          key={item.id}
+                          className={`hover:bg-emerald-50/30 transition-colors ${
+                            item.status === "out_of_stock" ? "bg-red-50/20" : ""
+                          }`}
+                        >
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              {item.image ? (
+                                <img
+                                  src={item.image}
+                                  alt={item.name}
+                                  className="w-10 h-10 rounded-lg object-cover bg-gray-50 p-1 border border-gray-100"
+                                  onError={(e) => {
+                                    e.target.style.display = "none";
+                                    e.target.nextSibling.style.display = "flex";
+                                  }}
+                                />
+                              ) : null}
+                              <div
+                                className={`w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 items-center justify-center text-2xl ${
+                                  item.image ? "hidden" : "flex"
+                                }`}
+                              >
+                                {item.icon || "📦"}
+                              </div>
+                              <div>
+                                <p className="font-bold text-gray-800">
+                                  {item.name.split("-")[0].trim()}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  {item.description}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-gray-600">
+                            {item.category}
+                          </td>
+                          <td className="px-6 py-4 text-gray-500 font-mono text-xs">
+                            {item.sku}
+                          </td>
+                          <td
+                            className={`px-6 py-4 text-right font-medium ${
+                              item.stock === 0
+                                ? "text-red-600"
+                                : item.stock < 20
+                                  ? "text-orange-600"
+                                  : "text-gray-800"
                             }`}
                           >
-                            {item.icon || '📦'}
-                          </div>
-                          <div>
-                            <p className="font-bold text-gray-800">{item.name.split('-')[0].trim()}</p>
-                            <p className="text-xs text-gray-500">{item.description}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-gray-600">{item.category}</td>
-                      <td className="px-6 py-4 text-gray-500 font-mono text-xs">{item.sku}</td>
-                      <td className={`px-6 py-4 text-right font-medium ${
-                        item.stock === 0 ? 'text-red-600' : 
-                        item.stock < 20 ? 'text-orange-600' : 
-                        'text-gray-800'
-                      }`}>
-                        {item.stock}
-                      </td>
-                      <td className="px-6 py-4 text-right font-medium text-gray-800">
-                        {item.price.toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        {getStatusBadge(item.status)}
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <button className="text-gray-400 hover:text-emerald-700 transition-colors p-1.5 rounded-lg hover:bg-emerald-50">
-                          <MoreVertical className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                  ) : (
-                    <tr>
-                      <td colSpan="7" className="py-12 text-center">
-                        <p className="text-gray-400 text-sm">No items found matching your filters.</p>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                            {item.stock}
+                          </td>
+                          <td className="px-6 py-4 text-right font-medium text-gray-800">
+                            {item.price.toLocaleString()}
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            {getStatusBadge(item.status)}
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <button className="text-gray-400 hover:text-emerald-700 transition-colors p-1.5 rounded-lg hover:bg-emerald-50">
+                              <MoreVertical className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="7" className="py-12 text-center">
+                          <p className="text-gray-400 text-sm">
+                            No items found matching your filters.
+                          </p>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
 
-            {/* Pagination */}
-            <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-white">
-              <span className="text-xs text-gray-600">
-                Showing <span className="font-semibold text-gray-800">1-{Math.min(filteredInventoryItems.length, 20)}</span> of{' '}
-                <span className="font-semibold text-gray-800">{filteredInventoryItems.length}</span> items
-              </span>
-              <div className="flex gap-2">
-                <button className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50" disabled>
-                  Previous
-                </button>
-                <button className="px-3 py-1.5 bg-emerald-700 text-white rounded-lg text-xs font-medium hover:bg-emerald-800 shadow-sm">
-                  1
-                </button>
-                <button className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-50" disabled>
-                  Next
-                </button>
+              {/* Pagination */}
+              <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-white">
+                <span className="text-xs text-gray-600">
+                  Showing{" "}
+                  <span className="font-semibold text-gray-800">
+                    1-{Math.min(filteredInventoryItems.length, 20)}
+                  </span>{" "}
+                  of{" "}
+                  <span className="font-semibold text-gray-800">
+                    {filteredInventoryItems.length}
+                  </span>{" "}
+                  items
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                    disabled
+                  >
+                    Previous
+                  </button>
+                  <button className="px-3 py-1.5 bg-emerald-700 text-white rounded-lg text-xs font-medium hover:bg-emerald-800 shadow-sm">
+                    1
+                  </button>
+                  <button
+                    className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-50"
+                    disabled
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </main>
-  </div>
+      </main>
+    </div>
   );
 };
 

@@ -1,6 +1,8 @@
+"use client";
+
 import { useState } from 'react';
-import DealerSidebar from '../../components/layout/DealerSidebar';
-import DealerHeader from '../../components/layout/DealerHeader';
+import DealerSidebar from '../../../../components/layout/DealerSidebar';
+import DealerHeader from '../../../../components/layout/DealerHeader';
 
 const TransactionsPage = () => {
   const [activeTab, setActiveTab] = useState('all');
@@ -726,7 +728,6 @@ const TransactionsPage = () => {
             </div>
           </div>
         </div>
-      </div>
 
       {/* Transaction Detail Modal */}
       {showModal && selectedTransaction && (
@@ -847,7 +848,6 @@ const TransactionsPage = () => {
           </div>
         </div>
       )}
-        </div>
       </main>
     </div>
   );

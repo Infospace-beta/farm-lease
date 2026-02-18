@@ -1,7 +1,7 @@
 import Link from "next/link";
-import Navbar from "../../components/layout/Navbar";
-import Footer from "../../components/layout/Footer";
-import Button from "../../components/common/Button";
+import Navbar from "../../components/shared/Navbar";
+import Footer from "../../components/shared/Footer";
+import Button from "../../components/ui/Button";
 
 const LandingPage = () => {
   return (

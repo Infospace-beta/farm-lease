@@ -4,11 +4,8 @@ import React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
-const AdminSidebar = ({
-  activeRoute = "dashboard",
-  isSidebarOpen = true,
-  setIsSidebarOpen,
-}) => {
+const DealerSidebar = ({ isSidebarOpen = true, setIsSidebarOpen }) => {
+  const pathname = usePathname();
   const router = useRouter();
 
   const menuItems = [
@@ -16,57 +13,74 @@ const AdminSidebar = ({
       id: "dashboard",
       label: "Dashboard",
       icon: "dashboard",
-      route: "dashboard",
+      route: "/dealer/dashboard",
     },
     {
-      id: "user-management",
-      label: "User Management",
-      icon: "group",
-      route: "user-management",
+      id: "inventory",
+      label: "Inventory",
+      icon: "warehouse",
+      route: "/dealer/inventory",
     },
     {
-      id: "land-verifications",
-      label: "Land Verifications",
-      icon: "verified-user",
-      route: "land-verifications",
-      badge: 12,
+      id: "orders",
+      label: "Orders",
+      icon: "shopping_cart",
+      route: "/dealer/orders",
     },
     {
-      id: "agro-dealer",
-      label: "Agro-Dealer Oversight",
-      icon: "storefront",
-      route: "agro-dealer",
+      id: "products",
+      label: "My Products",
+      icon: "inventory_2",
+      route: "/dealer/products",
     },
     {
-      id: "payments",
-      label: "Payments & Escrow",
-      icon: "payments",
-      route: "payments",
+      id: "add-product",
+      label: "Add New Product",
+      icon: "add_box",
+      route: "/dealer/products/add",
     },
     {
-      id: "agreements",
-      label: "Agreements & Contracts",
-      icon: "history-edu",
-      route: "agreements",
+      id: "queries",
+      label: "Customer Queries",
+      icon: "forum",
+      route: "/dealer/queries",
     },
-    { id: "reports", label: "Reports", icon: "bar-chart", route: "reports" },
+    {
+      id: "transactions",
+      label: "Transactions",
+      icon: "receipt_long",
+      route: "/dealer/transactions",
+    },
+    {
+      id: "analytics",
+      label: "Sales Analytics",
+      icon: "bar_chart",
+      route: "/dealer/analytics",
+    },
+    {
+      id: "trends",
+      label: "Market Trends",
+      icon: "trending_up",
+      route: "/dealer/trends",
+    },
+    {
+      id: "notifications",
+      label: "Notifications",
+      icon: "notifications",
+      route: "/dealer/notifications",
+    },
   ];
 
-  const isActive = (route) => activeRoute === route;
-
-  const handleProfileClick = () => {
-    router.push("/admin/profile");
-    if (setIsSidebarOpen) setIsSidebarOpen(false);
-  };
+  const isActive = (route) =>
+    pathname === route || pathname?.startsWith(route + "/");
 
   const handleLogout = () => {
-    // Implement logout logic
     console.log("Logout pressed");
   };
 
   return (
     <aside
-      className={`w-72 bg-[#0f392b] h-screen border-r border-white/5 fixed lg:relative z-30 transition-transform duration-300 ${
+      className={`w-72 bg-[#0f392b] h-screen border-r border-white/5 fixed lg:relative z-30 transition-transform duration-300 flex flex-col ${
         isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       }`}
     >
@@ -81,9 +95,9 @@ const AdminSidebar = ({
 
         {/* Logo Section */}
         <div className="flex items-center gap-3 mb-10 px-2 mt-2">
-          <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center shadow-lg">
+          <div className="w-10 h-10 rounded-lg bg-emerald-400 flex items-center justify-center shadow-lg">
             <span className="material-icons-round text-[#0f392b] text-2xl">
-              admin_panel_settings
+              storefront
             </span>
           </div>
           <div>
@@ -91,7 +105,7 @@ const AdminSidebar = ({
               Farm<span className="text-gray-300 font-normal">Lease</span>
             </h1>
             <p className="text-[10px] uppercase tracking-widest text-gray-400 mt-0.5">
-              Admin Console
+              Dealer Hub
             </p>
           </div>
         </div>
@@ -101,10 +115,11 @@ const AdminSidebar = ({
           {menuItems.map((item) => (
             <Link
               key={item.id}
-              href={`/admin/${item.route}`}
+              href={item.route}
+              onClick={() => setIsSidebarOpen && setIsSidebarOpen(false)}
               className={`flex items-center gap-4 px-4 py-3 rounded-lg transition-colors ${
                 isActive(item.route)
-                  ? "bg-white/10 text-primary"
+                  ? "bg-white/10 text-emerald-400"
                   : "text-gray-400 hover:text-white hover:bg-white/5"
               }`}
             >
@@ -116,44 +131,32 @@ const AdminSidebar = ({
               >
                 {item.label}
               </span>
-              {item.badge && (
-                <span
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold text-white ${
-                    item.badgeColor === "red" ? "bg-red-500/80" : "bg-[#5D4037]"
-                  }`}
-                >
-                  {item.badge}
-                </span>
-              )}
             </Link>
           ))}
         </nav>
       </div>
 
-      {/* Bottom Section - Profile & Logout */}
-      <div className="px-6 pb-6 space-y-4 border-t border-white/10 mt-auto">
-        {/* Admin Profile - Clickable */}
+      {/* Bottom Section */}
+      <div className="px-6 pb-6 space-y-4 border-t border-white/10">
         <button
-          onClick={handleProfileClick}
-          className="bg-black/20 rounded-xl p-3 flex items-center gap-3 w-full hover:bg-black/30 transition-colors"
+          onClick={() => router.push("/dealer/profile")}
+          className="bg-black/20 rounded-xl p-3 flex items-center gap-3 w-full hover:bg-black/30 transition-colors mt-4"
         >
-          <img
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7ZvmzxVv274-pe6FUZP8OHwCRgvrDzdEbABqYgGD3L2tZOE3EEZiEp_yonq1ctrQNXjE9q4X76GFxHLqBi5-Ki-i3A2jd9RZs_2lH5WtHZgNDwN2iLUbkVFE2T3ZuhAMmG1D9fLHbgWSeHtj_xvnBFCMcio2tim33FEGeydQbDScGWL17IyW19HcGpydoFYNre_N-qBMdcfgMExDLg5LAlwAZx978N7hJgCi6dru1egRdHooOSxMCiJ4LIgPPgKcyMajv-IU2YzLW"
-            alt="Admin"
-            className="w-10 h-10 rounded-full border-2 border-primary/20 object-cover"
-          />
+          <div className="w-10 h-10 rounded-full bg-emerald-700 flex items-center justify-center">
+            <span className="material-icons-round text-white text-xl">
+              person
+            </span>
+          </div>
           <div className="flex-1 text-left">
-            <p className="text-sm font-semibold text-white">David M.</p>
+            <p className="text-sm font-semibold text-white">Dealer</p>
             <p className="text-[10px] text-gray-400 uppercase tracking-wider">
-              Super Admin
+              Agro-Dealer
             </p>
           </div>
         </button>
 
-        {/* Divider */}
         <div className="h-px bg-white/10 w-full" />
 
-        {/* Logout Button */}
         <button
           onClick={handleLogout}
           className="flex items-center gap-3 px-3 py-2 w-full text-gray-300 hover:text-white transition-colors"
@@ -168,4 +171,4 @@ const AdminSidebar = ({
   );
 };
 
-export default AdminSidebar;
+export default DealerSidebar;
