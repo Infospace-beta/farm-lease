@@ -7,12 +7,14 @@ Your Farm Lease frontend has been successfully converted from **React + Vite** t
 ## What Changed
 
 ### 1. **Package Changes**
+
 - ✅ Added: `next@^14.1.0`
 - ✅ Added: `eslint-config-next@^14.1.0`
 - ❌ Removed: `vite`, `@vitejs/plugin-react`, `react-router-dom`
 - ❌ Removed: Vite-specific eslint plugins
 
 ### 2. **Configuration Files**
+
 - ✅ Created: `next.config.js` - Next.js configuration
 - ✅ Created: `.eslintrc.json` - Next.js ESLint config
 - ✅ Created: `jsconfig.json` - Path aliases configuration
@@ -22,20 +24,24 @@ Your Farm Lease frontend has been successfully converted from **React + Vite** t
 - ❌ Removed: `vite.config.js`, `index.html`, `babel.config.js`
 
 ### 3. **Entry Points**
+
 - ✅ Created: `pages/_app.js` - App wrapper with AuthProvider and ToastContainer
 - ✅ Created: `pages/_document.js` - HTML document template
 - ✅ Created: `pages/index.js` - Root redirect to login
 - ❌ Removed: `src/main.jsx`, `src/App.jsx`
 
 ### 4. **Routing Migration**
+
 All routes converted to Next.js file-based routing in `pages/` directory:
 
 **Public Routes:**
+
 - `/login` → `pages/login.js`
 - `/register` → `pages/register.js`
 - `/landing` → `pages/landing.js`
 
 **Lessee Routes:**
+
 - `/lessee/dashboard` → `pages/lessee/dashboard.js`
 - `/lessee/browse` → `pages/lessee/browse.js`
 - `/lessee/lands/:id` → `pages/lessee/lands/[id].js` (dynamic)
@@ -48,6 +54,7 @@ All routes converted to Next.js file-based routing in `pages/` directory:
 - `/lessee/notifications` → `pages/lessee/notifications.js`
 
 **Farm Owner Routes:**
+
 - `/owner/dashboard` → `pages/owner/dashboard.js`
 - `/owner/lands` → `pages/owner/lands.js`
 - `/owner/lands/add` → `pages/owner/lands/add.js`
@@ -58,6 +65,7 @@ All routes converted to Next.js file-based routing in `pages/` directory:
 - `/owner/profile` → `pages/owner/profile.js`
 
 **Agro-Dealer Routes:**
+
 - `/dealer/dashboard` → `pages/dealer/dashboard.js`
 - `/dealer/products` → `pages/dealer/products.js`
 - `/dealer/inventory` → `pages/dealer/inventory.js`
@@ -71,20 +79,24 @@ All routes converted to Next.js file-based routing in `pages/` directory:
 - `/dealer/profile` → `pages/dealer/profile.js`
 
 **Admin Routes:**
+
 - `/admin/dashboard` → `pages/admin/dashboard.js`
 
 ### 5. **Component Updates**
 
 **React Router DOM → Next.js:**
+
 - `import { Link } from 'react-router-dom'` → `import Link from 'next/link'`
 - `import { useNavigate } from 'react-router-dom'` → `import { useRouter } from 'next/router'`
 - `import { useLocation } from 'react-router-dom'` → `import { useRouter } from 'next/router'`
 - `import { useParams } from 'react-router-dom'` → `import { useRouter } from 'next/router'`
 
 **Link Component:**
+
 - `<Link to="/path">` → `<Link href="/path">`
 
 **Navigation:**
+
 - `navigate('/path')` → `router.push('/path')`
 - `navigate('/path', { replace: true })` → `router.replace('/path')`
 - `const { id } = useParams()` → `const { id } = router.query`
@@ -92,11 +104,13 @@ All routes converted to Next.js file-based routing in `pages/` directory:
 - `location.state` → `router.query` (passed as query params)
 
 **Context Updates:**
+
 - ✅ Updated `src/context/AuthContext.jsx` to use Next.js router
 - ✅ Updated `src/components/common/ProtectedRoute.jsx` for Next.js
 - ✅ Updated all sidebar and navigation components
 
 ### 6. **File Structure**
+
 ```
 frontend/
 ├── pages/                      # Next.js pages (NEW)
@@ -126,18 +140,22 @@ frontend/
 ## Running the Application
 
 ### Development Mode
+
 ```bash
 npm run dev
 ```
+
 Open [http://localhost:3000](http://localhost:3000)
 
 ### Build for Production
+
 ```bash
 npm run build
 npm run start
 ```
 
 ### Linting
+
 ```bash
 npm run lint
 ```
@@ -168,6 +186,7 @@ npm run lint
 ## Environment Variables
 
 Create `.env.local` file:
+
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8000/api
 ```
@@ -183,19 +202,23 @@ NEXT_PUBLIC_API_URL=http://localhost:8000/api
 ## Deployment Options
 
 ### Vercel (Recommended for Next.js)
+
 ```bash
 npm install -g vercel
 vercel
 ```
 
 ### Netlify
+
 ```bash
 npm run build
 # Deploy the .next folder
 ```
 
 ### Docker
+
 Create `Dockerfile`:
+
 ```dockerfile
 FROM node:18-alpine
 WORKDIR /app
