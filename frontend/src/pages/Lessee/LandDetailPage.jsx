@@ -1,11 +1,12 @@
-import { useParams } from 'react-router-dom';
+import { useRouter } from 'next/router';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Sidebar from '../../components/layout/Sidebar';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 
 const LandDetailPage = () => {
-  const { id } = useParams();
+  const router = useRouter();
+  const { id } = router.query;
   
   const menuItems = [
     { label: 'Dashboard', path: '/lessee/dashboard', icon: '📊' },

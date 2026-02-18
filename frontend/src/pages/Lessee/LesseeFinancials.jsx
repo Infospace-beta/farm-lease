@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import LesseeSidebar from '../../components/layout/LesseeSidebar';
 import LesseeHeader from '../../components/layout/LesseeHeader';
 import {

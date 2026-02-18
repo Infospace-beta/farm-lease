@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -22,10 +22,10 @@ const Footer = () => {
           <div>
             <h3 className="font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2 text-sm">
-              <li><Link to="/about" className="text-gray-400 hover:text-white">About Us</Link></li>
-              <li><Link to="/browse" className="text-gray-400 hover:text-white">Browse Lands</Link></li>
-              <li><Link to="/dealers" className="text-gray-400 hover:text-white">Agro-Dealers</Link></li>
-              <li><Link to="/contact" className="text-gray-400 hover:text-white">Contact</Link></li>
+              <li><Link href="/about" className="text-gray-400 hover:text-white">About Us</Link></li>
+              <li><Link href="/browse" className="text-gray-400 hover:text-white">Browse Lands</Link></li>
+              <li><Link href="/dealers" className="text-gray-400 hover:text-white">Agro-Dealers</Link></li>
+              <li><Link href="/contact" className="text-gray-400 hover:text-white">Contact</Link></li>
             </ul>
           </div>
 
@@ -33,10 +33,10 @@ const Footer = () => {
           <div>
             <h3 className="font-semibold mb-4">Resources</h3>
             <ul className="space-y-2 text-sm">
-              <li><Link to="/faq" className="text-gray-400 hover:text-white">FAQ</Link></li>
-              <li><Link to="/terms" className="text-gray-400 hover:text-white">Terms & Conditions</Link></li>
-              <li><Link to="/privacy" className="text-gray-400 hover:text-white">Privacy Policy</Link></li>
-              <li><Link to="/support" className="text-gray-400 hover:text-white">Support</Link></li>
+              <li><Link href="/faq" className="text-gray-400 hover:text-white">FAQ</Link></li>
+              <li><Link href="/terms" className="text-gray-400 hover:text-white">Terms & Conditions</Link></li>
+              <li><Link href="/privacy" className="text-gray-400 hover:text-white">Privacy Policy</Link></li>
+              <li><Link href="/support" className="text-gray-400 hover:text-white">Support</Link></li>
             </ul>
           </div>
 

@@ -1,15 +1,16 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { useAuth } from '../../context/AuthContext';
 
 const AdminDashboard = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { logout, user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    router.push('/login');
   };
 
   const menuItems = [
@@ -125,7 +126,7 @@ const AdminDashboard = () => {
             {menuItems.map((item) => (
               <Link
                 key={item.path}
-                to={item.path}
+                href={item.path}
                 className={`flex items-center gap-4 px-4 py-3 rounded-lg transition-all group ${
                   item.active
                     ? 'text-white font-bold bg-white/5'

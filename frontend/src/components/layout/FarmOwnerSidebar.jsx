@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { useAuth } from '../../context/AuthContext';
 import { IoChevronBackOutline, IoChevronForwardOutline } from 'react-icons/io5';
 
 const FarmOwnerSidebar = () => {
-  const location = useLocation();
+  const router = useRouter();
   const { user, logout } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -53,11 +54,11 @@ const FarmOwnerSidebar = () => {
       {/* Navigation */}
       <nav className="flex-1 space-y-1 px-4 py-4">
         {menuItems.map((item, index) => {
-          const isActive = location.pathname === item.path;
+          const isActive = router.pathname === item.path;
           return (
             <Link
               key={index}
-              to={item.path}
+              href={item.path}
               className={`
                 flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors relative group
                 ${isActive 
@@ -92,7 +93,7 @@ const FarmOwnerSidebar = () => {
       {/* User Profile & Logout */}
       <div className="mt-auto border-t border-white/10 p-4">
         <Link
-          to="/owner/profile"
+          href="/owner/profile"
           className="flex items-center gap-3 rounded-xl bg-white/5 p-3 hover:bg-white/10 transition-colors cursor-pointer group mb-2 relative"
           title={isCollapsed ? user?.name || 'Profile' : ''}
         >

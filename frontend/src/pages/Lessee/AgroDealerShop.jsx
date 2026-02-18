@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/router';
 import { Search, ShoppingCart, Heart, Star, Plus, MessageCircle } from 'lucide-react';
 import LesseeSidebar from '../../components/layout/LesseeSidebar';
 import LesseeHeader from '../../components/layout/LesseeHeader';
 
 const AgroDealerShop = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
@@ -136,7 +136,7 @@ const AgroDealerShop = () => {
   };
 
   const handleViewAllNotifications = () => {
-    navigate('/lessee/notifications');
+    router.push('/lessee/notifications');
   };
 
   const handleAddToCart = (productId) => {

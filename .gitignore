@@ -30,6 +30,5 @@ ENV/
 Thumbs.db
 
 
-requirements.txt
 #db
 .sqlite3

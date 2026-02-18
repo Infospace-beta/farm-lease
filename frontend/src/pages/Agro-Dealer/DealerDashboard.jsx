@@ -1,31 +1,26 @@
 import { useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import Link from "next/link";
+import { useRouter } from "next/router";
+import DealerSidebar from "../../components/layout/DealerSidebar";
+import DealerHeader from "../../components/layout/DealerHeader";
 import {
-  LayoutDashboard,
-  Package,
-  ShoppingCart,
-  ClipboardList,
   PlusCircle,
-  MessageSquare,
-  CreditCard,
   TrendingUp,
-  TrendingDown,
-  Bell,
   Calendar,
-  Truck,
-  Store,
+  FileText,
   DollarSign,
-  LogOut,
-  Star,
   CheckCircle,
   AlertTriangle,
-  Menu,
-  X,
+  Star,
+  Truck,
+  Package,
+  ShoppingCart,
+  MessageSquare,
+  Store,
 } from "lucide-react";
 
 const DealerDashboard = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [timePeriod, setTimePeriod] = useState("month");
@@ -107,70 +102,6 @@ const DealerDashboard = () => {
     }
   };
 
-  const menuItems = [
-    {
-      id: "dashboard",
-      label: "Dashboard",
-      icon: LayoutDashboard,
-      path: "/dealer/dashboard",
-    },
-    {
-      id: "inventory",
-      label: "Inventory",
-      icon: Package,
-      path: "/dealer/inventory",
-    },
-    {
-      id: "orders",
-      label: "Orders",
-      icon: ShoppingCart,
-      badge: 5,
-      path: "/dealer/orders",
-    },
-    {
-      id: "products",
-      label: "My Products",
-      icon: ClipboardList,
-      path: "/dealer/products",
-    },
-    {
-      id: "add-product",
-      label: "Add New Products",
-      icon: PlusCircle,
-      path: "/dealer/products/add",
-    },
-    {
-      id: "queries",
-      label: "Customer Queries",
-      icon: MessageSquare,
-      path: "/dealer/queries",
-    },
-    {
-      id: "transactions",
-      label: "Transactions",
-      icon: CreditCard,
-      path: "/dealer/transactions",
-    },
-    {
-      id: "analytics",
-      label: "Sales Analytics",
-      icon: TrendingUp,
-      path: "/dealer/analytics",
-    },
-    {
-      id: "trends",
-      label: "Market Trends",
-      icon: TrendingDown,
-      path: "/dealer/trends",
-    },
-    {
-      id: "notifications",
-      label: "Notifications",
-      icon: Bell,
-      path: "/dealer/notifications",
-    },
-  ];
-
   const inquiries = [
     {
       id: 1,
@@ -203,108 +134,65 @@ const DealerDashboard = () => {
     },
   ];
 
+  // Sample notifications
+  const [notifications, setNotifications] = useState([
+    {
+      id: 1,
+      type: 'success',
+      title: 'Order Completed',
+      message: 'Order #1234 has been successfully delivered.',
+      timestamp: new Date(Date.now() - 30 * 60000),
+      read: false
+    },
+    {
+      id: 2,
+      type: 'warning',
+      title: 'Low Stock Alert',
+      message: 'DAP Fertilizer 50kg is running low (12 bags remaining).',
+      timestamp: new Date(Date.now() - 2 * 60 * 60000),
+      read: false
+    },
+  ]);
+
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="bg-background-light min-h-screen flex relative">
+      {/* Mobile Overlay */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <div
-        className={`fixed md:static w-64 bg-gradient-to-b from-emerald-800 to-emerald-900 text-white flex flex-col h-screen z-40 transition-transform duration-300 ease-in-out ${
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } md:translate-x-0`}
-      >
-        {/* Logo */}
-        <div className="p-6 border-b border-emerald-700">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-              <span className="text-emerald-800 font-bold text-xl">🌾</span>
-            </div>
-            <div>
-              <h1 className="text-lg font-bold">FarmLease</h1>
-              <p className="text-xs text-emerald-300">DEALER HUB</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Menu Items */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {menuItems.map((item) => (
-            <Link
-              key={item.id}
-              to={item.path}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${
-                location.pathname === item.path
-                  ? "bg-emerald-700 shadow-lg"
-                  : "hover:bg-emerald-700/50"
-              }`}
-            >
-              <item.icon className="w-5 h-5" />
-              <span className="flex-1 text-left text-sm font-medium">
-                {item.label}
-              </span>
-              {item.badge && (
-                <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                  {item.badge}
-                </span>
-              )}
-            </Link>
-          ))}
-        </nav>
-
-        {/* User Profile */}
-        <div className="p-4 border-t border-emerald-700">
-          <Link
-            to="/dealer/profile"
-            className="flex items-center space-x-3 mb-4 cursor-pointer hover:bg-emerald-700/30 p-2 rounded-lg transition-colors"
-          >
-            <img
-              src="https://ui-avatars.com/api/?name=David+M&background=10b981&color=fff"
-              alt="User"
-              className="w-10 h-10 rounded-full"
-            />
-            <div className="flex-1">
-              <p className="text-sm font-semibold">David M.</p>
-              <p className="text-xs text-emerald-300">STORE MANAGER</p>
-            </div>
-          </Link>
-          <button className="w-full flex items-center space-x-2 px-4 py-2 bg-emerald-700 hover:bg-emerald-600 rounded-lg transition-colors">
-            <span>🚪</span>
-            <span className="text-sm font-medium">LOGOUT</span>
-          </button>
-        </div>
-      </div>
+      <DealerSidebar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4 flex-1">
-              <button
-                onClick={() => setIsSidebarOpen(true)}
-                className="md:hidden text-gray-600 hover:text-gray-900 hover:bg-gray-100 p-2 rounded-lg transition-colors"
-              >
-                <Menu className="w-6 h-6" />
-              </button>
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                  Dashboard
-                </h2>
-                <p className="text-gray-600 mt-1 text-sm sm:text-base">
-                  Welcome back to your Agro-Dealer Hub. Here's what's happening
-                  in your store today.
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
+        <DealerHeader
+          title="Dashboard"
+          subtitle="Welcome back to your Agro-Dealer Hub. Here's what's happening in your store today."
+          isSidebarOpen={isSidebarOpen}
+          setIsSidebarOpen={setIsSidebarOpen}
+          notifications={notifications}
+          onMarkNotificationAsRead={(id) => {
+            setNotifications(notifications.map(n => 
+              n.id === id ? { ...n, read: true } : n
+            ));
+          }}
+          onViewAllNotifications={() => router.push('/dealer/notifications')}
+          rightContent={
+            <>
               <div className="relative">
                 <button
                   onClick={() => setShowPeriodMenu(!showPeriodMenu)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg flex items-center space-x-2 hover:bg-gray-50"
+                  className="hidden sm:flex px-4 py-2 border border-gray-300 rounded-lg items-center gap-2 hover:bg-gray-50 transition"
                 >
-                  <span>📅</span>
+                  <Calendar size={18} />
                   <span className="text-sm font-medium">
                     {getDateRangeLabel()}
                   </span>
-                  <span>▼</span>
                 </button>
                 {showPeriodMenu && (
                   <div className="absolute top-full mt-2 right-0 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-[150px]">
@@ -414,19 +302,19 @@ const DealerDashboard = () => {
                 )}
               </div>
               <Link
-                to="/dealer/products/add"
-                className="px-6 py-2 bg-emerald-800 text-white rounded-lg flex items-center space-x-2 hover:bg-emerald-700"
+                href="/dealer/products/add"
+                className="flex px-4 lg:px-5 py-2 lg:py-2.5 bg-forest-green text-white rounded-lg items-center gap-2 hover:bg-opacity-90 transition shadow-lg shadow-forest-green/20"
               >
-                <PlusCircle className="w-4 h-4" />
-                <span className="text-sm font-medium">New Product</span>
+                <PlusCircle size={16} className="text-primary" />
+                <span className="font-medium text-sm hidden sm:inline">New Product</span>
               </Link>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+        />
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="p-8">
+        <div className="flex-1 overflow-y-auto bg-gray-50 p-4 lg:p-8">
+          <div className="max-w-7xl mx-auto">
             <div className="flex gap-6">
               {/* Left Side - Main Content */}
               <div className="flex-1 space-y-6">
@@ -443,8 +331,8 @@ const DealerDashboard = () => {
                           Ksh 1.2M
                         </h3>
                       </div>
-                      <div className="p-2 bg-emerald-100 rounded-lg">
-                        <span className="text-xl">💰</span>
+                      <div className="p-3 bg-emerald-100 rounded-lg">
+                        <DollarSign className="w-5 h-5 text-emerald-600" />
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -471,8 +359,8 @@ const DealerDashboard = () => {
                         </p>
                         <h3 className="text-3xl font-bold text-gray-900">42</h3>
                       </div>
-                      <div className="p-2 bg-emerald-100 rounded-lg">
-                        <span className="text-xl">✅</span>
+                      <div className="p-3 bg-emerald-100 rounded-lg">
+                        <CheckCircle className="w-5 h-5 text-emerald-600" />
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -501,8 +389,8 @@ const DealerDashboard = () => {
                           8 <span className="text-sm text-gray-500">Items</span>
                         </h3>
                       </div>
-                      <div className="p-2 bg-orange-100 rounded-lg">
-                        <span className="text-xl">⚠️</span>
+                      <div className="p-3 bg-orange-100 rounded-lg">
+                        <AlertTriangle className="w-5 h-5 text-orange-600" />
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -532,8 +420,8 @@ const DealerDashboard = () => {
                           <span className="text-sm text-gray-500">/5.0</span>
                         </h3>
                       </div>
-                      <div className="p-2 bg-emerald-100 rounded-lg">
-                        <span className="text-xl">⭐</span>
+                      <div className="p-3 bg-emerald-100 rounded-lg">
+                        <Star className="w-5 h-5 text-emerald-600 fill-current" />
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -566,7 +454,7 @@ const DealerDashboard = () => {
                     {/* Delivery Stats */}
                     <div>
                       <div className="flex items-center space-x-2 mb-4">
-                        <span className="text-2xl">🚚</span>
+                        <Truck className="w-6 h-6 text-gray-600" />
                         <div>
                           <p className="font-semibold text-gray-900">
                             Delivery to Address
@@ -605,7 +493,7 @@ const DealerDashboard = () => {
                     {/* Pickup Stats */}
                     <div>
                       <div className="flex items-center space-x-2 mb-4">
-                        <span className="text-2xl">🏪</span>
+                        <Store className="w-6 h-6 text-gray-600" />
                         <div>
                           <p className="font-semibold text-gray-900">
                             Customer Pick-up
@@ -895,7 +783,7 @@ const DealerDashboard = () => {
             </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

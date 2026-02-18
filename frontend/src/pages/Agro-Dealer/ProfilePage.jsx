@@ -1,24 +1,9 @@
 import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import DealerSidebar from '../../components/layout/DealerSidebar';
+import DealerHeader from '../../components/layout/DealerHeader';
 
 const ProfilePage = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [activeTab, setActiveTab] = useState('profile');
   const [activeProfileTab, setActiveProfileTab] = useState('store');
-
-  const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: '📊', path: '/dealer/dashboard' },
-    { id: 'inventory', label: 'Inventory', icon: '📦', path: '/dealer/inventory' },
-    { id: 'orders', label: 'Orders', icon: '🛒', badge: 5, path: '/dealer/orders' },
-    { id: 'products', label: 'My Products', icon: '📋', path: '/dealer/products' },
-    { id: 'add-product', label: 'Add New Products', icon: '➕', path: '/dealer/products/add' },
-    { id: 'queries', label: 'Customer Queries', icon: '💬', path: '/dealer/queries' },
-    { id: 'transactions', label: 'Transactions', icon: '💳', path: '/dealer/transactions' },
-    { id: 'analytics', label: 'Sales Analytics', icon: '📈', path: '/dealer/analytics' },
-    { id: 'trends', label: 'Market Trends', icon: '📉', path: '/dealer/trends' },
-    { id: 'notifications', label: 'Notifications', icon: '🔔', badge: 2, path: '/dealer/notifications' },
-  ];
 
   const profileTabs = [
     { id: 'store', label: 'Store Details' },
@@ -57,73 +42,18 @@ const ProfilePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-800 to-emerald-900 flex">
-      {/* Sidebar */}
-      <div className="w-64 bg-gradient-to-b from-emerald-900 to-emerald-950 text-white p-6 flex flex-col shadow-2xl overflow-y-auto">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-emerald-100">FarmLease</h1>
-          <p className="text-emerald-300 text-sm">Agro-Dealer Hub</p>
-        </div>
-
-        <nav className="flex-1 space-y-2">
-          {menuItems.map((item) => (
-            <Link
-              key={item.id}
-              to={item.path}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 ${
-                location.pathname === item.path
-                  ? 'bg-emerald-700 text-white shadow-lg'
-                  : 'text-emerald-200 hover:bg-emerald-800/50'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-xl">{item.icon}</span>
-                <span className="font-medium text-sm">{item.label}</span>
-              </div>
-              {item.badge && (
-                <span className={`text-xs font-bold px-2 py-1 rounded-full ${
-                  item.label === 'Notifications' ? 'bg-red-500' : 'bg-emerald-600'
-                } text-white`}>
-                  {item.badge}
-                </span>
-              )}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="mt-8 pt-6 border-t border-emerald-700">
-          <Link
-            to="/dealer/profile"
-            className="flex items-center gap-3 bg-emerald-800/50 rounded-xl p-3 border border-emerald-600 cursor-pointer hover:bg-emerald-800 transition-colors"
-          >
-            <img
-              src="https://ui-avatars.com/api/?name=David+M&background=10b981&color=fff"
-              alt="User"
-              className="w-10 h-10 rounded-full border-2 border-emerald-500"
-            />
-            <div className="flex-1">
-              <p className="font-medium text-sm text-emerald-100">David M.</p>
-              <p className="text-xs text-emerald-300">Store Manager</p>
-            </div>
-          </Link>
-          <button className="mt-3 w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors">
-            Logout
-          </button>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 bg-gray-50 overflow-hidden">
-        <div className="h-full overflow-y-auto p-8">
-          {/* Header */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-800 mb-1">Profile Settings</h2>
-              <p className="text-gray-500 text-sm max-w-xl">
-                Manage your store details, personal information, and payment preferences.
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
+    <div className="bg-background-light flex">
+      <DealerSidebar />
+      
+      <main className="flex-1 h-screen overflow-hidden">
+        <DealerHeader 
+          title="Profile"
+          subtitle="Manage your dealer account"
+        />
+        
+        <div className="h-[calc(100vh-5rem)] overflow-y-auto p-8 bg-gray-50">
+          {/* Action Buttons */}
+          <div className="flex justify-end items-center gap-3 mb-8">
               <button className="flex px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded-lg items-center gap-2 hover:bg-gray-50 transition shadow-sm text-sm">
                 Cancel
               </button>
@@ -730,7 +660,7 @@ const ProfilePage = () => {
             </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

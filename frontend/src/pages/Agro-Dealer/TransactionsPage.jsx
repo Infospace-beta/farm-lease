@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import DealerSidebar from '../../components/layout/DealerSidebar';
+import DealerHeader from '../../components/layout/DealerHeader';
 
 const TransactionsPage = () => {
-  const location = useLocation();
   const [activeTab, setActiveTab] = useState('all');
   const [periodFilter, setPeriodFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -151,18 +151,7 @@ const TransactionsPage = () => {
     setShowModal(true);
   };
 
-  const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: '📊', path: '/dealer/dashboard' },
-    { id: 'inventory', label: 'Inventory', icon: '📦', path: '/dealer/inventory' },
-    { id: 'orders', label: 'Orders', icon: '🛒', badge: 5, path: '/dealer/orders' },
-    { id: 'products', label: 'My Products', icon: '📋', path: '/dealer/products' },
-    { id: 'add-product', label: 'Add New Products', icon: '➕', path: '/dealer/products/add' },
-    { id: 'queries', label: 'Customer Queries', icon: '💬', path: '/dealer/queries' },
-    { id: 'transactions', label: 'Transactions', icon: '💳', path: '/dealer/transactions' },
-    { id: 'analytics', label: 'Sales Analytics', icon: '📈', path: '/dealer/analytics' },
-    { id: 'trends', label: 'Market Trends', icon: '📉', path: '/dealer/trends' },
-    { id: 'notifications', label: 'Notifications', icon: '🔔', path: '/dealer/notifications' },
-  ];
+
 
   const transactions = [
     {
@@ -321,73 +310,15 @@ const TransactionsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-800 to-emerald-900 flex">
-      {/* Sidebar */}
-      <div className="w-64 bg-gradient-to-b from-emerald-900 to-emerald-950 text-white p-6 flex flex-col shadow-2xl">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-emerald-100">FarmLease</h1>
-          <p className="text-emerald-300 text-sm">Agro-Dealer Hub</p>
-        </div>
-
-        <nav className="flex-1 space-y-2">
-          {menuItems.map((item) => (
-            <Link
-              key={item.id}
-              to={item.path}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 ${
-                location.pathname === item.path
-                  ? 'bg-emerald-700 text-white shadow-lg'
-                  : 'text-emerald-200 hover:bg-emerald-800/50'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-xl">{item.icon}</span>
-                <span className="font-medium text-sm">{item.label}</span>
-              </div>
-              {item.badge && (
-                <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                  {item.badge}
-                </span>
-              )}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="mt-8 pt-6 border-t border-emerald-700">
-          <Link
-            to="/dealer/profile"
-            className="flex items-center gap-3 cursor-pointer hover:bg-emerald-800/50 rounded-xl p-3 transition-colors"
-          >
-            <img
-              src="https://ui-avatars.com/api/?name=David+M&background=10b981&color=fff"
-              alt="User"
-              className="w-10 h-10 rounded-full"
-            />
-            <div className="flex-1">
-              <p className="font-medium text-sm text-emerald-100">David M.</p>
-              <p className="text-xs text-emerald-300">Store Manager</p>
-            </div>
-          </Link>
-          <button className="mt-3 w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors">
-            Logout
-          </button>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 bg-gray-50 overflow-hidden">
-        <div className="h-full overflow-y-auto p-8">
-          <div className="space-y-8">
-            {/* Header */}
-            <div className="flex justify-between items-end">
-              <div>
-                <h2 className="text-3xl font-bold text-gray-800 mb-1">Financial Transactions</h2>
-                <p className="text-gray-500 text-sm max-w-xl">
-                  Manage your direct M-Pesa product sales. Payments are received instantly for every sold
-                  product, eliminating the need for manual payouts or withdrawals.
-                </p>
-              </div>
-              <div className="flex items-center gap-4">
+    <div className="bg-background-light flex">
+      <DealerSidebar />
+      
+      <main className="flex-1 h-screen overflow-hidden">
+        <DealerHeader 
+          title="Transactions"
+          subtitle="Track your payments and earnings"
+          rightContent={
+            <div className="flex items-center gap-4">
                 {/* Period Filter */}
                 <div className="flex items-center bg-white border border-gray-200 rounded-lg p-1 shadow-sm">
                   <button
@@ -425,9 +356,12 @@ const TransactionsPage = () => {
                   <span className="text-sm">📥</span>
                   <span className="font-medium text-sm">Export Report</span>
                 </button>
-              </div>
             </div>
-
+          }
+        />
+        
+        <div className="h-[calc(100vh-5rem)] overflow-y-auto p-8 bg-gray-50">
+          <div className="space-y-8">
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex items-center justify-between">
@@ -913,6 +847,8 @@ const TransactionsPage = () => {
           </div>
         </div>
       )}
+        </div>
+      </main>
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useRouter } from "next/router";
 import { useAuth } from '../../context/AuthContext';
 import LesseeSidebar from '../../components/layout/LesseeSidebar';
 import LesseeHeader from '../../components/layout/LesseeHeader';
@@ -19,8 +19,7 @@ import {
 
 const AIPredictor = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [inputMode, setInputMode] = useState("regional");
   
@@ -60,12 +59,12 @@ const AIPredictor = () => {
     }
   ]);
   
-  // Restore inputMode from navigation state if returning from compare page
+  // Restore inputMode from navigation query if returning from compare page
   useEffect(() => {
-    if (location.state?.inputMode) {
-      setInputMode(location.state.inputMode);
+    if (router.query?.inputMode) {
+      setInputMode(router.query.inputMode);
     }
-  }, [location]);
+  }, [router.query]);
   const [searchRegion, setSearchRegion] = useState("");
   
   // Manual Entry States
@@ -256,7 +255,7 @@ const AIPredictor = () => {
               n.id === id ? { ...n, read: true } : n
             ));
           }}
-          onViewAllNotifications={() => navigate('/lessee/notifications')}
+          onViewAllNotifications={() => router.push('/lessee/notifications')}
           rightContent={
             <div className="flex bg-gray-50 rounded-lg border border-gray-200 p-1 shadow-sm">
               <button
@@ -265,7 +264,7 @@ const AIPredictor = () => {
                 Predictor
               </button>
               <button
-                onClick={() => navigate('/lessee/recommendations/history')}
+                onClick={() => router.push('/lessee/recommendations/history')}
                 className="px-3 lg:px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-md text-xs font-bold uppercase tracking-wide transition-all"
               >
                 History
@@ -557,7 +556,7 @@ const AIPredictor = () => {
             {/* Compare Assets Button */}
             <div className="mt-6 pt-6 border-t border-gray-100">
               <button 
-                onClick={() => navigate('/lessee/compare', { state: { inputMode } })}
+                onClick={() => router.push('/lessee/compare', { state: { inputMode } })}
                 className="w-full py-3 bg-white border-2 border-forest-green text-forest-green rounded-xl font-bold hover:bg-forest-green hover:text-white transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-wider group"
               >
                 <ArrowRight className="w-4 h-4 group-hover:scale-110 transition-transform" />

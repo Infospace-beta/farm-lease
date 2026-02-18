@@ -1,28 +1,17 @@
 import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useRouter } from 'next/router';
+import { Search, Settings, Download, Truck, Store, Clipboard, X, MessageSquare, MapPin, Package, Check } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
+import DealerSidebar from '../../components/layout/DealerSidebar';
+import DealerHeader from '../../components/layout/DealerHeader';
 
 const OrdersPage = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('orders');
   const [orderFilter, setOrderFilter] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState(null);
-
-  const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: '📊', path: '/dealer/dashboard' },
-    { id: 'inventory', label: 'Inventory', icon: '📦', path: '/dealer/inventory' },
-    { id: 'orders', label: 'Orders', icon: '🛒', badge: 5, path: '/dealer/orders' },
-    { id: 'products', label: 'My Products', icon: '📋', path: '/dealer/products' },
-    { id: 'add-product', label: 'Add New Products', icon: '➕', path: '/dealer/products/add' },
-    { id: 'queries', label: 'Customer Queries', icon: '💬', path: '/dealer/queries' },
-    { id: 'transactions', label: 'Transactions', icon: '💳', path: '/dealer/transactions' },
-    { id: 'analytics', label: 'Sales Analytics', icon: '📈', path: '/dealer/analytics' },
-    { id: 'trends', label: 'Market Trends', icon: '📉', path: '/dealer/trends' },
-    { id: 'notifications', label: 'Notifications', icon: '🔔', path: '/dealer/notifications' },
-  ];
 
   const orders = [
     {
@@ -139,88 +128,40 @@ const OrdersPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-800 to-emerald-900 flex">
-      {/* Sidebar */}
-      <div className="w-64 bg-gradient-to-b from-emerald-900 to-emerald-950 text-white p-6 flex flex-col shadow-2xl">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-emerald-100">FarmLease</h1>
-          <p className="text-emerald-300 text-sm">Agro-Dealer Hub</p>
-        </div>
-
-        <nav className="flex-1 space-y-2">
-          {menuItems.map((item) => (
-            <Link
-              key={item.id}
-              to={item.path}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 ${
-                location.pathname === item.path
-                  ? 'bg-emerald-700 text-white shadow-lg'
-                  : 'text-emerald-200 hover:bg-emerald-800/50'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-xl">{item.icon}</span>
-                <span className="font-medium text-sm">{item.label}</span>
-              </div>
-              {item.badge && (
-                <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                  {item.badge}
-                </span>
-              )}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="mt-8 pt-6 border-t border-emerald-700">
-          <Link
-            to="/dealer/profile"
-            className="flex items-center gap-3 cursor-pointer hover:bg-emerald-800/50 rounded-xl p-3 transition-colors"
-          >
-            <img
-              src="https://ui-avatars.com/api/?name=David+M&background=10b981&color=fff"
-              alt="User"
-              className="w-10 h-10 rounded-full"
-            />
-            <div className="flex-1">
-              <p className="font-medium text-sm text-emerald-100">David M.</p>
-              <p className="text-xs text-emerald-300">Store Manager</p>
-            </div>
-          </Link>
-          <button className="mt-3 w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors">
-            Logout
-          </button>
-        </div>
-      </div>
-
+    <div className="bg-background-light flex">
+      <DealerSidebar />
+      
       {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden bg-gray-50">
-        {/* Orders List */}
-        <div className="flex-1 p-8 overflow-y-auto">
-          <div className="space-y-6">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div>
-                <h2 className="text-3xl font-bold text-gray-800 mb-1">Incoming Orders</h2>
-                <p className="text-gray-600 text-sm">Manage fulfillment and track order status.</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <span className="absolute left-3 top-2.5 text-gray-400">🔍</span>
-                  <input
-                    type="text"
-                    placeholder="Search orders..."
-                    className="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none w-64"
-                  />
+      <main className="flex-1 h-screen overflow-hidden">
+        <DealerHeader 
+          title="Orders"
+          subtitle="Manage fulfillment and track order status"
+        />
+        
+        <div className="h-[calc(100vh-4rem)] flex overflow-hidden">
+          {/* Orders List */}
+          <div className="flex-1 p-8 overflow-y-auto bg-gray-50">
+            <div className="space-y-6">
+              {/* Header Actions */}
+              <div className="flex flex-col sm:flex-row justify-end items-start sm:items-center gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search orders..."
+                      className="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none w-64"
+                    />
+                  </div>
+                  <button className="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                    <Settings className="w-5 h-5 text-gray-400" />
+                  </button>
+                  <Button className="flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2">
+                    <Download className="w-4 h-4" />
+                    <span className="text-sm font-medium">Export</span>
+                  </Button>
                 </div>
-                <button className="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition">
-                  <span className="text-lg">⚙️</span>
-                </button>
-                <Button className="flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2">
-                  <span>📥</span>
-                  <span className="text-sm font-medium">Export</span>
-                </Button>
               </div>
-            </div>
 
             {/* Tabs */}
             <div className="flex gap-2 border-b border-gray-200 pb-1">
@@ -314,7 +255,7 @@ const OrdersPage = () => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2 text-gray-600">
-                          <span className="text-base">{order.type === 'Delivery' ? '🚚' : '🏪'}</span>
+                          {order.type === 'Delivery' ? <Truck className="w-4 h-4" /> : <Store className="w-4 h-4" />}
                           {order.type}
                         </div>
                       </td>
@@ -381,7 +322,7 @@ const OrdersPage = () => {
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="text-xl font-bold text-gray-800">Order {selectedOrder.id}</h3>
-                  <span className="text-emerald-700 text-sm cursor-pointer hover:scale-110 transition">📋</span>
+                  <span className="text-emerald-700 text-sm cursor-pointer hover:scale-110 transition"><Clipboard className="w-4 h-4" /></span>
                 </div>
                 <p className="text-xs text-gray-500">
                   Placed on {selectedOrder.date} at {selectedOrder.time}
@@ -391,7 +332,7 @@ const OrdersPage = () => {
                 onClick={() => setSelectedOrder(null)}
                 className="text-gray-400 hover:text-gray-600 transition"
               >
-                <span className="text-xl">✕</span>
+                <X className="w-5 h-5" />
               </button>
             </div>
 
@@ -440,11 +381,11 @@ const OrdersPage = () => {
                     <p className="text-xs text-emerald-700">{selectedOrder.phone}</p>
                   </div>
                   <button className="ml-auto p-1.5 bg-white border border-gray-200 rounded-lg hover:text-emerald-700 transition">
-                    <span className="text-sm">💬</span>
+                    <MessageSquare className="w-4 h-4" />
                   </button>
                 </div>
                 <div className="flex items-start gap-2 text-xs text-gray-500">
-                  <span className="text-sm mt-0.5">📍</span>
+                  <MapPin className="w-4 h-4 mt-0.5" />
                   <span>{selectedOrder.address}</span>
                 </div>
               </div>
@@ -461,7 +402,7 @@ const OrdersPage = () => {
                         {item.image ? (
                           <img src={item.image} alt={item.name} className="w-full h-full object-contain" />
                         ) : (
-                          <span className="text-2xl">{item.icon || '📦'}</span>
+                            <Package className="w-6 h-6 text-gray-400" />
                         )}
                       </div>
                       <div className="flex-1">
@@ -484,7 +425,7 @@ const OrdersPage = () => {
             {/* Actions Footer */}
             <div className="p-6 border-t border-gray-100 bg-gray-50 space-y-3">
               <Button className="w-full py-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl font-medium shadow-md flex justify-center items-center gap-2">
-                <span>✓</span>
+                <Check className="w-4 h-4" />
                 Mark as Ready
               </Button>
               <div className="grid grid-cols-2 gap-3">
@@ -499,7 +440,8 @@ const OrdersPage = () => {
           </div>
         )}
       </div>
-    </div>
+    </main>
+  </div>
   );
 };
 

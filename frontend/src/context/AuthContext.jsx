@@ -7,7 +7,7 @@ import {
   useCallback,
 } from "react";
 import authService from "../services/authService";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/router";
 import { toast } from "react-toastify";
 
 const AuthContext = createContext(null);
@@ -22,7 +22,7 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   // DEVELOPMENT MODE: Set mock user to bypass authentication
-  const DEVELOPMENT_MODE = true; // Set to false when backend is ready
+  const DEVELOPMENT_MODE = false; // Set to false when backend is ready
   
   const mockUser = {
     id: 1,
@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }) => {
 
   const [user, setUser] = useState(DEVELOPMENT_MODE ? mockUser : null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+  const router = useRouter();
 
   // Check if token is expired
   const isTokenExpired = (token) => {
@@ -95,7 +95,7 @@ export const AuthProvider = ({ children }) => {
       if (e.key === "accessToken" && !e.newValue) {
         // Token was removed in another tab, logout here too
         setUser(null);
-        navigate("/login");
+        router.push("/login");
       }
     };
 
@@ -103,7 +103,7 @@ export const AuthProvider = ({ children }) => {
     const handleLogoutEvent = () => {
       setUser(null);
       if (window.location.pathname !== "/login") {
-        navigate("/login");
+        router.push("/login");
       }
     };
 
@@ -114,7 +114,7 @@ export const AuthProvider = ({ children }) => {
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("auth-logout", handleLogoutEvent);
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [router]);
 
   const login = useCallback(
     async (email, password, rememberMe = false) => {
@@ -126,21 +126,21 @@ export const AuthProvider = ({ children }) => {
 
         // Redirect based on role and is_staff
         if (currentUser?.is_staff) {
-          navigate("/admin/dashboard");
+          router.push("/admin/dashboard");
         } else {
           const role = currentUser?.role;
           switch (role) {
             case "landowner":
-              navigate("/owner/dashboard");
+              router.push("/owner/dashboard");
               break;
             case "farmer":
-              navigate("/lessee/dashboard");
+              router.push("/lessee/dashboard");
               break;
             case "dealer":
-              navigate("/dealer/dashboard");
+              router.push("/dealer/dashboard");
               break;
             default:
-              navigate("/");
+              router.push("/");
           }
         }
 
@@ -157,7 +157,7 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
       }
     },
-    [navigate],
+    [router],
   );
 
   const register = useCallback(
@@ -166,7 +166,7 @@ export const AuthProvider = ({ children }) => {
         setLoading(true);
         const data = await authService.register(userData);
         toast.success("Registration successful! Please login.");
-        navigate("/login");
+        router.push("/login");
         return data;
       } catch (error) {
         console.error("Registration error details:", error.response?.data);
@@ -200,7 +200,7 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
       }
     },
-    [navigate],
+    [router],
   );
 
   const logout = async () => {
@@ -208,14 +208,14 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       await authService.logout();
       setUser(null);
-      navigate("/login");
+      router.push("/login");
       toast.info("Logged out successfully");
     } catch (error) {
       console.error("Logout error:", error);
       // Even if API call fails, clear local state
       authService.clearSession();
       setUser(null);
-      navigate("/login");
+      router.push("/login");
     } finally {
       setLoading(false);
     }

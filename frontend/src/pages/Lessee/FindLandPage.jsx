@@ -1,4 +1,5 @@
-import { Link, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { useAuth } from '../../context/AuthContext';
 import LesseeSidebar from '../../components/layout/LesseeSidebar';
 import LesseeHeader from '../../components/layout/LesseeHeader';
@@ -19,7 +20,7 @@ import { useState } from 'react';
 
 const FindLandPage = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedRegions, setSelectedRegions] = useState([]);
   const [selectedCrops, setSelectedCrops] = useState([]);
@@ -369,7 +370,7 @@ const FindLandPage = () => {
               n.id === id ? { ...n, read: true } : n
             ));
           }}
-          onViewAllNotifications={() => navigate('/lessee/notifications')}
+          onViewAllNotifications={() => router.push('/lessee/notifications')}
           rightContent={
             <div className="relative w-64 lg:w-80 hidden md:block">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10" size={20} />
