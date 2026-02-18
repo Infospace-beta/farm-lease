@@ -1,12 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Enable App Router (Next.js 13+)
+  experimental: {
+    appDir: true,
+  },
   images: {
-    domains: ['ui-avatars.com'],
+    domains: ["ui-avatars.com"],
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: '**',
+        protocol: "https",
+        hostname: "**",
       },
     ],
   },
@@ -18,8 +22,9 @@ const nextConfig = {
   async rewrites() {
     return [
       {
-        source: '/api/:path*',
-        destination: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/:path*',
+        source: "/api/:path*",
+        destination:
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/:path*",
       },
     ];
   },
