@@ -1,10 +1,12 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
-import Input from "../../components/common/Input";
-import Button from "../../components/common/Button";
-import Card from "../../components/common/Card";
+import Input from "../../../components/ui/Input";
+import Button from "../../../components/ui/Button";
+import Card from "../../../components/ui/Card";
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({

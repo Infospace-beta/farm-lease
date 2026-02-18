@@ -1,7 +1,9 @@
+'use client';
+
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/router";
-import { useAuth } from "../../context/AuthContext";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../../app/context/AuthContext";
 import { IoChevronBackOutline, IoChevronForwardOutline } from "react-icons/io5";
 
 const FarmOwnerSidebar = () => {

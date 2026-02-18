@@ -1,3 +1,5 @@
+'use client';
+
 import { cloneElement, isValidElement, useState } from 'react';
 import { Menu } from 'lucide-react';
 

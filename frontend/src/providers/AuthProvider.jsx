@@ -1,3 +1,5 @@
+"use client";
+
 import {
   createContext,
   useContext,
@@ -6,8 +8,8 @@ import {
   useMemo,
   useCallback,
 } from "react";
-import authService from "../services/authService";
-import { useRouter } from "next/router";
+import authService from "../lib/services/authService";
+import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 
 const AuthContext = createContext(null);
