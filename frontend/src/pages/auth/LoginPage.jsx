@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { useAuth } from '../../context/AuthContext';
 import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
@@ -14,7 +15,7 @@ const LoginPage = () => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const { login, user } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   useEffect(() => {
     if (!user) return;
@@ -26,8 +27,8 @@ const LoginPage = () => {
       admin: '/admin/dashboard',
     };
 
-    navigate(dashboardRoutes[user.role] || '/', { replace: true });
-  }, [user?.id, navigate]); // Only re-run when user ID changes, not the whole user object
+    router.replace(dashboardRoutes[user.role] || '/');
+  }, [user?.id, router]); // Only re-run when user ID changes, not the whole user object
 
   const validateForm = () => {
     const newErrors = {};
@@ -88,7 +89,7 @@ const LoginPage = () => {
       <div className="max-w-md w-full">
         {/* Header - Added a slight blur/background for better contrast against the photo */}
         <div className="text-center mb-8 bg-white/30 backdrop-blur-md p-6 rounded-2xl shadow-lg border border-white/20">
-          <Link to="/" className="inline-flex items-center space-x-2 mb-4">
+          <Link href="/" className="inline-flex items-center space-x-2 mb-4">
             <span className="text-2xl font-bold text-white drop-shadow-md">FarmLease</span>
           </Link>
           <h2 className="text-3xl font-bold text-white drop-shadow-sm">Welcome Back</h2>
@@ -135,7 +136,7 @@ const LoginPage = () => {
                 />
                 <span className="text-sm text-gray-600">Remember me</span>
               </label>
-              <Link to="/forgot-password" className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">
+              <Link href="/forgot-password" className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">
                 Forgot password?
               </Link>
             </div>
@@ -152,7 +153,7 @@ const LoginPage = () => {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Don't have an account?{' '}
-              <Link to="/register" className="text-emerald-600 hover:text-emerald-700 font-medium">
+              <Link href="/register" className="text-emerald-600 hover:text-emerald-700 font-medium">
                 Register here
               </Link>
             </p>

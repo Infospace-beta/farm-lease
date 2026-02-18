@@ -7,7 +7,15 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
+
+# Next.js
+.next
+out
+build
+
+# Vite (legacy)
 dist
 dist-ssr
 *.local
@@ -27,6 +35,7 @@ dist-ssr
 .env
 .env.local
 .env.production
+.env.*.local
 
 #DB
 db.sqlite3

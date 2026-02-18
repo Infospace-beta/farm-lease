@@ -1,14 +1,27 @@
 from django.db import models
 from django.conf import settings
 
+
 class LandListing(models.Model):
     # STEP 1: Basic Info
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE
+    )
     title = models.CharField(max_length=255)
     description = models.TextField()
-    total_area = models.DecimalField(max_digits=10, decimal_places=2) # In Acres
+    total_area = models.DecimalField(
+        max_digits=10,
+        decimal_places=2
+    )  # In Acres
     price_per_month = models.DecimalField(max_digits=12, decimal_places=2)
     preferred_duration = models.CharField(max_length=50)
+    title_deed_number = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text="For admin verification only"
+    )
     
     # Amenities
     has_irrigation = models.BooleanField(default=False)
@@ -26,11 +39,16 @@ class LandListing(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.title
+        return str(self.title)
+
 
 class SoilClimateData(models.Model):
     # STEP 2: Soil & Climate Data
-    land = models.OneToOneField(LandListing, on_delete=models.CASCADE, related_name='soil_data')
+    land = models.OneToOneField(
+        LandListing,
+        on_delete=models.CASCADE,
+        related_name='soil_data'
+    )
     ph_level = models.FloatField()
     nitrogen = models.FloatField()
     phosphorus = models.FloatField()
@@ -40,7 +58,12 @@ class SoilClimateData(models.Model):
     rainfall = models.FloatField()
     updated_at = models.DateTimeField(auto_now=True)
 
+
 class LandImage(models.Model):
     # STEP 3: Photos
-    land = models.ForeignKey(LandListing, on_delete=models.CASCADE, related_name='images')
+    land = models.ForeignKey(
+        LandListing,
+        on_delete=models.CASCADE,
+        related_name='images'
+    )
     image = models.ImageField(upload_to='land_photos/')

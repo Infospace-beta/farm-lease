@@ -1,9 +1,13 @@
-import { useState } from 'react';
+ import { useState } from 'react';
+import { useRouter } from 'next/router';
 import DashboardLayout from '../../components/layout/DashboardLayout';
+import FarmOwnerSidebar from '../../components/layout/FarmOwnerSidebar';
 
 const LeaseRequestsPage = () => {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [selectedRequest, setSelectedRequest] = useState(null);
 
   // Sample data for lease requests
   const leaseRequests = [
@@ -86,125 +90,193 @@ const LeaseRequestsPage = () => {
   };
 
   return (
-    <DashboardLayout>
-      {/* Pattern Background */}
-      <div className="absolute inset-0 bg-[radial-gradient(#047857_0.5px,transparent_0.5px)] [background-size:10px_10px] opacity-5 pointer-events-none"></div>
+    <DashboardLayout sidebar={<FarmOwnerSidebar />}>
+      <>
+        <div className="mx-auto max-w-7xl">
+          {/* Header */}
+          <div className="mb-6">
+            <h2 className="text-3xl font-bold tracking-tight text-earth font-serif dark:text-white">
+              Lease Requests
+            </h2>
+            <p className="mt-1 text-slate-500 dark:text-slate-400">
+              Review and manage incoming lease requests from potential tenants.
+            </p>
+          </div>
 
-      <div className="mx-auto max-w-7xl relative z-10">
-        {/* Header */}
-        <div className="mb-8">
-          <h2 className="text-4xl font-bold tracking-tight text-earth font-serif">
-            Lease Requests
-          </h2>
-          <p className="mt-2 text-slate-500 max-w-2xl">
-            Review and manage incoming lease requests from potential tenants.
-          </p>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="mb-8 grid gap-6 sm:grid-cols-4">
-          <StatCard title="Total Requests" value={stats.total} icon="inbox" color="slate" />
-          <StatCard
-            title="Pending Review"
-            value={stats.pending}
-            icon="pending_actions"
-            color="amber"
-          />
-          <StatCard
-            title="Negotiating"
-            value={stats.negotiating}
-            icon="handshake"
-            color="blue"
-          />
-          <StatCard title="Approved" value={stats.approved} icon="check_circle" color="emerald" />
-        </div>
-
-        {/* Search and Filter */}
-        <div className="mb-6 flex flex-col sm:flex-row gap-4 items-center justify-between bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-          <div className="relative flex-1 w-full sm:max-w-md">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">
-              search
-            </span>
-            <input
-              type="text"
-              placeholder="Search by farmer name or plot..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+          {/* Stats Cards */}
+          <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard 
+              title="Total Requests" 
+              value={stats.total} 
+              icon="inbox" 
+              iconColor="bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+            />
+            <StatCard
+              title="Pending Review"
+              value={stats.pending}
+              icon="pending_actions"
+              iconColor="bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400"
+            />
+            <StatCard
+              title="Negotiating"
+              value={stats.negotiating}
+              icon="handshake"
+              iconColor="bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
+            />
+            <StatCard 
+              title="Approved" 
+              value={stats.approved} 
+              icon="check_circle" 
+              iconColor="bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
             />
           </div>
 
-          <div className="flex gap-2">
-            <button
-              onClick={() => setFilterStatus('all')}
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                filterStatus === 'all'
-                  ? 'bg-primary text-white'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setFilterStatus('pending')}
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                filterStatus === 'pending'
-                  ? 'bg-primary text-white'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
-            >
-              Pending
-            </button>
-            <button
-              onClick={() => setFilterStatus('approved')}
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                filterStatus === 'approved'
-                  ? 'bg-primary text-white'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
-            >
-              Approved
-            </button>
+          {/* Filters and Search */}
+          <div className="mb-6 bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+            {/* Tab Filters */}
+            <div className="flex border-b border-slate-200 dark:border-slate-700">
+              <button
+                onClick={() => setFilterStatus('all')}
+                className={`flex-1 px-6 py-4 text-sm font-semibold transition-colors relative ${
+                  filterStatus === 'all'
+                    ? 'text-primary dark:text-primary'
+                    : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+                }`}
+              >
+                All Requests
+                {filterStatus === 'all' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"></div>
+                )}
+              </button>
+              <button
+                onClick={() => setFilterStatus('pending')}
+                className={`flex-1 px-6 py-4 text-sm font-semibold transition-colors relative ${
+                  filterStatus === 'pending'
+                    ? 'text-primary dark:text-primary'
+                    : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+                }`}
+              >
+                Pending
+                <span className="ml-2 px-2 py-0.5 text-xs font-bold rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                  {stats.pending}
+                </span>
+                {filterStatus === 'pending' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"></div>
+                )}
+              </button>
+              <button
+                onClick={() => setFilterStatus('negotiating')}
+                className={`flex-1 px-6 py-4 text-sm font-semibold transition-colors relative ${
+                  filterStatus === 'negotiating'
+                    ? 'text-primary dark:text-primary'
+                    : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+                }`}
+              >
+                Negotiating
+                <span className="ml-2 px-2 py-0.5 text-xs font-bold rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                  {stats.negotiating}
+                </span>
+                {filterStatus === 'negotiating' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"></div>
+                )}
+              </button>
+              <button
+                onClick={() => setFilterStatus('approved')}
+                className={`flex-1 px-6 py-4 text-sm font-semibold transition-colors relative ${
+                  filterStatus === 'approved'
+                    ? 'text-primary dark:text-primary'
+                    : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+                }`}
+              >
+                Approved
+                <span className="ml-2 px-2 py-0.5 text-xs font-bold rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                  {stats.approved}
+                </span>
+                {filterStatus === 'approved' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"></div>
+                )}
+              </button>
+            </div>
+
+            {/* Search Bar */}
+            <div className="p-4">
+              <div className="relative">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">
+                  search
+                </span>
+                <input
+                  type="text"
+                  placeholder="Search by farmer name or plot ID..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 border border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-shadow"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Requests Table */}
+          <div className="bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+            {filteredRequests.length === 0 ? (
+              <div className="text-center py-16">
+                <span className="material-symbols-outlined text-slate-300 dark:text-slate-600 text-6xl mb-4 block">
+                  inbox
+                </span>
+                <p className="text-slate-500 dark:text-slate-400 text-lg">No lease requests found</p>
+                <p className="text-slate-400 dark:text-slate-500 text-sm mt-2">
+                  {filterStatus !== 'all' ? 'Try adjusting your filters' : 'New requests will appear here'}
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                        Tenant
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                        Plot Details
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                        Lease Terms
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                        Offer Amount
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                        Status
+                      </th>
+                      <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                    {filteredRequests.map((request) => (
+                      <RequestRow key={request.id} request={request} />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
-
-        {/* Requests List */}
-        <div className="space-y-4">
-          {filteredRequests.map((request) => (
-            <LeaseRequestCard key={request.id} request={request} />
-          ))}
-
-          {filteredRequests.length === 0 && (
-            <div className="text-center py-16">
-              <span className="material-symbols-outlined text-slate-300 text-6xl mb-4">
-                inbox
-              </span>
-              <p className="text-slate-500 text-lg">No lease requests found</p>
-            </div>
-          )}
-        </div>
-      </div>
+      </>
     </DashboardLayout>
   );
 };
 
 // StatCard Component
-const StatCard = ({ title, value, icon, color }) => {
-  const colorMap = {
-    slate: 'bg-slate-100 text-slate-600',
-    amber: 'bg-amber-100 text-amber-600',
-    blue: 'bg-blue-100 text-blue-600',
-    emerald: 'bg-emerald-100 text-emerald-600',
-  };
-
+const StatCard = ({ title, value, icon, iconColor }) => {
   return (
-    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100">
+    <div className="bg-white dark:bg-surface-dark rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-400">{title}</p>
-          <h3 className="mt-2 text-3xl font-bold text-earth">{value}</h3>
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{title}</p>
+          <h3 className="mt-2 text-2xl font-bold text-earth dark:text-white">{value}</h3>
         </div>
-        <div className={`h-12 w-12 rounded-xl ${colorMap[color]} flex items-center justify-center`}>
+        <div className={`h-12 w-12 rounded-xl ${iconColor} flex items-center justify-center`}>
           <span className="material-symbols-outlined text-2xl">{icon}</span>
         </div>
       </div>
@@ -212,108 +284,178 @@ const StatCard = ({ title, value, icon, color }) => {
   );
 };
 
-// LeaseRequestCard Component
-const LeaseRequestCard = ({ request }) => {
-  const statusColorMap = {
-    amber: 'bg-amber-100 text-amber-700',
-    blue: 'bg-blue-100 text-blue-700',
-    emerald: 'bg-emerald-100 text-emerald-700',
+// RequestRow Component
+const RequestRow = ({ request }) => {
+  const router = useRouter();
+  const [showActions, setShowActions] = useState(false);
+
+  const handleDecline = (requestId) => {
+    // TODO: Implement decline functionality
+    console.log('Declining request:', requestId);
+    alert('Decline functionality will be implemented');
   };
 
+  const handleReview = (requestId) => {
+    // Navigate to detailed review page
+    router.push(`/owner/lease-requests/${requestId}`);
+  };
+
+  const handleContinueNegotiation = (requestId) => {
+    // Navigate to negotiation page
+    router.push(`/owner/lease-requests/${requestId}/negotiate`);
+  };
+
+  const handleViewAgreement = (requestId) => {
+    // Navigate to agreement page
+    router.push(`/owner/agreements/${requestId}`);
+  };
+
+  const statusConfig = {
+    'Pending Review': {
+      bg: 'bg-amber-100 dark:bg-amber-900/30',
+      text: 'text-amber-700 dark:text-amber-400',
+      icon: 'schedule',
+    },
+    'Under Negotiation': {
+      bg: 'bg-blue-100 dark:bg-blue-900/30',
+      text: 'text-blue-700 dark:text-blue-400',
+      icon: 'handshake',
+    },
+    'Approved': {
+      bg: 'bg-emerald-100 dark:bg-emerald-900/30',
+      text: 'text-emerald-700 dark:text-emerald-400',
+      icon: 'check_circle',
+    },
+  };
+
+  const status = statusConfig[request.status];
+
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* Farmer Info */}
-        <div className="flex items-start gap-4 flex-1">
+    <tr 
+      className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+      onMouseEnter={() => setShowActions(true)}
+      onMouseLeave={() => setShowActions(false)}
+    >
+      {/* Tenant Column */}
+      <td className="px-6 py-4">
+        <div className="flex items-center gap-3">
           {request.farmer.avatar ? (
             <div
-              className="h-16 w-16 rounded-full bg-slate-100 bg-cover bg-center border-2 border-slate-200"
+              className="h-10 w-10 rounded-full bg-slate-100 dark:bg-slate-700 bg-cover bg-center border-2 border-slate-200 dark:border-slate-600 flex-shrink-0"
               style={{ backgroundImage: `url('${request.farmer.avatar}')` }}
             ></div>
           ) : (
-            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xl border-2 border-primary/20">
+            <div className="h-10 w-10 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm border-2 border-primary/20 flex-shrink-0">
               {request.farmer.initials}
             </div>
           )}
-          <div>
-            <h4 className="text-lg font-bold text-slate-900">{request.farmer.name}</h4>
-            <div className="flex items-center gap-3 mt-1">
-              <div className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-amber-500 text-sm">star</span>
-                <span className="text-sm font-medium text-slate-600">{request.farmer.rating}</span>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+              {request.farmer.name}
+            </p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <div className="flex items-center gap-0.5">
+                <span className="material-symbols-outlined text-amber-500 text-xs">star</span>
+                <span className="text-xs font-medium text-slate-600 dark:text-slate-400">{request.farmer.rating}</span>
               </div>
-              <span className="text-slate-300">•</span>
-              <span className="text-sm text-slate-500">
-                {request.farmer.leaseCount} completed leases
+              <span className="text-slate-300 dark:text-slate-600">•</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                {request.farmer.leaseCount} leases
               </span>
             </div>
-            <p className="text-xs text-slate-400 mt-2">Requested on {request.requestDate}</p>
           </div>
         </div>
+      </td>
 
-        {/* Plot Info */}
-        <div className="flex-1 border-l border-slate-100 pl-6">
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-            Plot Details
+      {/* Plot Details Column */}
+      <td className="px-6 py-4">
+        <p className="text-sm font-semibold text-slate-900 dark:text-white">{request.plot.id}</p>
+        <div className="mt-1 space-y-0.5">
+          <p className="text-xs text-slate-600 dark:text-slate-400">
+            <span className="font-medium">{request.plot.acres}</span> acres • {request.plot.soil} soil
           </p>
-          <h5 className="text-base font-bold text-slate-900 mb-2">{request.plot.id}</h5>
-          <div className="space-y-1 text-sm text-slate-600">
-            <p>
-              <span className="font-medium">Size:</span> {request.plot.acres} acres
-            </p>
-            <p>
-              <span className="font-medium">Soil:</span> {request.plot.soil}
-            </p>
-            <p>
-              <span className="font-medium">Duration:</span> {request.duration}
-            </p>
-            <p>
-              <span className="font-medium">Start:</span> {request.startDate}
-            </p>
-          </div>
         </div>
+      </td>
 
-        {/* Offer & Actions */}
-        <div className="flex flex-col justify-between items-end gap-4">
-          <div className="text-right">
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Offer Amount</p>
-            <p className="text-2xl font-bold text-primary mt-1">
-              Ksh {request.offerAmount.toLocaleString()}
-            </p>
-            <span
-              className={`inline-block mt-2 px-3 py-1 text-xs font-medium rounded-full ${
-                statusColorMap[request.statusColor]
+      {/* Lease Terms Column */}
+      <td className="px-6 py-4">
+        <div className="space-y-0.5">
+          <p className="text-sm text-slate-900 dark:text-white">
+            <span className="font-semibold">{request.duration}</span>
+          </p>
+          <p className="text-xs text-slate-600 dark:text-slate-400">
+            Start: {request.startDate}
+          </p>
+          <p className="text-xs text-slate-500 dark:text-slate-500">
+            Requested: {request.requestDate}
+          </p>
+        </div>
+      </td>
+
+      {/* Offer Amount Column */}
+      <td className="px-6 py-4">
+        <p className="text-lg font-bold text-primary dark:text-primary">
+          Ksh {request.offerAmount.toLocaleString()}
+        </p>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">per month</p>
+      </td>
+
+      {/* Status Column */}
+      <td className="px-6 py-4">
+        <span
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full ${status.bg} ${status.text}`}
+        >
+          <span className="material-symbols-outlined text-sm">{status.icon}</span>
+          {request.status}
+        </span>
+      </td>
+
+      {/* Actions Column */}
+      <td className="px-6 py-4">
+        <div className="flex items-center justify-end gap-2">
+          {request.status === 'Pending Review' && (
+            <>
+              <button
+                onClick={() => handleDecline(request.id)}
+                className={`px-3 py-1.5 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 text-xs font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-all ${
+                  showActions ? 'opacity-100' : 'opacity-0'
+                }`}
+              >
+                Decline
+              </button>
+              <button
+                onClick={() => handleReview(request.id)}
+                className={`px-3 py-1.5 bg-primary text-white text-xs font-medium rounded-lg hover:bg-primary-dark transition-all shadow-sm ${
+                  showActions ? 'opacity-100' : 'opacity-0'
+                }`}
+              >
+                Review
+              </button>
+            </>
+          )}
+          {request.status === 'Under Negotiation' && (
+            <button
+              onClick={() => handleContinueNegotiation(request.id)}
+              className={`px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-all shadow-sm ${
+                showActions ? 'opacity-100' : 'opacity-0'
               }`}
             >
-              {request.status}
-            </span>
-          </div>
-
-          <div className="flex gap-2">
-            {request.status === 'Pending Review' && (
-              <>
-                <button className="px-4 py-2 border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 transition-colors">
-                  Decline
-                </button>
-                <button className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-dark transition-colors">
-                  Negotiate
-                </button>
-              </>
-            )}
-            {request.status === 'Under Negotiation' && (
-              <button className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-dark transition-colors">
-                View Details
-              </button>
-            )}
-            {request.status === 'Approved' && (
-              <button className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors">
-                View Agreement
-              </button>
-            )}
-          </div>
+              Continue
+            </button>
+          )}
+          {request.status === 'Approved' && (
+            <button
+              onClick={() => handleViewAgreement(request.id)}
+              className={`px-3 py-1.5 bg-emerald-600 text-white text-xs font-medium rounded-lg hover:bg-emerald-700 transition-all shadow-sm ${
+                showActions ? 'opacity-100' : 'opacity-0'
+              }`}
+            >
+              View Agreement
+            </button>
+          )}
         </div>
-      </div>
-    </div>
+      </td>
+    </tr>
   );
 };
 

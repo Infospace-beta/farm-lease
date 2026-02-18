@@ -1,7 +1,10 @@
 import { useState } from 'react';
+import { useRouter } from 'next/router';
 import DashboardLayout from '../../components/layout/DashboardLayout';
+import FarmOwnerSidebar from '../../components/layout/FarmOwnerSidebar';
 
 const FinancialsPage = () => {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedYear, setSelectedYear] = useState('This Year');
 
@@ -79,39 +82,69 @@ const FinancialsPage = () => {
   );
 
   return (
-    <DashboardLayout>
-      {/* Pattern Background */}
-      <div className="absolute inset-0 bg-[radial-gradient(#047857_0.5px,transparent_0.5px)] [background-size:10px_10px] opacity-5 pointer-events-none"></div>
-
-      <div className="mx-auto max-w-7xl relative z-10">
+    <DashboardLayout sidebar={<FarmOwnerSidebar />}>
+      <>
+        <div className="mx-auto max-w-7xl">
         {/* Header */}
-        <div className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2 className="text-4xl font-bold tracking-tight text-earth font-serif">
-              Financials &amp; Revenue
-            </h2>
-            <p className="mt-2 text-slate-500 max-w-2xl">
-              Track earnings, manage withdrawals, and view transaction history.
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <button className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-all">
-              <span className="material-symbols-outlined text-[20px]">calendar_today</span>
-              {selectedYear}
-            </button>
-            <button className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-dark transition-all">
-              <span className="material-symbols-outlined text-[20px]">download</span>
-              Export Report
-            </button>
-          </div>
+        <div className="mb-6">
+          <h2 className="text-3xl font-bold tracking-tight text-earth font-serif dark:text-white">
+            Financials
+          </h2>
+          <p className="mt-1 text-slate-500 dark:text-slate-400">
+            Track earnings, manage withdrawals, and view transaction history.
+          </p>
         </div>
 
+        {/* Action Buttons Row */}
+        <div className="mb-6 flex gap-3 justify-end">
+          <button 
+            onClick={() => {
+              // TODO: Implement year selector dropdown
+              console.log('Opening year selector...');
+            }}
+            className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-surface-dark px-4 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all"
+          >
+            <span className="material-symbols-outlined text-[20px]">calendar_today</span>
+            {selectedYear}
+          </button>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard 
+            title="Total Revenue" 
+            value="Ksh 340k" 
+            icon="payments" 
+            iconColor="bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
+          />
+          <StatCard
+            title="In Escrow"
+            value="Ksh 125k"
+            icon="lock"
+            iconColor="bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400"
+          />
+          <StatCard
+            title="Available"
+            value="Ksh 85.4k"
+            icon="account_balance_wallet"
+            iconColor="bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
+          />
+          <StatCard 
+            title="This Month" 
+            value="Ksh 75k" 
+            icon="trending_up" 
+            iconColor="bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary"
+          />
+        </div>
+
+        {/* Main Content */}
+        <div className="mb-6">
         {/* Revenue Trends Chart */}
-        <div className="mb-8 rounded-2xl bg-white p-6 shadow-sm border border-slate-100">
+        <div className="mb-6 rounded-xl bg-white dark:bg-surface-dark p-6 shadow-sm border border-slate-200 dark:border-slate-700">
           <div className="mb-6 flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-bold text-slate-900">Revenue Trends (Ksh)</h3>
-              <p className="text-sm text-slate-500">Monthly income over last 6 months</p>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Revenue Trends (Ksh)</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Monthly income over last 6 months</p>
             </div>
             <div className="flex items-center gap-4 text-xs">
               <div className="flex items-center gap-2">
@@ -174,52 +207,50 @@ const FinancialsPage = () => {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid gap-6 lg:grid-cols-2 mb-8">
+        <div className="grid gap-6 lg:grid-cols-2 mb-6">
           {/* Pending Escrow Payouts */}
-          <div className="rounded-2xl bg-white p-6 shadow-sm border border-slate-100">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">
+          <div className="rounded-xl bg-white dark:bg-surface-dark p-6 shadow-sm border border-slate-200 dark:border-slate-700">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">
               Pending Escrow Payouts
             </h3>
-            <h4 className="text-3xl font-bold text-earth mb-2">Ksh 125,000</h4>
-            <p className="text-xs text-slate-500 mb-6">Held securely for active leases</p>
+            <h4 className="text-3xl font-bold text-earth dark:text-white mb-2">Ksh 125,000</h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Held securely for active leases</p>
 
             {/* Escrow Item */}
-            <div className="border-t border-slate-100 pt-4">
+            <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-sm font-medium text-slate-900">Plot A4 (James K.)</span>
+                  <span className="text-sm font-medium text-slate-900 dark:text-white">Plot A4 (James K.)</span>
                 </div>
-                <span className="text-lg font-bold text-accent">Ksh 50k</span>
+                <span className="text-lg font-bold text-primary dark:text-primary">Ksh 50k</span>
               </div>
 
               {/* Progress bar */}
               <div className="mb-3">
-                <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
+                <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
                   <span>Est. Release: 15 Nov</span>
                   <span>75% Complete</span>
                 </div>
-                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div className="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-accent rounded-full transition-all duration-500"
+                    className="h-full bg-primary rounded-full transition-all duration-500"
                     style={{ width: '75%' }}
                   ></div>
                 </div>
               </div>
 
-              <button className="w-full mt-4 px-4 py-2 text-sm font-medium text-primary border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+              <button className="w-full mt-4 px-4 py-2 text-sm font-medium text-primary dark:text-primary border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
                 View Escrow Details
               </button>
             </div>
           </div>
 
           {/* Available for Withdrawal */}
-          <div className="rounded-2xl bg-primary text-white p-6 shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
-            <div className="relative z-10">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-white/70 mb-4">
+          <div className="rounded-xl bg-primary text-white p-6 shadow-sm">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-white/80 mb-4">
                 Available for Withdrawal
               </h3>
-              <h4 className="text-4xl font-bold mb-6">Ksh 85,400</h4>
+              <h4 className="text-3xl font-bold mb-6">Ksh 85,400</h4>
 
               <div className="flex items-center justify-between mb-6 text-sm">
                 <div>
@@ -232,17 +263,16 @@ const FinancialsPage = () => {
                 </div>
               </div>
 
-              <button className="w-full px-4 py-3 bg-white text-primary text-sm font-bold rounded-lg hover:bg-slate-50 transition-colors shadow-lg">
+              <button className="w-full px-4 py-3 bg-white text-primary text-sm font-semibold rounded-lg hover:bg-slate-50 transition-colors">
                 Request Withdrawal
               </button>
-            </div>
           </div>
         </div>
 
         {/* Transaction History */}
-        <div className="rounded-2xl bg-white p-6 shadow-sm border border-slate-100">
-          <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h3 className="text-xl font-bold text-slate-900">Transaction History</h3>
+        <div className="rounded-xl bg-white dark:bg-surface-dark shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div className="p-6 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Transaction History</h3>
 
             <div className="flex items-center gap-3">
               {/* Search */}
@@ -255,13 +285,13 @@ const FinancialsPage = () => {
                   placeholder="Search transactions..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  className="w-full pl-10 pr-4 py-2 border border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-shadow"
                 />
               </div>
 
               {/* Filter button */}
-              <button className="p-2 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
-                <span className="material-symbols-outlined text-slate-600 text-[20px]">
+              <button className="p-2 border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                <span className="material-symbols-outlined text-slate-600 dark:text-slate-400 text-[20px]">
                   tune
                 </span>
               </button>
@@ -271,26 +301,26 @@ const FinancialsPage = () => {
           {/* Transaction Table */}
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead>
-                <tr className="border-b border-slate-100">
-                  <th className="pb-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              <thead className="bg-slate-50 dark:bg-slate-800/50 border-y border-slate-200 dark:border-slate-700">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                     Transaction Details
                   </th>
-                  <th className="pb-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                     Date
                   </th>
-                  <th className="pb-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                     Status
                   </th>
-                  <th className="pb-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                     Amount
                   </th>
-                  <th className="pb-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
                     Receipt
                   </th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                 {filteredTransactions.map((transaction) => (
                   <TransactionRow key={transaction.id} transaction={transaction} />
                 ))}
@@ -298,67 +328,86 @@ const FinancialsPage = () => {
             </table>
 
             {filteredTransactions.length === 0 && (
-              <div className="text-center py-12">
-                <span className="material-symbols-outlined text-slate-300 text-5xl mb-2">
+              <div className="text-center py-16">
+                <span className="material-symbols-outlined text-slate-300 dark:text-slate-600 text-6xl mb-4 block">
                   search_off
                 </span>
-                <p className="text-slate-500">No transactions found</p>
+                <p className="text-slate-500 dark:text-slate-400 text-lg">No transactions found</p>
               </div>
             )}
           </div>
         </div>
+        </div>
       </div>
+      </>
     </DashboardLayout>
+  );
+};
+
+// StatCard Component
+const StatCard = ({ title, value, icon, iconColor }) => {
+  return (
+    <div className="bg-white dark:bg-surface-dark rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{title}</p>
+          <h3 className="mt-2 text-2xl font-bold text-earth dark:text-white">{value}</h3>
+        </div>
+        <div className={`h-12 w-12 rounded-xl ${iconColor} flex items-center justify-center`}>
+          <span className="material-symbols-outlined text-2xl">{icon}</span>
+        </div>
+      </div>
+    </div>
   );
 };
 
 // TransactionRow Component
 const TransactionRow = ({ transaction }) => {
   const statusColorMap = {
-    emerald: 'bg-emerald-100 text-emerald-700',
-    amber: 'bg-amber-100 text-amber-700',
-    slate: 'bg-slate-100 text-slate-600',
+    emerald: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400',
+    amber: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400',
+    slate: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400',
   };
 
   return (
-    <tr className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
-      <td className="py-4">
+    <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+      <td className="px-6 py-4">
         <div className="flex items-center gap-3">
-          <div className={`h-10 w-10 rounded-lg ${transaction.iconBg} flex items-center justify-center shrink-0`}>
+          <div className={`h-10 w-10 rounded-lg ${transaction.iconBg} dark:opacity-80 flex items-center justify-center shrink-0`}>
             <span className={`material-symbols-outlined text-lg ${transaction.iconColor}`}>
               {transaction.icon}
             </span>
           </div>
           <div>
-            <p className="text-sm font-medium text-slate-900">{transaction.type}</p>
-            <p className="text-xs text-slate-500">
+            <p className="text-sm font-semibold text-slate-900 dark:text-white">{transaction.type}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               {transaction.description}
               {transaction.from && (
                 <>
-                  <br />
-                  <span className="text-slate-600">From: {transaction.from}</span>
+                  {' • '}
+                  <span className="text-slate-600 dark:text-slate-400">From: {transaction.from}</span>
                 </>
               )}
             </p>
           </div>
         </div>
       </td>
-      <td className="py-4">
-        <p className="text-sm text-slate-600">{transaction.date}</p>
+      <td className="px-6 py-4">
+        <p className="text-sm text-slate-600 dark:text-slate-400">{transaction.date}</p>
       </td>
-      <td className="py-4">
-        <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${statusColorMap[transaction.statusColor]}`}>
+      <td className="px-6 py-4">
+        <span className={`inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-full ${statusColorMap[transaction.statusColor]}`}>
           {transaction.status}
         </span>
       </td>
-      <td className="py-4 text-right">
-        <p className={`text-sm font-bold ${transaction.amount > 0 ? 'text-emerald-600' : 'text-slate-900'}`}>
+      <td className="px-6 py-4 text-right">
+        <p className={`text-sm font-bold ${transaction.amount > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>
           {transaction.amount > 0 ? '+' : ''} Ksh {Math.abs(transaction.amount).toLocaleString()}
         </p>
       </td>
-      <td className="py-4 text-right">
-        <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-          <span className="material-symbols-outlined text-slate-400 text-[20px]">
+      <td className="px-6 py-4 text-right">
+        <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+          <span className="material-symbols-outlined text-slate-400 dark:text-slate-500 text-[20px]">
             download
           </span>
         </button>

@@ -1,4 +1,5 @@
-import { Link, useLocation } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { useAuth } from '../../context/AuthContext';
 import { 
   LayoutDashboard, 
@@ -15,11 +16,11 @@ import {
 
 const LesseeSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const { user, logout } = useAuth();
-  const location = useLocation();
+  const router = useRouter();
   const displayName = user?.name || user?.username || 'User';
   const displayRole = user?.role || 'lessee';
 
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) => router.pathname === path;
 
   return (
     <aside className={`fixed lg:sticky top-0 w-64 bg-forest-green h-screen flex flex-col justify-between py-6 px-6 shadow-xl z-40 transition-transform duration-300 border-r border-white/5 ${
@@ -50,7 +51,7 @@ const LesseeSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
         {/* Navigation */}
         <nav className="space-y-1">
           <Link 
-            to="/lessee/dashboard" 
+            href="/lessee/dashboard" 
             onClick={() => setIsSidebarOpen(false)} 
             className={`flex items-center gap-4 px-4 py-3 rounded-lg transition-all group ${
               isActive('/lessee/dashboard')
@@ -63,7 +64,7 @@ const LesseeSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
           </Link>
           
           <Link 
-            to="/lessee/browse" 
+            href="/lessee/browse" 
             onClick={() => setIsSidebarOpen(false)} 
             className={`flex items-center gap-4 px-4 py-3 rounded-lg transition-all group ${
               isActive('/lessee/browse')
@@ -76,7 +77,7 @@ const LesseeSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
           </Link>
           
           <Link 
-            to="/lessee/recommendations" 
+            href="/lessee/recommendations" 
             onClick={() => setIsSidebarOpen(false)} 
             className={`flex items-center gap-4 px-4 py-3 rounded-lg transition-all group ${
               isActive('/lessee/recommendations') || isActive('/lessee/recommendations/history')
@@ -89,7 +90,7 @@ const LesseeSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
           </Link>
           
           <Link 
-            to="/lessee/shop" 
+            href="/lessee/shop" 
             onClick={() => setIsSidebarOpen(false)} 
             className={`flex items-center gap-4 px-4 py-3 rounded-lg transition-all group ${
               isActive('/lessee/shop')
@@ -102,7 +103,7 @@ const LesseeSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
           </Link>
           
           <Link 
-            to="/lessee/leases" 
+            href="/lessee/leases" 
             onClick={() => setIsSidebarOpen(false)} 
             className={`flex items-center gap-4 px-4 py-3 rounded-lg transition-all group ${
               isActive('/lessee/leases')
@@ -115,7 +116,7 @@ const LesseeSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
           </Link>
           
           <Link 
-            to="/lessee/financials" 
+            href="/lessee/financials" 
             onClick={() => setIsSidebarOpen(false)} 
             className={`flex items-center gap-4 px-4 py-3 rounded-lg transition-all group ${
               isActive('/lessee/financials')
@@ -128,7 +129,7 @@ const LesseeSidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
           </Link>
           
           <Link 
-            to="/lessee/notifications" 
+            href="/lessee/notifications" 
             onClick={() => setIsSidebarOpen(false)} 
             className={`flex items-center gap-4 px-4 py-3 rounded-lg transition-all group relative ${
               isActive('/lessee/notifications')

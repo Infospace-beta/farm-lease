@@ -48,8 +48,6 @@ import ProfilePage from "./pages/Agro-Dealer/ProfilePage";
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
-import PendingLandsPage from "./pages/admin/PendingLandsPage";
-import UsersListPage from "./pages/admin/UsersListPage";
 
 // Protected Route Component
 import ProtectedRoute from "./components/common/ProtectedRoute";
@@ -60,7 +58,7 @@ function App() {
       <AuthProvider>
         <Routes>
           {/* Redirect root to login page */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/" element={<Navigate href="/login" replace />} />
 
           {/* Public Routes */}
           <Route path="/landing" element={<LandingPage />} />
@@ -70,7 +68,7 @@ function App() {
           {/* Farm Owner Routes */}
           <Route
             path="/owner"
-            element={<Navigate to="/owner/dashboard" replace />}
+            element={<Navigate href="/owner/dashboard" replace />}
           />
           <Route
             path="/owner/dashboard"
@@ -140,7 +138,7 @@ function App() {
           {/* Lessee Routes */}
           <Route
             path="/lessee"
-            element={<Navigate to="/lessee/dashboard" replace />}
+            element={<Navigate href="/lessee/dashboard" replace />}
           />
           <Route
             path="/lessee/dashboard"
@@ -226,7 +224,7 @@ function App() {
           {/* Agro-Dealer Routes */}
           <Route
             path="/dealer"
-            element={<Navigate to="/dealer/dashboard" replace />}
+            element={<Navigate href="/dealer/dashboard" replace />}
           />
           <Route
             path="/dealer/dashboard"
@@ -320,7 +318,7 @@ function App() {
           {/* Admin Routes */}
           <Route
             path="/admin"
-            element={<Navigate to="/admin/dashboard" replace />}
+            element={<Navigate href="/admin/dashboard" replace />}
           />
           <Route
             path="/admin/dashboard"
@@ -331,18 +329,10 @@ function App() {
             }
           />
           <Route
-            path="/admin/lands/pending"
+            path="/admin/*"
             element={
               <ProtectedRoute requireAdmin={true}>
-                <PendingLandsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/users"
-            element={
-              <ProtectedRoute requireAdmin={true}>
-                <UsersListPage />
+                <AdminDashboard />
               </ProtectedRoute>
             }
           />

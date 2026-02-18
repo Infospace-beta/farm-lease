@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { useAuth } from '../../context/AuthContext';
 import { USER_ROLES } from '../../constants';
 import Input from '../../components/common/Input';
@@ -72,7 +72,7 @@ const RegisterPage = () => {
       <div className="max-w-md w-full">
         {/* Header - Glassmorphism style */}
         <div className="text-center mb-8 bg-white/20 backdrop-blur-md p-6 rounded-2xl shadow-lg border border-white/20">
-          <Link to="/" className="inline-flex items-center space-x-2 mb-4">
+          <Link href="/" className="inline-flex items-center space-x-2 mb-4">
             <span className="text-2xl font-bold text-white drop-shadow-md">FarmLease</span>
           </Link>
           <h2 className="text-3xl font-bold text-white">Create Account</h2>
@@ -198,7 +198,7 @@ const RegisterPage = () => {
           <div className="mt-6 text-center border-t border-gray-100 pt-4">
             <p className="text-sm text-gray-600">
               Already have an account?{' '}
-              <Link to="/login" className="text-primary-600 hover:text-primary-700 font-medium">
+              <Link href="/login" className="text-primary-600 hover:text-primary-700 font-medium">
                 Login here
               </Link>
             </p>

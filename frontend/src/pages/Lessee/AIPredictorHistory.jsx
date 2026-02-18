@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/router';
 import { Search, Calendar, Download, ChevronLeft, ChevronRight, Coffee, Wheat, Leaf, Nut, CupSoda } from 'lucide-react';
 import LesseeSidebar from '../../components/layout/LesseeSidebar';
 import LesseeHeader from '../../components/layout/LesseeHeader';
 
 const AIPredictorHistory = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFilter, setDateFilter] = useState('');
@@ -176,7 +176,7 @@ const AIPredictorHistory = () => {
           rightContent={
             <div className="flex bg-gray-50 rounded-lg border border-gray-200 p-1 shadow-sm">
               <button
-                onClick={() => navigate('/lessee/recommendations')}
+                onClick={() => router.push('/lessee/recommendations')}
                 className="px-3 lg:px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-md text-xs font-bold uppercase tracking-wide transition-all"
               >
                 Predictor
