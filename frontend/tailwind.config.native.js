@@ -7,9 +7,10 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: '#047857', // Emerald green for high-tech premium feel
-        'primary-dark': '#064e3b',
+        primary: '#13ec80', // Bright green - FarmLease primary color
+        'primary-dark': '#047857', // Emerald green for high-tech premium feel
         'sidebar-bg': '#0f392b', // Deep forest green
+        'forest-green': '#0f392b', // Deep forest green (alias)
         accent: '#d97706', // Earthy tone for alerts
         earth: '#5D4037', // Earthy brown for typography
         'earth-light': '#8D6E63',
@@ -21,12 +22,18 @@ module.exports = {
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
         serif: ['Playfair Display', 'serif'],
+        display: ['Space Grotesk', 'sans-serif'],
       },
       borderRadius: {
         DEFAULT: '0.375rem',
         lg: '0.5rem',
         xl: '0.75rem',
         '2xl': '1rem',
+      },
+      spacing: {
+        '0.5': '0.125rem',
+        '1.5': '0.375rem',
+        '2.5': '0.625rem',
       },
     },
   },

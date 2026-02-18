@@ -48,8 +48,6 @@ import ProfilePage from "./pages/Agro-Dealer/ProfilePage";
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
-import PendingLandsPage from "./pages/admin/PendingLandsPage";
-import UsersListPage from "./pages/admin/UsersListPage";
 
 // Protected Route Component
 import ProtectedRoute from "./components/common/ProtectedRoute";
@@ -331,18 +329,10 @@ function App() {
             }
           />
           <Route
-            path="/admin/lands/pending"
+            path="/admin/*"
             element={
               <ProtectedRoute requireAdmin={true}>
-                <PendingLandsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/users"
-            element={
-              <ProtectedRoute requireAdmin={true}>
-                <UsersListPage />
+                <AdminDashboard />
               </ProtectedRoute>
             }
           />

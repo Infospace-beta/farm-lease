@@ -10,6 +10,7 @@ const AddLandPage = () => {
     description: '',
     leasePrice: '',
     leaseDuration: '',
+    titleDeedNumber: '',
     latitude: '-1.2921',
     longitude: '36.8219',
     amenities: {
@@ -159,13 +160,8 @@ const AddLandPage = () => {
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto bg-background-light p-6 lg:p-10 dark:bg-background-dark">
         <div className="mx-auto max-w-5xl">
-          {/* Breadcrumb */}
-          <div className="mb-8">
-            <div className="flex items-center gap-2 text-sm text-slate-500 mb-2">
-              <Link to="/owner/lands" className="hover:text-primary">Lands</Link>
-              <span className="material-symbols-outlined text-xs">chevron_right</span>
-              <span className="text-slate-800 dark:text-slate-200 font-medium">New Listing</span>
-            </div>
+          {/* Page Header */}
+          <div className="mb-6">
             <h2 className="text-3xl font-bold tracking-tight text-earth font-serif dark:text-white">
               {currentStep === 1 && 'Upload New Land'}
               {currentStep === 2 && 'Soil & Climate Data'}
@@ -179,7 +175,7 @@ const AddLandPage = () => {
           </div>
 
           {/* Step Indicator */}
-          <div className="mb-10">
+          <div className="mb-8">
             <div className="relative flex justify-between">
               {/* Step 1 - Basic Info */}
               <div className="flex flex-col items-center relative z-10">
@@ -303,6 +299,29 @@ const AddLandPage = () => {
                       />
                       <p className="mt-1 text-xs text-slate-500 text-right">
                         {formData.description.length}/500 characters
+                      </p>
+                    </div>
+
+                    {/* Title Deed Number */}
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5" htmlFor="titleDeedNumber">
+                        Title Deed Number
+                        <span className="ml-2 text-xs text-amber-600 dark:text-amber-500 font-normal">
+                          (For Admin Verification Only)
+                        </span>
+                      </label>
+                      <input
+                        className="w-full rounded-lg border-slate-300 shadow-sm focus:border-primary focus:ring-primary dark:bg-slate-800 dark:border-slate-600 dark:text-white dark:placeholder-slate-500 transition-shadow"
+                        id="titleDeedNumber"
+                        name="titleDeedNumber"
+                        placeholder="e.g. CR/12345/6789"
+                        type="text"
+                        value={formData.titleDeedNumber}
+                        onChange={handleInputChange}
+                      />
+                      <p className="mt-1 text-xs text-slate-500 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-sm text-amber-600">lock</span>
+                        This information is confidential and will only be visible to administrators for verification purposes.
                       </p>
                     </div>
 

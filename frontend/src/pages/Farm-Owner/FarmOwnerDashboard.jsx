@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import FarmOwnerSidebar from '../../components/layout/FarmOwnerSidebar';
 
 const FarmOwnerDashboard = () => {
+  const navigate = useNavigate();
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
 
   // Sample data - replace with actual API data
@@ -122,11 +124,20 @@ const FarmOwnerDashboard = () => {
               </p>
             </div>
             <div className="flex gap-3">
-              <button className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-all dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200">
+              <button 
+                onClick={() => {
+                  // TODO: Implement report download functionality
+                  console.log('Downloading report...');
+                }}
+                className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-all dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
+              >
                 <span className="material-symbols-outlined text-[20px]">download</span>
                 Report
               </button>
-              <button className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary/30 hover:bg-primary-dark transition-all">
+              <button 
+                onClick={() => navigate('/owner/lands/add')}
+                className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary/30 hover:bg-primary-dark transition-all"
+              >
                 <span className="material-symbols-outlined text-[20px]">add_location_alt</span>
                 List New Land
               </button>
@@ -136,7 +147,7 @@ const FarmOwnerDashboard = () => {
           {/* Stats Cards */}
           <div className="mb-10 grid gap-6 sm:grid-cols-3">
             {/* Total Valuation */}
-            <div className="relative overflow-hidden rounded-2xl bg-white p-6 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] dark:bg-surface-dark border border-slate-100 dark:border-slate-700">
+            <div className="relative overflow-hidden rounded-xl bg-white p-6 shadow-sm dark:bg-surface-dark border border-slate-200 dark:border-slate-700">
               <div className="flex flex-col h-full justify-between">
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-wider text-slate-400">
@@ -165,7 +176,7 @@ const FarmOwnerDashboard = () => {
             </div>
 
             {/* Monthly Revenue */}
-            <div className="relative overflow-hidden rounded-2xl bg-white p-6 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] dark:bg-surface-dark border border-slate-100 dark:border-slate-700">
+            <div className="relative overflow-hidden rounded-xl bg-white p-6 shadow-sm dark:bg-surface-dark border border-slate-200 dark:border-slate-700">
               <div className="flex flex-col h-full justify-between">
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-wider text-slate-400">
@@ -193,7 +204,7 @@ const FarmOwnerDashboard = () => {
             </div>
 
             {/* Occupancy Rate */}
-            <div className="relative overflow-hidden rounded-2xl bg-white p-6 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] dark:bg-surface-dark border border-slate-100 dark:border-slate-700">
+            <div className="relative overflow-hidden rounded-xl bg-white p-6 shadow-sm dark:bg-surface-dark border border-slate-200 dark:border-slate-700">
               <div className="flex flex-col h-full justify-between">
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-wider text-slate-400">
@@ -260,7 +271,10 @@ const FarmOwnerDashboard = () => {
                 ))}
 
                 {/* Add New Land Card */}
-                <div className="group relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-4 transition-all hover:border-primary hover:bg-primary/5 dark:border-slate-700 dark:bg-slate-800/30 cursor-pointer">
+                <div 
+                  onClick={() => navigate('/owner/lands/add')}
+                  className="group relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-4 transition-all hover:border-primary hover:bg-primary/5 dark:border-slate-700 dark:bg-slate-800/30 cursor-pointer"
+                >
                   <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-sm dark:bg-slate-800 mb-4 group-hover:scale-110 transition-transform">
                     <span className="material-symbols-outlined text-primary text-3xl">add</span>
                   </div>
@@ -274,7 +288,7 @@ const FarmOwnerDashboard = () => {
 
             {/* Activity Pulse */}
             <div className="lg:col-span-1">
-              <div className="sticky top-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-surface-dark">
+              <div className="sticky top-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-surface-dark">
                 <div className="mb-6 flex items-center gap-2">
                   <div className="relative flex h-3 w-3">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
@@ -285,7 +299,7 @@ const FarmOwnerDashboard = () => {
 
                 <div className="space-y-8">
                   {activities.map((activity) => (
-                    <ActivityItem key={activity.id} activity={activity} />
+                    <ActivityItem key={activity.id} activity={activity} navigate={navigate} />
                   ))}
                 </div>
               </div>
@@ -312,7 +326,7 @@ const DashboardLandCard = ({ land }) => {
   };
 
   return (
-    <div className="group relative rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition-all hover:shadow-md hover:border-primary/30 dark:border-slate-800 dark:bg-surface-dark dark:hover:border-primary/50">
+    <div className="group relative rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md hover:border-primary/30 dark:border-slate-700 dark:bg-surface-dark dark:hover:border-primary/50">
       {/* Map Visualization */}
       <div className="relative h-40 w-full overflow-hidden rounded-xl bg-slate-200" style={{
         backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%239ca3af' fill-opacity='0.2' fill-rule='evenodd'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E\")"
@@ -365,7 +379,7 @@ const DashboardLandCard = ({ land }) => {
       </div>
 
       {/* Action Footer */}
-      <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center">
+      <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center">
         {land.endDate ? (
           <span className="text-xs text-slate-400">Ends: {land.endDate}</span>
         ) : (
@@ -376,11 +390,33 @@ const DashboardLandCard = ({ land }) => {
           </span>
         )}
         {land.actionStyle === 'dark' ? (
-          <button className="rounded bg-slate-900 px-3 py-1 text-xs font-semibold text-white hover:bg-slate-700 dark:bg-white dark:text-slate-900">
+          <button 
+            onClick={() => {
+              if (land.action === 'View Agreement') {
+                navigate(`/owner/agreements/${land.id}`);
+              } else if (land.action === 'View Offer') {
+                navigate(`/owner/lease-requests/${land.id}`);
+              } else if (land.action === 'View Docs') {
+                navigate(`/owner/lease-requests/${land.id}`);
+              }
+            }}
+            className="rounded bg-slate-900 px-3 py-1 text-xs font-semibold text-white hover:bg-slate-700 dark:bg-white dark:text-slate-900"
+          >
             {land.action}
           </button>
         ) : (
-          <button className="text-xs font-semibold text-primary hover:text-primary-dark hover:underline">
+          <button 
+            onClick={() => {
+              if (land.action === 'View Agreement') {
+                navigate(`/owner/agreements/${land.id}`);
+              } else if (land.action === 'View Offer') {
+                navigate(`/owner/lease-requests/${land.id}`);
+              } else if (land.action === 'View Docs') {
+                navigate(`/owner/lease-requests/${land.id}`);
+              }
+            }}
+            className="text-xs font-semibold text-primary hover:text-primary-dark hover:underline"
+          >
             {land.action}
           </button>
         )}
@@ -390,7 +426,7 @@ const DashboardLandCard = ({ land }) => {
 };
 
 // Activity Item Component
-const ActivityItem = ({ activity }) => {
+const ActivityItem = ({ activity, navigate }) => {
   const colorClasses = {
     primary: 'bg-primary',
     amber: 'bg-amber-500',
@@ -429,7 +465,14 @@ const ActivityItem = ({ activity }) => {
         </div>
       )}
       {activity.action && (
-        <button className="mt-2 text-xs font-bold text-primary hover:underline">
+        <button 
+          onClick={() => {
+            if (activity.action === 'Review PDF') {
+              navigate('/owner/agreements');
+            }
+          }}
+          className="mt-2 text-xs font-bold text-primary hover:underline"
+        >
           {activity.action}
         </button>
       )}

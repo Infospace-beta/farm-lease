@@ -1,7 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
+import FarmOwnerSidebar from '../../components/layout/FarmOwnerSidebar';
 
 const EscrowStatusPage = () => {
+  const navigate = useNavigate();
   const escrowTracks = [
     {
       id: 1,
@@ -70,60 +73,61 @@ const EscrowStatusPage = () => {
   ];
 
   return (
-    <DashboardLayout>
-      {/* Pattern Background */}
-      <div className="absolute inset-0 bg-[radial-gradient(#047857_0.5px,transparent_0.5px)] [background-size:10px_10px] opacity-5 pointer-events-none"></div>
-
-      <div className="mx-auto max-w-7xl relative z-10">
+    <DashboardLayout sidebar={<FarmOwnerSidebar />}>
+      <>
+        <div className="mx-auto max-w-7xl">
         {/* Header */}
-        <div className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2 className="text-4xl font-bold tracking-tight text-earth font-serif">
-              Escrow Status
-            </h2>
-            <p className="mt-2 text-slate-500 max-w-2xl">
-              Track payment milestones for all your active land leases. Funds are securely held until conditions are met.
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <button className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-all">
-              <span className="material-symbols-outlined text-[20px]">history</span>
-              Transaction History
-            </button>
-          </div>
+        <div className="mb-6">
+          <h2 className="text-3xl font-bold tracking-tight text-earth font-serif dark:text-white">
+            Escrow Status
+          </h2>
+          <p className="mt-1 text-slate-500 dark:text-slate-400">
+            Track payment milestones for all your active land leases. Funds are securely held until conditions are met.
+          </p>
+        </div>
+
+        {/* Action Button Row */}
+        <div className="mb-6 flex gap-3 justify-end">
+          <button 
+            onClick={() => navigate('/owner/financials')}
+            className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-surface-dark px-4 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all"
+          >
+            <span className="material-symbols-outlined text-[20px]">history</span>
+            Transaction History
+          </button>
         </div>
 
         {/* Stats Cards */}
-        <div className="mb-10 grid gap-6 sm:grid-cols-3">
+        <div className="mb-6 grid gap-4 sm:grid-cols-3">
           <StatCard
             title="Total in Escrow"
             amount="Ksh 1.2M"
             subtitle="Across 3 active deals"
             icon="lock"
-            iconColor="primary"
+            iconColor="bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400"
           />
           <StatCard
             title="Pending Release"
             amount="Ksh 450k"
             subtitle="Next release: 2 days"
             icon="hourglass_top"
-            iconColor="amber-600"
+            iconColor="bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
           />
           <StatCard
             title="Cleared this Month"
             amount="Ksh 210k"
             subtitle="Successfully transferred"
             icon="check_circle"
-            iconColor="emerald-600"
+            iconColor="bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
           />
         </div>
 
         {/* Active Escrow Tracks */}
-        <div className="space-y-6">
-          <h3 className="text-xl font-bold text-earth font-serif flex items-center gap-2">
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
             Active Escrow Tracks
-            <span className="bg-primary text-white text-xs px-2 py-0.5 rounded-full font-sans">
-              3
+            <span className="bg-primary text-white text-xs px-2 py-0.5 rounded-full">
+              {escrowTracks.length}
             </span>
           </h3>
 
@@ -132,30 +136,23 @@ const EscrowStatusPage = () => {
           ))}
         </div>
       </div>
+      </>
     </DashboardLayout>
   );
 };
 
 // StatCard Component
 const StatCard = ({ title, amount, subtitle, icon, iconColor }) => {
-  const iconColorClass = iconColor === 'primary' 
-    ? 'bg-primary/10 text-primary' 
-    : `bg-${iconColor}/10 text-${iconColor}`;
-
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-white p-6 shadow-sm border border-slate-100">
-      <div className="flex flex-col h-full justify-between">
+    <div className="bg-white dark:bg-surface-dark rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
+      <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
-            {title}
-          </p>
-          <h3 className="mt-2 text-3xl font-bold text-earth">{amount}</h3>
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{title}</p>
+          <h3 className="mt-2 text-2xl font-bold text-earth dark:text-white">{amount}</h3>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{subtitle}</p>
         </div>
-        <div className="mt-4 flex items-center justify-between">
-          <span className="text-xs text-slate-500">{subtitle}</span>
-          <div className={`h-8 w-8 rounded-full flex items-center justify-center ${iconColorClass}`}>
-            <span className="material-symbols-outlined text-lg">{icon}</span>
-          </div>
+        <div className={`h-12 w-12 rounded-xl ${iconColor} flex items-center justify-center`}>
+          <span className="material-symbols-outlined text-2xl">{icon}</span>
         </div>
       </div>
     </div>
@@ -165,45 +162,45 @@ const StatCard = ({ title, amount, subtitle, icon, iconColor }) => {
 // EscrowTrackCard Component
 const EscrowTrackCard = ({ track }) => {
   const statusColorMap = {
-    emerald: 'bg-emerald-100 text-emerald-700',
-    amber: 'bg-amber-100 text-amber-700',
-    slate: 'bg-slate-100 text-slate-600',
+    emerald: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400',
+    amber: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400',
+    slate: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400',
   };
 
   return (
-    <div className={`rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden ${track.completed ? 'opacity-80 hover:opacity-100' : ''} transition-opacity`}>
+    <div className={`rounded-xl bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden ${track.completed ? 'opacity-75' : ''} transition-opacity`}>
       <div className="p-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-6">
           <div className="flex items-start gap-4">
-            <div className="h-14 w-14 rounded-lg bg-slate-100 border border-slate-200 p-1 shrink-0">
+            <div className="h-14 w-14 rounded-lg bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 p-1 shrink-0">
               <div
                 className="h-full w-full rounded bg-cover bg-center"
                 style={{ backgroundImage: `url('${track.imageUrl}')` }}
               ></div>
             </div>
             <div>
-              <h4 className="text-lg font-bold text-slate-900">{track.plotName}</h4>
-              <p className="text-sm text-slate-500">
+              <h4 className="text-lg font-bold text-slate-900 dark:text-white">{track.plotName}</h4>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
                 Lease ID: {track.leaseId} • Tenant:{' '}
-                <span className="text-slate-800 font-medium">{track.tenant}</span>
+                <span className="text-slate-800 dark:text-slate-200 font-medium">{track.tenant}</span>
               </p>
               <div className="flex items-center gap-2 mt-1">
-                <span className={`text-xs px-2 py-0.5 rounded font-medium ${statusColorMap[track.statusColor]}`}>
+                <span className={`text-xs px-2 py-0.5 rounded font-semibold ${statusColorMap[track.statusColor]}`}>
                   {track.status}
                 </span>
-                <span className="text-xs text-slate-400">{track.lastUpdate}</span>
+                <span className="text-xs text-slate-400 dark:text-slate-500">{track.lastUpdate}</span>
               </div>
             </div>
           </div>
           <div className="flex flex-col items-end">
-            <p className="text-sm text-slate-500 uppercase font-semibold">
+            <p className="text-xs text-slate-500 dark:text-slate-400 uppercase font-semibold">
               Total Escrow Amount
             </p>
-            <p className={`text-2xl font-bold ${track.completed ? 'text-slate-400 line-through' : 'text-primary'}`}>
+            <p className={`text-2xl font-bold ${track.completed ? 'text-slate-400 dark:text-slate-500 line-through' : 'text-primary dark:text-primary'}`}>
               Ksh {track.totalAmount.toLocaleString()}
             </p>
-            <button className="text-sm text-primary hover:underline mt-1 font-medium">
+            <button className="text-sm text-primary dark:text-primary hover:underline mt-1 font-medium">
               {track.completed ? 'Download Receipt' : 'View Agreement Details'}
             </button>
           </div>
@@ -214,18 +211,23 @@ const EscrowTrackCard = ({ track }) => {
 
         {/* Action Section */}
         {track.actionRequired && (
-          <div className="mt-12 pt-4 border-t border-slate-100 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-            <div className="flex items-center gap-2 text-sm text-slate-600">
+          <div className="mt-8 pt-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
               <span className={`material-symbols-outlined ${track.actionType === 'primary' ? 'text-amber-500' : 'text-slate-400'}`}>
                 {track.actionType === 'primary' ? 'warning' : 'info'}
               </span>
               <span>{track.actionMessage}</span>
             </div>
             <button
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
+              onClick={() => {
+                // TODO: Implement action based on button type
+                console.log(`Action: ${track.actionButton} for`, track.leaseId);
+                alert(`${track.actionButton} functionality will be implemented`);
+              }}
+              className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap shadow-sm ${
                 track.actionType === 'primary'
-                  ? 'bg-slate-900 text-white hover:bg-slate-800'
-                  : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                  ? 'bg-primary text-white hover:bg-primary-dark'
+                  : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
               }`}
             >
               {track.actionButton}
@@ -240,12 +242,12 @@ const EscrowTrackCard = ({ track }) => {
 // ProgressTimeline Component
 const ProgressTimeline = ({ milestones, progress, completed }) => {
   return (
-    <div className="relative py-4">
+    <div className="relative py-6">
       {/* Background Progress Bar */}
-      <div className="absolute top-1/2 left-0 w-full h-1.5 bg-slate-100 rounded-full -translate-y-1/2"></div>
+      <div className="absolute top-1/2 left-0 w-full h-1 bg-slate-200 dark:bg-slate-700 rounded-full -translate-y-1/2"></div>
       {/* Active Progress Bar */}
       <div
-        className={`absolute top-1/2 left-0 h-1.5 rounded-full -translate-y-1/2 transition-all duration-1000 ${completed ? 'bg-emerald-500' : 'bg-primary'}`}
+        className={`absolute top-1/2 left-0 h-1 rounded-full -translate-y-1/2 transition-all duration-1000 ${completed ? 'bg-emerald-500' : 'bg-primary'}`}
         style={{ width: `${progress}%` }}
       ></div>
 
@@ -255,14 +257,14 @@ const ProgressTimeline = ({ milestones, progress, completed }) => {
           <div key={index} className="flex flex-col items-center group">
             {/* Milestone Icon */}
             <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center border-4 border-white shadow-sm z-10 ${
+              className={`w-8 h-8 rounded-full flex items-center justify-center border-4 border-white dark:border-surface-dark shadow-sm z-10 ${
                 milestone.completed
                   ? completed
                     ? 'bg-emerald-500 text-white'
                     : 'bg-primary text-white'
                   : milestone.active
-                  ? 'bg-white border-2 border-primary text-primary'
-                  : 'bg-slate-200 text-slate-400'
+                  ? 'bg-white dark:bg-surface-dark border-2 border-primary text-primary'
+                  : 'bg-slate-200 dark:bg-slate-700 text-slate-400'
               }`}
             >
               <span className={`material-symbols-outlined text-sm ${milestone.active && !milestone.completed ? 'animate-pulse' : ''}`}>
