@@ -1,23 +1,22 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   IoDownloadOutline, 
   IoCheckboxOutline, 
   IoAdd, 
   IoSearch, 
   IoChevronDown, 
-  IoFilter,
-  IoMenu,
-  IoClose
+  IoFilter
 } from 'react-icons/io5';
 import { MdAddLocationAlt } from 'react-icons/md';
 import FarmOwnerSidebar from '../../components/layout/FarmOwnerSidebar';
 import LandCard from '../../components/Farm-Owner/LandCard';
 
 const MyLandsPage = () => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [soilTypeFilter, setSoilTypeFilter] = useState('All');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const landsData = [
     {
@@ -109,57 +108,61 @@ const MyLandsPage = () => {
     },
   ];
 
+  // Filter lands based on search query, status, and soil type
+  const filteredLands = landsData.filter((land) => {
+    // Search filter
+    const matchesSearch = 
+      land.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      land.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      land.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (land.tenant?.name && land.tenant.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (land.topBidder?.name && land.topBidder.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (land.applicant?.name && land.applicant.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    // Status filter
+    const matchesStatus = statusFilter === 'All' || land.status === statusFilter;
+    
+    // Soil type filter
+    const matchesSoilType = soilTypeFilter === 'All' || land.soilType.toLowerCase().includes(soilTypeFilter.toLowerCase());
+    
+    return matchesSearch && matchesStatus && matchesSoilType;
+  });
+
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background-light dark:bg-background-dark">
       {/* Sidebar */}
-      <div className={`fixed lg:relative z-30 h-full transition-transform duration-300 ${
-        isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0 lg:w-0 lg:overflow-hidden'
-      }`}>
-        {isSidebarOpen && <FarmOwnerSidebar />}
-      </div>
-
-      {/* Overlay for mobile */}
-      {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-20 lg:hidden"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
+      <FarmOwnerSidebar />
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark">
         <div className="px-6 lg:px-10 py-6">
-          {/* Toggle Button & Header */}
-          <div className="flex items-start gap-4 mb-6">
-            <button
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 transition-colors dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700"
-            >
-              {isSidebarOpen ? <IoClose className="text-xl text-slate-700 dark:text-slate-200" /> : <IoMenu className="text-xl text-slate-700 dark:text-slate-200" />}
-            </button>
-            <div className="flex-1">
-              <h2 className="text-3xl font-bold text-[#5D4037] font-serif dark:text-white mb-2">
-                My Lands
-              </h2>
-              <p className="text-slate-500 dark:text-slate-400">
-                Manage your land plots, track soil health, and monitor leasing status.
-              </p>
-            </div>
+          {/* Header */}
+          <div className="mb-6">
+            <h2 className="text-3xl font-bold text-[#5D4037] font-serif dark:text-white mb-2">
+              My Lands
+            </h2>
+            <p className="text-slate-500 dark:text-slate-400">
+              Manage your land plots, track soil health, and monitor leasing status.
+            </p>
           </div>
 
           {/* Action Buttons */}
           <div className="flex gap-3 mb-6">
-            <button className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-all dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200">
-              <IoDownloadOutline className="text-lg" />
-              Export
-            </button>
-
-            <button className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-all dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200">
+            <button 
+              onClick={() => {
+                // TODO: Implement bulk actions functionality
+                console.log('Opening bulk actions...');
+              }}
+              className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-all dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
+            >
               <IoCheckboxOutline className="text-lg" />
               Bulk Actions
             </button>
 
-            <button className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-primary/30 hover:bg-primary-dark transition-all">
+            <button 
+              onClick={() => navigate('/owner/lands/add')}
+              className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-primary/30 hover:bg-primary-dark transition-all"
+            >
               <IoAdd className="text-lg" />
               Add New Plot
             </button>
@@ -182,23 +185,31 @@ const MyLandsPage = () => {
             {/* Filter Row */}
             <div className="flex flex-wrap gap-3">
               <div className="relative">
-                <select className="w-full appearance-none rounded-lg border border-slate-300 bg-white py-2.5 pl-4 pr-10 text-sm font-medium text-slate-700 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200">
-                  <option>Status: All</option>
-                  <option>Leased</option>
-                  <option>Pending</option>
-                  <option>Reviewing</option>
-                  <option>Vacant</option>
+                <select 
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="w-full appearance-none rounded-lg border border-slate-300 bg-white py-2.5 pl-4 pr-10 text-sm font-medium text-slate-700 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200"
+                >
+                  <option value="All">Status: All</option>
+                  <option value="Leased">Leased</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Under Review">Under Review</option>
+                  <option value="Vacant">Vacant</option>
                 </select>
                 <IoChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500" />
               </div>
               
               <div className="relative">
-                <select className="w-full appearance-none rounded-lg border border-slate-300 bg-white py-2.5 pl-4 pr-10 text-sm font-medium text-slate-700 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200">
-                  <option>Soil Type: All</option>
-                  <option>Loam</option>
-                  <option>Clay</option>
-                  <option>Silt</option>
-                  <option>Sandy</option>
+                <select 
+                  value={soilTypeFilter}
+                  onChange={(e) => setSoilTypeFilter(e.target.value)}
+                  className="w-full appearance-none rounded-lg border border-slate-300 bg-white py-2.5 pl-4 pr-10 text-sm font-medium text-slate-700 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200"
+                >
+                  <option value="All">Soil Type: All</option>
+                  <option value="Loam">Loam</option>
+                  <option value="Clay">Clay</option>
+                  <option value="Silt">Silt</option>
+                  <option value="Alluvial">Alluvial</option>
                 </select>
                 <IoChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500" />
               </div>
@@ -211,9 +222,21 @@ const MyLandsPage = () => {
 
           {/* Land Cards Grid */}
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 mt-6">
-            {landsData.map((land) => (
-              <LandCard key={land.id} land={land} />
-            ))}
+            {filteredLands.length === 0 ? (
+              <div className="col-span-full text-center py-16">
+                <span className="material-symbols-outlined text-slate-300 dark:text-slate-600 text-6xl mb-4 block">
+                  search_off
+                </span>
+                <p className="text-slate-500 dark:text-slate-400 text-lg">No lands found</p>
+                <p className="text-slate-400 dark:text-slate-500 text-sm mt-2">
+                  Try adjusting your filters or search query
+                </p>
+              </div>
+            ) : (
+              filteredLands.map((land) => (
+                <LandCard key={land.id} land={land} />
+              ))
+            )}
 
             {/* Add New Property Card */}
             <div className="group relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/50 p-6 text-center transition-all hover:border-primary hover:bg-primary/5 dark:border-slate-700 dark:bg-slate-800/30">
@@ -224,7 +247,10 @@ const MyLandsPage = () => {
               <p className="mt-2 max-w-xs text-sm text-slate-500">
                 Upload ownership documents, map coordinates, and soil reports to start earning.
               </p>
-              <button className="mt-6 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-md shadow-primary/20 hover:bg-primary-dark transition-colors">
+              <button 
+                onClick={() => navigate('/owner/lands/add')}
+                className="mt-6 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-md shadow-primary/20 hover:bg-primary-dark transition-colors"
+              >
                 Start Listing
               </button>
             </div>
@@ -233,9 +259,8 @@ const MyLandsPage = () => {
           {/* Pagination */}
           <div className="mt-8 flex items-center justify-between border-t border-slate-200 pt-6 dark:border-slate-700">
             <p className="text-sm text-slate-500">
-              Showing <span className="font-medium text-slate-900 dark:text-white">1</span> to{' '}
-              <span className="font-medium text-slate-900 dark:text-white">5</span> of{' '}
-              <span className="font-medium text-slate-900 dark:text-white">12</span> results
+              Showing <span className="font-medium text-slate-900 dark:text-white">{filteredLands.length}</span> of{' '}
+              <span className="font-medium text-slate-900 dark:text-white">{landsData.length}</span> results
             </p>
             <div className="flex gap-2">
               <button className="flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-400">

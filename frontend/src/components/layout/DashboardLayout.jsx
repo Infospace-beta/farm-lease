@@ -12,7 +12,7 @@ const DashboardLayout = ({ children, sidebar }) => {
     : sidebar;
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex h-screen w-full overflow-hidden bg-gray-50">
       {/* Mobile Overlay */}
       {isSidebarOpen && (
         <div
@@ -21,17 +21,17 @@ const DashboardLayout = ({ children, sidebar }) => {
         ></div>
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - Fixed on desktop, slides in on mobile */}
       <div
         className={`${
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } md:translate-x-0 fixed md:static inset-y-0 left-0 z-40 transition-transform duration-300 ease-in-out`}
+        } md:translate-x-0 fixed md:sticky md:top-0 md:h-screen inset-y-0 left-0 z-40 transition-transform duration-300 ease-in-out`}
       >
         {resolvedSidebar}
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 w-full md:w-auto">
+      <div className="flex-1 w-full md:w-auto overflow-y-auto">
         {/* Mobile Menu Button */}
         <div className="md:hidden bg-white border-b border-gray-200 p-4 sticky top-0 z-20">
           <button
