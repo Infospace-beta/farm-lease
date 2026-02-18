@@ -1,8 +1,10 @@
+"use client";
+
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/router";
-import DealerSidebar from "../../components/layout/DealerSidebar";
-import DealerHeader from "../../components/layout/DealerHeader";
+import { useRouter } from "next/navigation";
+import DealerSidebar from "../../../../components/layout/DealerSidebar";
+import DealerHeader from "../../../../components/layout/DealerHeader";
 import {
   PlusCircle,
   TrendingUp,
@@ -138,19 +140,19 @@ const DealerDashboard = () => {
   const [notifications, setNotifications] = useState([
     {
       id: 1,
-      type: 'success',
-      title: 'Order Completed',
-      message: 'Order #1234 has been successfully delivered.',
+      type: "success",
+      title: "Order Completed",
+      message: "Order #1234 has been successfully delivered.",
       timestamp: new Date(Date.now() - 30 * 60000),
-      read: false
+      read: false,
     },
     {
       id: 2,
-      type: 'warning',
-      title: 'Low Stock Alert',
-      message: 'DAP Fertilizer 50kg is running low (12 bags remaining).',
+      type: "warning",
+      title: "Low Stock Alert",
+      message: "DAP Fertilizer 50kg is running low (12 bags remaining).",
       timestamp: new Date(Date.now() - 2 * 60 * 60000),
-      read: false
+      read: false,
     },
   ]);
 
@@ -165,7 +167,10 @@ const DealerDashboard = () => {
       )}
 
       {/* Sidebar */}
-      <DealerSidebar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+      <DealerSidebar
+        isSidebarOpen={isSidebarOpen}
+        setIsSidebarOpen={setIsSidebarOpen}
+      />
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
@@ -177,11 +182,13 @@ const DealerDashboard = () => {
           setIsSidebarOpen={setIsSidebarOpen}
           notifications={notifications}
           onMarkNotificationAsRead={(id) => {
-            setNotifications(notifications.map(n => 
-              n.id === id ? { ...n, read: true } : n
-            ));
+            setNotifications(
+              notifications.map((n) =>
+                n.id === id ? { ...n, read: true } : n,
+              ),
+            );
           }}
-          onViewAllNotifications={() => router.push('/dealer/notifications')}
+          onViewAllNotifications={() => router.push("/dealer/notifications")}
           rightContent={
             <>
               <div className="relative">
@@ -306,7 +313,9 @@ const DealerDashboard = () => {
                 className="flex px-4 lg:px-5 py-2 lg:py-2.5 bg-forest-green text-white rounded-lg items-center gap-2 hover:bg-opacity-90 transition shadow-lg shadow-forest-green/20"
               >
                 <PlusCircle size={16} className="text-primary" />
-                <span className="font-medium text-sm hidden sm:inline">New Product</span>
+                <span className="font-medium text-sm hidden sm:inline">
+                  New Product
+                </span>
               </Link>
             </>
           }

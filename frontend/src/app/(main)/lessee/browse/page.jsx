@@ -1,23 +1,31 @@
-import DashboardLayout from '../../components/layout/DashboardLayout';
-import Sidebar from '../../components/layout/Sidebar';
-import Card from '../../components/common/Card';
-import Input from '../../components/common/Input';
-import Button from '../../components/common/Button';
+"use client";
+
+import DashboardLayout from "../../../../components/shared/DashboardLayout";
+import Sidebar from "../../../../components/shared/Sidebar";
+import Card from "../../../../components/ui/Card";
+import Input from "../../../../components/ui/Input";
+import Button from "../../../../components/ui/Button";
 
 const BrowseLandsPage = () => {
   const menuItems = [
-    { label: 'Dashboard', path: '/lessee/dashboard', icon: '📊' },
-    { label: 'Browse Lands', path: '/lessee/browse', icon: '🔍' },
-    { label: 'My Leases', path: '/lessee/leases', icon: '📄' },
-    { label: 'Crop Recommendations', path: '/lessee/recommendations', icon: '🌾' },
-    { label: 'Agro Products', path: '/lessee/products', icon: '🛒' },
-    { label: 'Profile', path: '/lessee/profile', icon: '👤' },
+    { label: "Dashboard", path: "/lessee/dashboard", icon: "📊" },
+    { label: "Browse Lands", path: "/lessee/browse", icon: "🔍" },
+    { label: "My Leases", path: "/lessee/leases", icon: "📄" },
+    {
+      label: "Crop Recommendations",
+      path: "/lessee/recommendations",
+      icon: "🌾",
+    },
+    { label: "Agro Products", path: "/lessee/products", icon: "🛒" },
+    { label: "Profile", path: "/lessee/profile", icon: "👤" },
   ];
 
   return (
     <DashboardLayout sidebar={<Sidebar menuItems={menuItems} />}>
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Browse Available Lands</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">
+          Browse Available Lands
+        </h1>
 
         {/* Search and Filters */}
         <Card className="mb-6">

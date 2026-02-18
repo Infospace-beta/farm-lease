@@ -1,10 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Enable App Router (Next.js 13+)
-  experimental: {
-    appDir: true,
-  },
   images: {
     domains: ["ui-avatars.com"],
     remotePatterns: [

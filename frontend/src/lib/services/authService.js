@@ -1,5 +1,5 @@
 import apiClient from "./apiClient";
-import { API_ENDPOINTS } from "../constants";
+import { API_ENDPOINTS } from "../../constants";
 import { jwtDecode } from "jwt-decode";
 
 const authService = {

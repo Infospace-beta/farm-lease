@@ -1,7 +1,9 @@
+"use client";
+
 import { useState } from "react";
 import Link from "next/link";
-import LesseeSidebar from "../../components/layout/LesseeSidebar";
-import LesseeHeader from "../../components/layout/LesseeHeader";
+import LesseeSidebar from "../../../../components/shared/LesseeSidebar";
+import LesseeHeader from "../../../../components/shared/LesseeHeader";
 import {
   Settings,
   CheckCircle2,

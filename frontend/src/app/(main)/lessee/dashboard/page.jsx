@@ -1,9 +1,11 @@
+"use client";
+
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/router";
-import { useAuth } from "../../context/AuthContext";
-import LesseeSidebar from "../../components/layout/LesseeSidebar";
-import LesseeHeader from "../../components/layout/LesseeHeader";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../../../../providers/AuthProvider";
+import LesseeSidebar from "../../../../components/shared/LesseeSidebar";
+import LesseeHeader from "../../../../components/shared/LesseeHeader";
 import {
   FileText,
   Search,

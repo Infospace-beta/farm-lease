@@ -1,11 +1,12 @@
+"use client";
 import { useState } from "react";
 import Link from "next/link";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../providers/AuthProvider";
 import { USER_ROLES } from "../../constants";
-import Input from "../../components/common/Input";
-import Select from "../../components/common/Select";
-import Button from "../../components/common/Button";
-import Card from "../../components/common/Card";
+import Input from "../../components/ui/Input";
+import Select from "../../components/ui/Select";
+import Button from "../../components/ui/Button";
+import Card from "../../components/ui/Card";
 
 const RegisterPage = () => {
   const [step, setStep] = useState(1);

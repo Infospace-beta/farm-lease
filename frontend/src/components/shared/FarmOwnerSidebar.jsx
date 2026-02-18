@@ -1,11 +1,23 @@
+<<<<<<< HEAD
+'use client';
+
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/router";
-import { useAuth } from "../../context/AuthContext";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../../app/context/AuthContext";
+=======
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "../../providers/AuthProvider";
+>>>>>>> 852c6e2d8755b6bb796c6dc5d3388b00af6b0fe9
 import { IoChevronBackOutline, IoChevronForwardOutline } from "react-icons/io5";
 
 const FarmOwnerSidebar = () => {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, logout } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -75,7 +87,7 @@ const FarmOwnerSidebar = () => {
       {/* Navigation */}
       <nav className="flex-1 space-y-1 px-4 py-4">
         {menuItems.map((item, index) => {
-          const isActive = router.pathname === item.path;
+          const isActive = pathname === item.path;
           return (
             <Link
               key={index}
