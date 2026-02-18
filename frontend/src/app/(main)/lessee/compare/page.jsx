@@ -1,9 +1,12 @@
+"use client";
+
 import React, { useState } from "react";
-import { useRouter } from "next/router";
-import { useAuth } from '../../context/AuthContext';
-import LesseeSidebar from '../../components/layout/LesseeSidebar';
-import LesseeHeader from '../../components/layout/LesseeHeader';
-import {  ArrowLeft,
+import { useRouter } from "next/navigation";
+import { useAuth } from "../../../../providers/AuthProvider";
+import LesseeSidebar from "../../../../components/shared/LesseeSidebar";
+import LesseeHeader from "../../../../components/shared/LesseeHeader";
+import {
+  ArrowLeft,
   Download,
   X,
   MapPin,
@@ -12,48 +15,48 @@ import {  ArrowLeft,
   SquareIcon,
   ArrowRight,
   CheckCircle,
-  Menu
+  Menu,
 } from "lucide-react";
 
 const CompareFarmAssets = () => {
   const { user } = useAuth();
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  
+
   // Sample notifications
   const [notifications, setNotifications] = useState([
     {
       id: 1,
-      type: 'info',
-      title: 'Comparison Saved',
-      message: 'Your asset comparison has been saved to your dashboard.',
+      type: "info",
+      title: "Comparison Saved",
+      message: "Your asset comparison has been saved to your dashboard.",
       timestamp: new Date(Date.now() - 10 * 60000), // 10 minutes ago
-      read: false
+      read: false,
     },
     {
       id: 2,
-      type: 'success',
-      title: 'Best Match Updated',
-      message: 'Plot A42 is now the top recommendation based on your needs.',
+      type: "success",
+      title: "Best Match Updated",
+      message: "Plot A42 is now the top recommendation based on your needs.",
       timestamp: new Date(Date.now() - 1 * 60 * 60000), // 1 hour ago
-      read: false
+      read: false,
     },
     {
       id: 3,
-      type: 'warning',
-      title: 'Limited Availability',
-      message: 'Plot B18 has high interest. 3 others are viewing.',
+      type: "warning",
+      title: "Limited Availability",
+      message: "Plot B18 has high interest. 3 others are viewing.",
       timestamp: new Date(Date.now() - 4 * 60 * 60000), // 4 hours ago
-      read: true
+      read: true,
     },
     {
       id: 4,
-      type: 'info',
-      title: 'Export Ready',
-      message: 'Your comparison PDF is ready to download.',
+      type: "info",
+      title: "Export Ready",
+      message: "Your comparison PDF is ready to download.",
       timestamp: new Date(Date.now() - 1 * 24 * 60 * 60000), // 1 day ago
-      read: true
-    }
+      read: true,
+    },
   ]);
 
   // Sample comparison data - would come from props/state in real app
@@ -62,7 +65,8 @@ const CompareFarmAssets = () => {
       id: 1,
       name: "Rift Valley - Plot A42",
       location: "Nakuru County, Kenya",
-      image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800",
+      image:
+        "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800",
       isBestMatch: true,
       soilMatch: 94,
       soilMatchDescription: "Excellent pH balance for Maize & Wheat",
@@ -74,17 +78,24 @@ const CompareFarmAssets = () => {
       waterDescription: "Borehole on site + Seasonal River",
       waterIcon: "water",
       crops: [
-        { name: "Maize", color: "bg-yellow-100 text-yellow-800 border-yellow-200" },
-        { name: "Wheat", color: "bg-amber-100 text-amber-800 border-amber-200" },
-        { name: "Peas", color: "bg-green-100 text-green-800 border-green-200" }
+        {
+          name: "Maize",
+          color: "bg-yellow-100 text-yellow-800 border-yellow-200",
+        },
+        {
+          name: "Wheat",
+          color: "bg-amber-100 text-amber-800 border-amber-200",
+        },
+        { name: "Peas", color: "bg-green-100 text-green-800 border-green-200" },
       ],
-      verifiedDate: "Oct 12, 2023"
+      verifiedDate: "Oct 12, 2023",
     },
     {
       id: 2,
       name: "Narok Prime - Plot B18",
       location: "Narok County, Kenya",
-      image: "https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=800",
+      image:
+        "https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=800",
       isBestMatch: false,
       soilMatch: 89,
       soilMatchDescription: "Slightly alkaline, good for Barley",
@@ -96,16 +107,20 @@ const CompareFarmAssets = () => {
       waterDescription: "Rain-fed dependence, no borehole",
       waterIcon: "sun",
       crops: [
-        { name: "Barley", color: "bg-amber-100 text-amber-800 border-amber-200" },
-        { name: "Beans", color: "bg-red-100 text-red-800 border-red-200" }
+        {
+          name: "Barley",
+          color: "bg-amber-100 text-amber-800 border-amber-200",
+        },
+        { name: "Beans", color: "bg-red-100 text-red-800 border-red-200" },
       ],
-      verifiedDate: "Nov 05, 2023"
+      verifiedDate: "Nov 05, 2023",
     },
     {
       id: 3,
       name: "Kericho Highlands - Plot C27",
       location: "Kericho County, Kenya",
-      image: "https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=800",
+      image:
+        "https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=800",
       isBestMatch: false,
       soilMatch: 82,
       soilMatchDescription: "Well-drained acidic soil, ideal for Tea & Avocado",
@@ -117,21 +132,30 @@ const CompareFarmAssets = () => {
       waterDescription: "Natural spring + High rainfall region",
       waterIcon: "water",
       crops: [
-        { name: "Purple Tea", color: "bg-purple-100 text-purple-800 border-purple-200" },
-        { name: "Avocado", color: "bg-green-100 text-green-800 border-green-200" },
-        { name: "Coffee", color: "bg-orange-100 text-orange-800 border-orange-200" }
+        {
+          name: "Purple Tea",
+          color: "bg-purple-100 text-purple-800 border-purple-200",
+        },
+        {
+          name: "Avocado",
+          color: "bg-green-100 text-green-800 border-green-200",
+        },
+        {
+          name: "Coffee",
+          color: "bg-orange-100 text-orange-800 border-orange-200",
+        },
       ],
-      verifiedDate: "Oct 28, 2023"
-    }
+      verifiedDate: "Oct 28, 2023",
+    },
   ]);
 
   const handleRemoveAsset = (id) => {
-    setComparisonAssets(comparisonAssets.filter(asset => asset.id !== id));
+    setComparisonAssets(comparisonAssets.filter((asset) => asset.id !== id));
   };
 
   const handleBackToResults = () => {
     // Preserve the inputMode query param when navigating back
-    const inputMode = router.query?.inputMode || 'regional';
+    const inputMode = router.query?.inputMode || "regional";
     router.push(`/lessee/recommendations?inputMode=${inputMode}`);
   };
 
@@ -146,7 +170,10 @@ const CompareFarmAssets = () => {
       )}
 
       {/* Sidebar */}
-      <LesseeSidebar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+      <LesseeSidebar
+        isSidebarOpen={isSidebarOpen}
+        setIsSidebarOpen={setIsSidebarOpen}
+      />
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
@@ -158,11 +185,13 @@ const CompareFarmAssets = () => {
           setIsSidebarOpen={setIsSidebarOpen}
           notifications={notifications}
           onMarkNotificationAsRead={(id) => {
-            setNotifications(notifications.map(n => 
-              n.id === id ? { ...n, read: true } : n
-            ));
+            setNotifications(
+              notifications.map((n) =>
+                n.id === id ? { ...n, read: true } : n,
+              ),
+            );
           }}
-          onViewAllNotifications={() => router.push('/lessee/notifications')}
+          onViewAllNotifications={() => router.push("/lessee/notifications")}
           rightContent={
             <button className="px-3 lg:px-5 py-2 lg:py-2.5 bg-forest-green text-white rounded-lg text-xs lg:text-sm font-bold shadow-lg shadow-forest-green/30 hover:bg-forest-light flex items-center gap-2">
               <Download className="w-4 h-4" />
@@ -175,11 +204,11 @@ const CompareFarmAssets = () => {
         <div className="flex-1 overflow-y-auto p-4 lg:p-8">
           {/* Back Button */}
           <div className="mb-6">
-            <button 
+            <button
               onClick={handleBackToResults}
               className="text-gray-500 hover:text-forest-green transition-colors flex items-center gap-2 text-sm font-medium hover:gap-3"
             >
-              <ArrowLeft className="w-4 h-4" /> 
+              <ArrowLeft className="w-4 h-4" />
               <span>Back to Recommendations</span>
             </button>
           </div>
@@ -187,12 +216,12 @@ const CompareFarmAssets = () => {
           {/* Comparison Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 max-w-[1600px] mx-auto pb-12">
             {comparisonAssets.map((asset) => (
-              <div 
+              <div
                 key={asset.id}
                 className={`bg-white rounded-2xl border ${
-                  asset.isBestMatch 
-                    ? 'border-[#13ec80]/30 ring-4 ring-[#13ec80]/10' 
-                    : 'border-gray-200'
+                  asset.isBestMatch
+                    ? "border-[#13ec80]/30 ring-4 ring-[#13ec80]/10"
+                    : "border-gray-200"
                 } shadow-xl overflow-hidden flex flex-col relative h-full`}
               >
                 {/* Top Green Line for Best Match */}
@@ -211,14 +240,14 @@ const CompareFarmAssets = () => {
 
                 {/* Image Section */}
                 <div className="relative h-64 bg-gray-200 group cursor-pointer overflow-hidden">
-                  <img 
-                    src={asset.image} 
+                  <img
+                    src={asset.image}
                     alt={asset.name}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
-                  
+
                   {/* Close Button */}
-                  <button 
+                  <button
                     onClick={() => handleRemoveAsset(asset.id)}
                     className="absolute top-4 right-4 w-8 h-8 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center text-gray-500 hover:text-red-500 hover:bg-white transition-all shadow-sm z-20"
                   >
@@ -237,7 +266,7 @@ const CompareFarmAssets = () => {
                         </p>
                       </div>
                       <div className="bg-white/10 backdrop-blur-sm p-2 rounded-lg border border-white/20">
-                        {asset.waterIcon === 'water' ? (
+                        {asset.waterIcon === "water" ? (
                           <Droplets className="text-[#13ec80] w-6 h-6" />
                         ) : (
                           <Sun className="text-white w-6 h-6" />
@@ -258,20 +287,28 @@ const CompareFarmAssets = () => {
                       <div className="col-span-2">
                         <div className="flex items-center gap-3">
                           <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
-                            <div 
+                            <div
                               className={`h-2.5 rounded-full ${
-                                asset.soilMatch >= 90 ? 'bg-primary-dark' : 'bg-earth-light'
+                                asset.soilMatch >= 90
+                                  ? "bg-primary-dark"
+                                  : "bg-earth-light"
                               }`}
                               style={{ width: `${asset.soilMatch}%` }}
                             ></div>
                           </div>
-                          <span className={`font-bold text-lg font-display ${
-                            asset.soilMatch >= 90 ? 'text-primary-dark' : 'text-earth-light'
-                          }`}>
+                          <span
+                            className={`font-bold text-lg font-display ${
+                              asset.soilMatch >= 90
+                                ? "text-primary-dark"
+                                : "text-earth-light"
+                            }`}
+                          >
                             {asset.soilMatch}%
                           </span>
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">{asset.soilMatchDescription}</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {asset.soilMatchDescription}
+                        </p>
                       </div>
                     </div>
 
@@ -284,7 +321,10 @@ const CompareFarmAssets = () => {
                         <span className="text-2xl font-bold text-earth-brown font-display">
                           Ksh {asset.leasePrice}
                         </span>
-                        <span className="text-sm text-gray-500"> / acre / year</span>
+                        <span className="text-sm text-gray-500">
+                          {" "}
+                          / acre / year
+                        </span>
                       </div>
                     </div>
 
@@ -295,8 +335,12 @@ const CompareFarmAssets = () => {
                       </div>
                       <div className="col-span-2 flex items-center gap-2">
                         <SquareIcon className="w-4 h-4 text-gray-400" />
-                        <span className="font-bold text-gray-700">{asset.acreage} Acres</span>
-                        <span className={`${asset.acreageScaleClass} text-[10px] px-2 py-0.5 rounded font-bold uppercase ml-auto`}>
+                        <span className="font-bold text-gray-700">
+                          {asset.acreage} Acres
+                        </span>
+                        <span
+                          className={`${asset.acreageScaleClass} text-[10px] px-2 py-0.5 rounded font-bold uppercase ml-auto`}
+                        >
                           {asset.acreageScale}
                         </span>
                       </div>
@@ -309,9 +353,13 @@ const CompareFarmAssets = () => {
                       </div>
                       <div className="col-span-2">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="font-bold text-gray-700">{asset.waterAvailability}</span>
+                          <span className="font-bold text-gray-700">
+                            {asset.waterAvailability}
+                          </span>
                         </div>
-                        <p className="text-xs text-gray-500">{asset.waterDescription}</p>
+                        <p className="text-xs text-gray-500">
+                          {asset.waterDescription}
+                        </p>
                       </div>
                     </div>
 
@@ -322,7 +370,7 @@ const CompareFarmAssets = () => {
                       </div>
                       <div className="col-span-2 flex flex-wrap gap-2">
                         {asset.crops.map((crop, idx) => (
-                          <span 
+                          <span
                             key={idx}
                             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${crop.color} border`}
                           >
@@ -335,11 +383,13 @@ const CompareFarmAssets = () => {
 
                   {/* Request Lease Button */}
                   <div className="p-6 mt-auto border-t border-gray-100 bg-gray-50/50">
-                    <button className={`w-full py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-wider group ${
-                      asset.isBestMatch
-                        ? 'bg-forest-green text-white shadow-lg shadow-forest-green/20 hover:bg-forest-light'
-                        : 'bg-white border-2 border-forest-green text-forest-green hover:bg-forest-green hover:text-white'
-                    }`}>
+                    <button
+                      className={`w-full py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-wider group ${
+                        asset.isBestMatch
+                          ? "bg-forest-green text-white shadow-lg shadow-forest-green/20 hover:bg-forest-light"
+                          : "bg-white border-2 border-forest-green text-forest-green hover:bg-forest-green hover:text-white"
+                      }`}
+                    >
                       Request Lease
                       <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     </button>

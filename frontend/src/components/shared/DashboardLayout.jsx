@@ -1,7 +1,14 @@
+<<<<<<< HEAD
 'use client';
 
 import { cloneElement, isValidElement, useState } from 'react';
 import { Menu } from 'lucide-react';
+=======
+"use client";
+
+import { cloneElement, isValidElement, useState } from "react";
+import { Menu } from "lucide-react";
+>>>>>>> 852c6e2d8755b6bb796c6dc5d3388b00af6b0fe9
 
 const DashboardLayout = ({ children, sidebar }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -26,7 +33,7 @@ const DashboardLayout = ({ children, sidebar }) => {
       {/* Sidebar - Fixed on desktop, slides in on mobile */}
       <div
         className={`${
-          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         } md:translate-x-0 fixed md:sticky md:top-0 md:h-screen inset-y-0 left-0 z-40 transition-transform duration-300 ease-in-out`}
       >
         {resolvedSidebar}
@@ -44,9 +51,7 @@ const DashboardLayout = ({ children, sidebar }) => {
           </button>
         </div>
 
-        <main className="p-4 sm:p-6 lg:p-8">
-          {children}
-        </main>
+        <main>{children}</main>
       </div>
     </div>
   );

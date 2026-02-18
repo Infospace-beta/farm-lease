@@ -1,11 +1,13 @@
+"use client";
+
 import { useState } from 'react';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
 import { Search, Settings, Download, Truck, Store, Clipboard, X, MessageSquare, MapPin, Package, Check } from 'lucide-react';
-import Badge from '../../components/common/Badge';
-import Card from '../../components/common/Card';
-import Button from '../../components/common/Button';
-import DealerSidebar from '../../components/layout/DealerSidebar';
-import DealerHeader from '../../components/layout/DealerHeader';
+import Badge from '../../../../components/ui/Badge';
+import Card from '../../../../components/ui/Card';
+import Button from '../../../../components/ui/Button';
+import DealerSidebar from '../../../../components/layout/DealerSidebar';
+import DealerHeader from '../../../../components/layout/DealerHeader';
 
 const OrdersPage = () => {
   const router = useRouter();

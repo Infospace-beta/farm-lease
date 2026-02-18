@@ -1,6 +1,7 @@
+"use client";
 import { useState } from 'react';
-import DashboardLayout from '../../components/layout/DashboardLayout';
-import { useAuth } from '../../context/AuthContext';
+import DashboardLayout from '../../../../components/shared/DashboardLayout';
+import { useAuth } from '../../../../providers/AuthProvider';
 
 const ProfileSettingsPage = () => {
   const { user } = useAuth();

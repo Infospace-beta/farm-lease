@@ -1,7 +1,8 @@
+"use client";
 import { useState } from 'react';
-import { useRouter } from 'next/router';
-import DashboardLayout from '../../components/layout/DashboardLayout';
-import FarmOwnerSidebar from '../../components/layout/FarmOwnerSidebar';
+import { useRouter } from 'next/navigation';
+import DashboardLayout from '../../../../components/shared/DashboardLayout';
+import FarmOwnerSidebar from '../../../../components/shared/FarmOwnerSidebar';
 
 const EscrowStatusPage = () => {
   const router = useRouter();

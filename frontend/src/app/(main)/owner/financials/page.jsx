@@ -1,5 +1,9 @@
+<<<<<<< HEAD
 'use client';
 
+=======
+"use client";
+>>>>>>> 852c6e2d8755b6bb796c6dc5d3388b00af6b0fe9
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '../../../../components/shared/DashboardLayout';

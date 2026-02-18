@@ -1,6 +1,8 @@
+"use client";
+
 import Link from "next/link";
-import { useRouter } from "next/router";
-import { useAuth } from "../../context/AuthContext";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "../../providers/AuthProvider";
 import { X } from "lucide-react";
 
 const Sidebar = ({ menuItems, isMobile, onClose }) => {

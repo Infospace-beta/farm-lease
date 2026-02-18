@@ -1,6 +1,8 @@
+"use client";
+
 import { useState } from 'react';
-import DealerSidebar from '../../components/layout/DealerSidebar';
-import DealerHeader from '../../components/layout/DealerHeader';
+import DealerSidebar from '../../../../components/layout/DealerSidebar';
+import DealerHeader from '../../../../components/layout/DealerHeader';
 
 const ProfilePage = () => {
   const [activeProfileTab, setActiveProfileTab] = useState('store');
