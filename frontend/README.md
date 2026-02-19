@@ -1,196 +1,133 @@
-# FarmLease Platform - Frontend
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-A React-based web application for the FarmLease Platform, connecting farm owners, lessees, and agro-dealers.
+## Getting Started
 
-## 🚀 Tech Stack
+First, run the development server:
 
-- **Framework**: React 18
-- **Build Tool**: Vite
-- **Styling**: Tailwind CSS
-- **Routing**: React Router v6
-- **HTTP Client**: Axios
-- **Form Management**: React Hook Form + Yup
-- **State Management**: Context API
-- **Maps**: Leaflet & React Leaflet
-- **Notifications**: React Toastify
-- **Icons**: Lucide React
-
-## 📁 Project Structure
-
-```
-frontend/
-├── public/                 # Static assets
-├── src/
-│   ├── assets/            # Images, fonts, etc.
-│   ├── components/        # Reusable UI components
-│   │   ├── common/        # Generic components (Button, Input, Modal, etc.)
-│   │   ├── layout/        # Layout components (Navbar, Footer, Sidebar)
-│   │   └── features/      # Feature-specific components
-│   ├── pages/             # Page components
-│   │   ├── auth/          # Authentication pages
-│   │   ├── owner/         # Farm owner pages
-│   │   ├── lessee/        # Lessee/farmer pages
-│   │   ├── dealer/        # Agro-dealer pages
-│   │   └── admin/         # Admin pages
-│   ├── services/          # API service layer
-│   ├── hooks/             # Custom React hooks
-│   ├── context/           # Context providers
-│   ├── utils/             # Utility functions
-│   ├── constants/         # App constants
-│   ├── App.jsx            # Main app component
-│   ├── main.jsx           # Entry point
-│   └── index.css          # Global styles
-├── .env.example           # Environment variables template
-├── package.json           # Dependencies
-├── vite.config.js         # Vite configuration
-└── tailwind.config.js     # Tailwind configuration
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-## 🛠️ Setup Instructions
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-### Prerequisites
-- Node.js (v18 or higher)
-- npm or yarn
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-### Installation
+## Recommended Production-Level File Organization
 
-1. **Clone the repository and navigate to frontend**
-   ```bash
-   cd frontend
-   ```
+Here is a comprehensive, production-ready structure that combines the App Router's conventions with best practices for scalability.
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+```txt
+.
+├── /public/                      # Static assets (images, fonts, etc.)
+├── /src/                         # Optional but recommended 'src' directory
+│   ├── /app/                     # The core of your application and routing
+│   │   ├── /api/                 # Route Handlers for your API endpoints
+│   │   │   └── /users
+│   │   │       └── route.ts      # -> /api/users
+│   │   │
+│   │   ├── /(main)/              # A Route Group for main app pages (e.g., with main navbar/footer)
+│   │   │   ├── /dashboard/       # FEATURE: Dashboard (Route: /dashboard)
+│   │   │   │   ├── page.tsx      # UI for the page
+│   │   │   │   ├── layout.tsx    # Layout specific to this feature
+│   │   │   │   ├── loading.tsx   # Loading UI specific to this feature
+│   │   │   │   ├── /components/  # Components used ONLY within the dashboard feature
+│   │   │   │   │   ├── StatCard.tsx
+│   │   │   │   │   └── ProjectList.tsx
+│   │   │   │   ├── _actions.ts   # Server Actions (private to this feature)
+│   │   │   │   └── _lib.ts       # Utility functions (private to this feature)
+│   │   │   │
+│   │   │   ├── /settings/        # FEATURE: Settings (Route: /settings)
+│   │   │   │   ├── page.tsx
+│   │   │   │   └── ... (similar structure as dashboard)
+│   │   │   │
+│   │   │   └── page.tsx          # Homepage UI (Route: /)
+│   │   │
+│   │   ├── /(auth)/              # A Route Group for auth pages (e.g., with a different, simpler layout)
+│   │   │   ├── /login/
+│   │   │   │   └── page.tsx
+│   │   │   ├── /signup/
+│   │   │   │   └── page.tsx
+│   │   │   └── layout.tsx        # Shared layout for ONLY login and signup
+│   │   │
+│   │   ├── layout.tsx            # ROOT layout (applies to everything)
+│   │   └── globals.css           # Global styles
+│   │
+│   ├── /components/              # SHARED, Reusable Components
+│   │   ├── /ui/                  # Primitive, "dumb" components (like a design system)
+│   │   │   ├── Button.tsx
+│   │   │   ├── Input.tsx
+│   │   │   └── Card.tsx
+│   │   ├── /shared/              # Complex components composed of UI primitives
+│   │   │   ├── MainNav.tsx
+│   │   │   └── PageHeader.tsx
+│   │
+│   ├── /lib/                     # SHARED helper functions, libraries, SDKs
+│   │   ├── db.ts                 # Database client (Prisma, Drizzle, etc.)
+│   │   ├── auth.ts               # Auth configuration (NextAuth.js, Clerk)
+│   │   ├── utils.ts              # General utility functions (formatting, etc.)
+│   │
+│   ├── /hooks/                   # SHARED custom React hooks
+│   │   ├── use-user.ts
+│   │   └── use-media-query.ts
+│   │
+│   ├── /store/                   # Global state management (Zustand, Redux, Jotai)
+│   │   └── user-store.ts
+│   │
+│   ├── /types/                   # Shared TypeScript type definitions
+│   │   └── index.ts
+│   │
+│   └── /constants/               # Application-wide constants
+│       └── index.ts
+│
+├── next.config.mjs               # Next.js configuration
+├── tsconfig.json                 # TypeScript configuration
+└── package.json
+```
 
-3. **Setup environment variables**
-   ```bash
-   cp .env.example .env
-   ```
-   Then edit `.env` with your actual API keys and configuration.
+### Explanation of Key Directories
 
-4. **Start development server**
-   ```bash
-   npm run dev
-   ```
-   The app will be available at `http://localhost:3000`
+1.  **`src/` directory**: While optional, it's highly recommended. It clearly separates your source code from configuration files at the root, leading to a cleaner project.
 
-## 📝 Development Guidelines
+2.  **`app/`**: This is the heart of the App Router.
+    *   **Route Groups `(...)`**: Folders wrapped in parentheses, like `(main)` or `(auth)`, organize your routes without affecting the URL. This is perfect for applying different layouts to different sections of your app. For example, your main app pages have a full navbar, while your login/signup pages have a simple, centered layout.
+    *   **Feature Folders (`dashboard/`, `settings/`)**: These are your route segments. By adopting the colocation model, each folder becomes a mini-application responsible for its own UI, logic, components, and data fetching.
+    *   **Private Folders `_...`**: Prefixing a folder with an underscore (e.g., `_lib`, `_components`) prevents Next.js from treating it as a URL segment. While the convention is to use `components/` directly, using `_` for non-component files like `_actions.ts` or `_lib.ts` is a great way to signal that they are internal implementation details of that feature and not routable.
 
-### Branch Strategy
-- `main` - Production-ready code
-- `frontend-dev` - Main development branch
-- `feature/*` - Individual feature branches
+3.  **`components/`**: This is for **truly shared and reusable components**.
+    *   **`/ui`**: For your base design system components (often called atoms). These are highly reusable and application-agnostic (e.g., `Button`, `Dialog`, `Input`). Tools like `shadcn/ui` populate this directory.
+    *   **`/shared`**: For more complex components that are used in multiple places but are specific to your application's domain (e.g., `SiteHeader`, `UserAvatarMenu`).
 
-### Component Development
-- Each component should be in its own file
-- Use functional components with hooks
-- Follow the naming convention: `ComponentName.jsx`
-- Add PropTypes or use TypeScript for type checking
+4.  **`lib/`**: Your global library. This is for code that can be used anywhere, both on the client and the server. Think database initializations, authentication helpers, and globally used utility functions.
 
-### Styling Guidelines
-- Use Tailwind CSS utility classes
-- Custom colors are defined in `tailwind.config.js`
-- Mobile-first responsive design
-- Maintain consistent spacing using Tailwind's spacing scale
+5.  **`hooks/`, `store/`, `types/`, `constants/`**: These folders are for cross-cutting concerns. They are organized by their *type* because they are, by definition, meant to be shared across many different *features*.
 
-### API Integration
-- All API calls should go through the service layer
-- Use environment variables for API endpoints
-- Implement proper error handling and loading states
+### Summary: The "Best Way"
 
-## 🎨 User Roles & Dashboards
+1.  **Embrace File-System Routing**: Don't fight it. Use the route folders (`app/dashboard`, `app/settings`) as the foundation.
+2.  **Colocate by Feature**: Make each route folder a self-contained module. Place components, server actions, and helper functions related to that feature *inside* its folder. This is the single most important principle for scalability.
+3.  **Use Route Groups `(...)` for Layouts**: Organize sections of your app that share a common layout (e.g., `(main)` vs. `(auth)`) without changing the URL.
+4.  **Distinguish Shared vs. Local**: Have a top-level `/components` folder for truly reusable UI and use local `components/` folders inside feature routes for single-purpose components.
+5.  **Use a `src/` Directory**: Keep your project root clean.
 
-1. **Farm Owners**: Manage land listings, view leases, track payments
-2. **Lessees/Farmers**: Browse lands, lease farms, get AI recommendations
-3. **Agro-Dealers**: Manage product listings, view inquiries
-4. **Admin**: Verify lands, manage users, handle disputes
+By following this structure, your application will be organized, easy to navigate, and built to scale with your team and your codebase.
 
-## 🚧 Development Workflow
+## Learn More
 
-### For Individual Developers
+To learn more about Next.js, take a look at the following resources:
 
-1. **Create your feature branch**
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-2. **Work on your assigned component/page**
-   - Follow the project structure
-   - Implement your UI based on the wireframes
-   - Connect to backend APIs using the service layer
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-3. **Test your changes**
-   ```bash
-   npm run dev
-   ```
+## Deploy on Vercel
 
-4. **Commit and push**
-   ```bash
-   git add .
-   git commit -m "feat: add your feature description"
-   git push origin feature/your-feature-name
-   ```
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-5. **Create a Pull Request** to `frontend-dev`
-
-## 📋 Available Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
-
-## 🔗 Integration Points
-
-### Backend API
-Base URL: `http://localhost:8000/api`
-
-### External APIs
-- **Gemini API**: AI crop recommendations
-- **Weather API**: Climate data
-- **M-Pesa Daraja**: Payment processing
-- **OpenStreetMap**: Location services
-
-## 📦 Key Features to Implement
-
-### Phase 1 (Weeks 1-2)
-- [ ] Authentication (Login/Register)
-- [ ] Role-based dashboards
-- [ ] Land listing and browsing
-- [ ] Basic admin verification
-
-### Phase 2 (Weeks 3-4)
-- [ ] Payment integration UI
-- [ ] Land detail pages
-- [ ] Search and filter
-- [ ] User profiles
-
-### Phase 3 (Weeks 5-6)
-- [ ] AI crop recommendations
-- [ ] Agro-dealer marketplace
-- [ ] Reviews and ratings
-- [ ] Notifications
-
-### Phase 4 (Weeks 7-8)
-- [ ] Map integration
-- [ ] Advanced analytics
-- [ ] Reports and moderation
-- [ ] Final polish and testing
-
-## 🤝 Contributing
-
-1. Follow the code style and structure
-2. Write clean, readable code
-3. Comment complex logic
-4. Test your changes before pushing
-5. Keep commits atomic and meaningful
-
-## 📞 Support
-
-For questions or issues, contact the project lead or create an issue in the repository.
-
----
-
-**Happy Coding! 🚜🌾**
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
