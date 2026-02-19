@@ -26,16 +26,21 @@ class UserSerializer(serializers.ModelSerializer):
             'county',
             'id_number',
             'is_verified',
+            'is_staff',
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at', 'is_verified']
+        read_only_fields = [
+            'id', 'created_at', 'updated_at', 'is_verified', 'is_staff',
+        ]
 
 
 class RegisterSerializer(serializers.ModelSerializer):
     """Serializer for user registration"""
 
-    password = serializers.CharField(write_only=True, validators=[validate_password])
+    password = serializers.CharField(
+        write_only=True, validators=[validate_password]
+    )
     password2 = serializers.CharField(write_only=True, required=False)
     username = serializers.CharField(required=False)
 
