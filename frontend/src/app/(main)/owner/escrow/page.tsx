@@ -41,21 +41,22 @@ const STATUS = {
 
 export default function EscrowStatusPage() {
   return (
-    <div className="p-6 lg:p-10">
-      <div className="mx-auto max-w-4xl">
+    <div className="min-h-screen bg-slate-50">
+      <div className="p-6 lg:p-8">
+        <div className="mx-auto max-w-4xl">
         <PageHeader
           title="Escrow Status"
           description="Track escrow deposits and release timelines for all active leases."
         />
 
         {/* Summary cards */}
-        <div className="mb-8 grid gap-6 sm:grid-cols-3">
+        <div className="mb-6 grid gap-4 sm:grid-cols-3">
           {[
             { label: "Total in Escrow",   value: "Ksh 60,000",   icon: "lock",          color: "text-blue-600",    bg: "bg-blue-50" },
             { label: "Released This Month", value: "Ksh 50,000", icon: "payments",       color: "text-emerald-600", bg: "bg-emerald-50" },
             { label: "Pending Deposit",   value: "Ksh 45,000",   icon: "pending",       color: "text-amber-600",   bg: "bg-amber-50" },
           ].map((c) => (
-            <div key={c.label} className={`rounded-2xl ${c.bg} border border-slate-100 p-5 flex items-center gap-4`}>
+            <div key={c.label} className={`rounded-lg ${c.bg} border border-slate-100 p-4 flex items-center gap-3`}>
               <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-sm`}>
                 <span className={`material-symbols-outlined text-2xl ${c.color}`}>{c.icon}</span>
               </div>
@@ -68,11 +69,11 @@ export default function EscrowStatusPage() {
         </div>
 
         {/* Escrow cards */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           {escrows.map((e) => {
             const s = STATUS[e.status as keyof typeof STATUS];
             return (
-              <div key={e.id} className="rounded-2xl bg-white border border-slate-200 shadow-sm p-6">
+              <div key={e.id} className="rounded-lg bg-white border border-slate-200 p-5">
                 {/* Header */}
                 <div className="flex items-start justify-between mb-6">
                   <div>
@@ -152,6 +153,7 @@ export default function EscrowStatusPage() {
           })}
         </div>
       </div>
+    </div>
     </div>
   );
 }

@@ -64,7 +64,7 @@ export default function UploadLandPage() {
     setLoading(true); setError(null);
     try {
       const { data } = await landsApi.createBasic(basic);
-      setLandId(data.id);
+      setLandId(data.land_id);
       setStep(1);
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
@@ -90,7 +90,7 @@ export default function UploadLandPage() {
     try {
       if (photos && photos.length > 0) {
         const fd = new FormData();
-        Array.from(photos).forEach((f) => fd.append("image", f));
+        Array.from(photos).forEach((f) => fd.append("images", f));
         await landsApi.uploadPhotos(landId, fd);
       }
       router.push("/owner/lands");
@@ -102,24 +102,25 @@ export default function UploadLandPage() {
 
   /* ── UI ─────────────────────────────────────────────── */
   return (
-    <div className="p-6 lg:p-10">
-      <div className="mx-auto max-w-3xl">
+    <div className="min-h-screen bg-slate-50">
+      <div className="p-6 lg:p-8">
+        <div className="mx-auto max-w-3xl">
 
-        {/* Header */}
-        <div className="mb-8">
-          <h2
-            className="text-3xl font-bold tracking-tight text-earth"
-            style={{ fontFamily: "'Playfair Display', serif" }}
-          >
-            List New Land
-          </h2>
-          <p className="mt-2 text-slate-500">
-            Upload your land details, soil data and photos to start receiving lease requests.
-          </p>
-        </div>
+          {/* Header */}
+          <div className="mb-6">
+            <h2
+              className="text-3xl font-bold tracking-tight text-earth"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+            >
+              List New Land
+            </h2>
+            <p className="mt-1.5 text-sm text-slate-500">
+              Upload your land details, soil data and photos to start receiving lease requests.
+            </p>
+          </div>
 
-        {/* Step indicator */}
-        <div className="mb-10 flex items-center gap-0">
+          {/* Step indicator */}
+          <div className="mb-6 flex items-center gap-0">
           {STEPS.map((s, i) => (
             <div key={s} className="flex flex-1 items-center">
               <div className="flex flex-col items-center">
@@ -363,6 +364,7 @@ export default function UploadLandPage() {
         )}
 
       </div>
+    </div>
     </div>
   );
 }

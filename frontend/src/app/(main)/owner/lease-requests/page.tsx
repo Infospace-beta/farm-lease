@@ -4,7 +4,8 @@ import { useState } from "react";
 import PageHeader from "@/components/owner/PageHeader";
 import MiniMapThumb from "@/components/owner/MiniMapThumb";
 
-type TabKey = "all" | "pending" | "review" | "accepted" | "rejected";
+type StatusKey = "pending" | "review" | "accepted" | "rejected";
+type TabKey = "all" | StatusKey;
 
 const TABS: { key: TabKey; label: string; count: number }[] = [
   { key: "all",      label: "All Requests",  count: 8 },
@@ -59,7 +60,7 @@ const requests = [
   },
 ];
 
-const STATUS_STYLES = {
+const STATUS_STYLES: Record<StatusKey, { bg: string; text: string; label: string }> = {
   pending:  { bg: "bg-amber-100",   text: "text-amber-700",   label: "Pending" },
   review:   { bg: "bg-blue-100",    text: "text-blue-700",    label: "Under Review" },
   accepted: { bg: "bg-emerald-100", text: "text-emerald-700", label: "Accepted" },
@@ -69,25 +70,26 @@ const STATUS_STYLES = {
 export default function LeaseRequestsPage() {
   const [tab, setTab] = useState<TabKey>("all");
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [localStatuses, setLocalStatuses] = useState<Record<string, TabKey>>({});
+  const [localStatuses, setLocalStatuses] = useState<Record<string, StatusKey>>({});
 
-  const getStatus = (id: string, def: TabKey) => localStatuses[id] ?? def;
+  const getStatus = (id: string, def: StatusKey): StatusKey => localStatuses[id] ?? def;
 
   const filtered = (tab === "all" ? requests : requests.filter((r) => getStatus(r.id, r.status) === tab));
 
   return (
-    <div className="p-6 lg:p-10">
-      <div className="mx-auto max-w-5xl">
-        <PageHeader
-          title="Lease Requests"
-          description="Review and respond to incoming lease applications for your lands."
-          actions={[
-            { label: "Export", icon: "download" },
-          ]}
-        />
+    <div className="min-h-screen bg-slate-50">
+      <div className="p-6 lg:p-8">
+        <div className="mx-auto max-w-5xl">
+          <PageHeader
+            title="Lease Requests"
+            description="Review and respond to incoming lease applications for your lands."
+            actions={[
+              { label: "Export", icon: "download" },
+            ]}
+          />
 
         {/* Tabs */}
-        <div className="mb-6 flex gap-1 rounded-xl bg-white border border-slate-200 p-1 shadow-sm overflow-x-auto">
+        <div className="mb-5 flex gap-1 rounded-lg bg-white border border-slate-200 p-1 overflow-x-auto">
           {TABS.map((t) => (
             <button
               key={t.key}
@@ -120,7 +122,7 @@ export default function LeaseRequestsPage() {
             return (
               <div
                 key={req.id}
-                className="rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden"
+                className="rounded-lg bg-white border border-slate-200 overflow-hidden hover:shadow-md transition-shadow"
               >
                 {/* Card header */}
                 <button
@@ -222,6 +224,7 @@ export default function LeaseRequestsPage() {
           })}
         </div>
       </div>
+    </div>
     </div>
   );
 }

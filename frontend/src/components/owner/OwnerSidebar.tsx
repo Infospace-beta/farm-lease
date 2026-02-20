@@ -4,39 +4,41 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { memo, useMemo } from "react";
+import { useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/providers";
 
 const navLinks = [
-  { href: "/admin/dashboard", label: "Dashboard", icon: "dashboard", badge: 0 },
-  { href: "/admin/users", label: "User Management", icon: "group", badge: 0 },
-  { href: "/admin/land-verifications", label: "Land Verifications", icon: "verified", badge: 12 },
-  { href: "/admin/dealer-oversight", label: "Agro-Dealer Oversight", icon: "store", badge: 0 },
-  { href: "/admin/payments", label: "Payments & Escrow", icon: "payments", badge: 0 },
-  { href: "/admin/agreements", label: "Agreements & Contracts", icon: "description", badge: 0 },
-  { href: "/admin/analytics", label: "Reports", icon: "bar_chart", badge: 0 },
+  { href: "/owner/dashboard",      label: "Dashboard",      icon: "dashboard",             badge: 0 },
+  { href: "/owner/lands",          label: "My Lands",       icon: "map",                   badge: 0 },
+  { href: "/owner/lands/add",      label: "Upload Land",    icon: "upload_file",           badge: 0 },
+  { href: "/owner/lease-requests", label: "Lease Requests", icon: "pending_actions",       badge: 3 },
+  { href: "/owner/financials",     label: "Financials",     icon: "account_balance_wallet", badge: 0 },
+  { href: "/owner/escrow",         label: "Escrow Status",  icon: "verified_user",         badge: 0 },
+  { href: "/owner/agreements",     label: "Agreements",     icon: "handshake",             badge: 0 },
 ];
 
-function AdminSidebar() {
+function OwnerSidebar() {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const { profile, loading } = useProfile();
+  const { logout } = useAuth();
 
   const displayName = useMemo(() => {
-    return user
-      ? `${user.first_name} ${user.last_name}`.trim() || user.username || user.email
-      : "Admin User";
-  }, [user]);
+    return profile
+      ? `${profile.first_name} ${profile.last_name}`.trim() || profile.email
+      : loading ? "..." : "James M.";
+  }, [profile, loading]);
 
   const avatarSrc = useMemo(() => {
-    return user?.profile_picture ??
-      `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=10b981&color=fff`;
-  }, [user?.profile_picture, displayName]);
+    return profile?.profile_picture ??
+      `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=047857&color=fff`;
+  }, [profile?.profile_picture, displayName]);
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 flex flex-col border-r border-slate-800 bg-sidebar-bg overflow-y-auto z-30 shadow-lg text-white">
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 py-5">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/20">
-          <span className="material-symbols-outlined text-2xl">admin_panel_settings</span>
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-white shadow-lg shadow-black/20">
+          <span className="material-symbols-outlined text-2xl">agriculture</span>
         </div>
         <div className="flex flex-col">
           <h1
@@ -46,7 +48,7 @@ function AdminSidebar() {
             FarmLease
           </h1>
           <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-300/70">
-            Admin Console
+            Land Management
           </span>
         </div>
       </div>
@@ -56,7 +58,7 @@ function AdminSidebar() {
         {navLinks.map(({ href, label, icon, badge }) => {
           const isActive =
             pathname === href ||
-            (href !== "/admin/dashboard" && pathname.startsWith(href));
+            (href !== "/owner/dashboard" && pathname.startsWith(href));
 
           return (
             <Link
@@ -76,7 +78,7 @@ function AdminSidebar() {
               </span>
               {label}
               {badge > 0 && (
-                <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-white">
                   {badge}
                 </span>
               )}
@@ -88,7 +90,7 @@ function AdminSidebar() {
       {/* User section */}
       <div className="mt-auto border-t border-white/10 p-4">
         <Link
-          href="/admin/profile"
+          href="/owner/profile"
           className="flex items-center gap-3 rounded-xl bg-white/5 p-3 hover:bg-white/10 transition-colors cursor-pointer group mb-2"
         >
           <Image
@@ -96,19 +98,21 @@ function AdminSidebar() {
             alt={displayName}
             width={40}
             height={40}
-            className="h-10 w-10 rounded-full border-2 border-emerald-500 shadow-sm object-cover"
+            className="h-10 w-10 rounded-full border-2 border-primary shadow-sm object-cover"
             priority={false}
             loading="lazy"
           />
           <div className="flex flex-col flex-1 min-w-0">
             <span className="text-sm font-semibold text-white truncate">{displayName}</span>
-            <span className="text-xs text-slate-400 group-hover:text-slate-300 transition-colors">
-              {user?.role === "admin" || user?.is_staff ? "Super Admin" : "Administrator"}
+            <span className="text-xs text-slate-400 group-hover:text-slate-300 transition-colors capitalize">
+              {profile?.role === "landowner" ? "Premium Owner" : (profile?.role ?? "Land Owner")}
             </span>
           </div>
-          <span className="material-symbols-outlined text-sm text-emerald-500" title="Admin">
-            verified
-          </span>
+          {profile?.is_verified && (
+            <span className="material-symbols-outlined text-sm text-primary" title="Verified">
+              verified
+            </span>
+          )}
         </Link>
 
         <button
@@ -123,4 +127,4 @@ function AdminSidebar() {
   );
 }
 
-export default memo(AdminSidebar);
+export default memo(OwnerSidebar);

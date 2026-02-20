@@ -9,6 +9,7 @@ urlpatterns = [
         views.upload_land_images,
         name='upload_photos',
     ),
+    path('my-lands/', views.list_user_lands, name='my_lands'),
     path(
         'ownerdashboard/',
         views.LandownerDashboardStats.as_view(),

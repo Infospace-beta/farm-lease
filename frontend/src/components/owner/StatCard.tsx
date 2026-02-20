@@ -11,7 +11,7 @@ interface Props {
 
 export default function StatCard({ label, value, badge, badgeUp, sub, chart }: Props) {
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-white p-6 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-slate-100">
+    <div className="relative overflow-hidden rounded-xl bg-white p-5 border border-slate-200 hover:shadow-md transition-shadow">
       <div className="flex flex-col h-full justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-wider text-slate-400">{label}</p>

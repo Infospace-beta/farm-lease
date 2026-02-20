@@ -1,33 +1,43 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { landsApi } from "@/lib/services/api";
 
 /* ─── Types ──────────────────────────────────────────── */
 type StatusKey = "Leased" | "Pending" | "Under Review" | "Vacant";
 
-interface AssetCard {
-  id: string;
-  name: string;
-  location: string;
-  status: StatusKey;
-  size: string;
-  soilType: string;
-  col3Label: string;
-  col3Value: React.ReactNode;
-  col4Label: string;
-  col4Value: string;
-  revenueLabel: string;
-  revenueValue: string;
-  revenueColor: string;
-  actionLabel: string;
-  actionStyle: "manage" | "review" | "docs" | "boost";
-  hoverBorder: string;
+interface LandData {
+  id: number;
+  title: string;
+  description: string;
+  total_area: number;
+  price_per_month: number;
+  preferred_duration: string;
+  status: string;
+  is_verified: boolean;
+  created_at: string;
+  latitude: number;
+  longitude: number;
+  has_irrigation: boolean;
+  has_electricity: boolean;
+  has_road_access: boolean;
+  has_fencing: boolean;
+  soil_data?: {
+    ph_level: number;
+    nitrogen: number;
+    phosphorus: number;
+    potassium: number;
+    moisture: number;
+    temperature: number;
+    rainfall: number;
+  };
+  images: Array<{id: number; image: string}>;
 }
 
 /* ─── Status badge config ─────────────────────────────── */
 const STATUS_CONFIG: Record<
-  StatusKey,
+  string,
   { bg: string; icon: string }
 > = {
   Leased: { bg: "bg-emerald-500", icon: "check_circle" },
@@ -36,208 +46,89 @@ const STATUS_CONFIG: Record<
   Vacant: { bg: "bg-slate-500", icon: "crop_free" },
 };
 
-/* ─── Action button styles ───────────────────────────── */
-const ACTION_STYLES: Record<string, string> = {
-  manage:
-    "rounded-lg bg-slate-50 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-primary transition-colors",
-  review:
-    "rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 transition-colors shadow-sm shadow-accent/20",
-  docs: "rounded-lg bg-blue-50 px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-100 transition-colors",
-  boost:
-    "rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-700 transition-colors",
+/* ─── Helper to determine soil type from pH ─────────── */
+const getSoilType = (ph?: number): string => {
+  if (!ph) return "Unknown";
+  if (ph < 5.5) return "Acidic";
+  if (ph > 7.5) return "Alkaline";
+  return "Neutral";
 };
-
-/* ─── Static land data ────────────────────────────────── */
-const assets: AssetCard[] = [
-  {
-    id: "PL-A401",
-    name: "Highland North",
-    location: "Nairobi County, Zone 4",
-    status: "Leased",
-    size: "3.5 Acres",
-    soilType: "Loam (Rich)",
-    col3Label: "Tenant",
-    col3Value: (
-      <div className="flex items-center gap-1.5 mt-0.5">
-        <img
-          src="https://ui-avatars.com/api/?name=John+Doe&background=e2e8f0&color=475569&size=32"
-          alt="John Doe"
-          className="h-5 w-5 rounded-full object-cover"
-        />
-        <span className="text-sm font-semibold text-slate-800 truncate max-w-20">
-          John Doe
-        </span>
-      </div>
-    ),
-    col4Label: "Expires",
-    col4Value: "Dec 2024",
-    revenueLabel: "Monthly Revenue",
-    revenueValue: "Ksh 50,000",
-    revenueColor: "text-primary",
-    actionLabel: "Manage",
-    actionStyle: "manage",
-    hoverBorder: "hover:border-primary/40",
-  },
-  {
-    id: "PL-B205",
-    name: "Eastern Ridge",
-    location: "Machakos County, Zone 2",
-    status: "Pending",
-    size: "2.0 Acres",
-    soilType: "Red Clay",
-    col3Label: "Top Bidder",
-    col3Value: (
-      <div className="flex items-center gap-1.5 mt-0.5">
-        <img
-          src="https://ui-avatars.com/api/?name=Jane+Smith&background=e2e8f0&color=475569&size=32"
-          alt="Jane Smith"
-          className="h-5 w-5 rounded-full object-cover"
-        />
-        <span className="text-sm font-semibold text-slate-800 truncate max-w-20">
-          Jane Smith
-        </span>
-      </div>
-    ),
-    col4Label: "Bids",
-    col4Value: "3 Active",
-    revenueLabel: "Current Top Offer",
-    revenueValue: "Ksh 45,000",
-    revenueColor: "text-accent",
-    actionLabel: "Review",
-    actionStyle: "review",
-    hoverBorder: "hover:border-accent/40",
-  },
-  {
-    id: "PL-C109",
-    name: "Valley Farms",
-    location: "Nakuru County, Zone 1",
-    status: "Under Review",
-    size: "5.0 Acres",
-    soilType: "Volcanic Silt",
-    col3Label: "Applicant",
-    col3Value: (
-      <div className="flex items-center gap-1.5 mt-0.5">
-        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-[10px] font-bold text-blue-700">
-          MK
-        </div>
-        <span className="text-sm font-semibold text-slate-800 truncate max-w-20">
-          Michael K.
-        </span>
-      </div>
-    ),
-    col4Label: "Stage",
-    col4Value: "Doc Check",
-    revenueLabel: "Proposed Revenue",
-    revenueValue: "Ksh 60,000",
-    revenueColor: "text-blue-600",
-    actionLabel: "Docs",
-    actionStyle: "docs",
-    hoverBorder: "hover:border-blue-500/40",
-  },
-  {
-    id: "PL-D450",
-    name: "River Side Plot",
-    location: "Kisumu County, Zone 7",
-    status: "Vacant",
-    size: "1.2 Acres",
-    soilType: "Alluvial",
-    col3Label: "Last Crop",
-    col3Value: (
-      <span className="text-sm font-semibold text-slate-800">Rice</span>
-    ),
-    col4Label: "Listed",
-    col4Value: "2 days ago",
-    revenueLabel: "Listing Price",
-    revenueValue: "Ksh 25,000",
-    revenueColor: "text-slate-700",
-    actionLabel: "Boost",
-    actionStyle: "boost",
-    hoverBorder: "hover:border-slate-400/40",
-  },
-  {
-    id: "PL-E220",
-    name: "Sunset Orchards",
-    location: "Kiambu County, Zone 5",
-    status: "Leased",
-    size: "8.0 Acres",
-    soilType: "Red Loam",
-    col3Label: "Tenant",
-    col3Value: (
-      <div className="flex items-center gap-1.5 mt-0.5">
-        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 text-[10px] font-bold text-slate-600">
-          GL
-        </div>
-        <span className="text-sm font-semibold text-slate-800 truncate max-w-20">
-          GreenLeaf
-        </span>
-      </div>
-    ),
-    col4Label: "Expires",
-    col4Value: "Jun 2025",
-    revenueLabel: "Monthly Revenue",
-    revenueValue: "Ksh 120,000",
-    revenueColor: "text-primary",
-    actionLabel: "Manage",
-    actionStyle: "manage",
-    hoverBorder: "hover:border-primary/40",
-  },
-];
 
 /* ─── Page ────────────────────────────────────────────── */
 export default function MyLandsPage() {
+  const [lands, setLands] = useState<LandData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [soilFilter, setSoilFilter] = useState("");
 
-  const filtered = assets.filter((a) => {
+  useEffect(() => {
+    const fetchLands = async () => {
+      try {
+        setLoading(true);
+        const { data } = await landsApi.myLands();
+        setLands(data);
+        setError(null);
+      } catch (err) {
+        console.error("Failed to fetch lands:", err);
+        setError("Failed to load your lands. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLands();
+  }, []);
+
+  const filtered = lands.filter((land) => {
     const matchSearch =
       !search ||
-      a.name.toLowerCase().includes(search.toLowerCase()) ||
-      a.id.toLowerCase().includes(search.toLowerCase()) ||
-      a.location.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = !statusFilter || a.status === statusFilter;
-    const matchSoil =
-      !soilFilter || a.soilType.toLowerCase().includes(soilFilter.toLowerCase());
+      land.title.toLowerCase().includes(search.toLowerCase()) ||
+      land.id.toString().includes(search);
+    const matchStatus = !statusFilter || land.status === statusFilter;
+    const matchSoil = !soilFilter || getSoilType(land.soil_data?.ph_level).toLowerCase().includes(soilFilter.toLowerCase());
     return matchSearch && matchStatus && matchSoil;
   });
   return (
-    <div className="p-6 lg:p-10">
-      <div className="mx-auto max-w-7xl">
+    <div className="min-h-screen bg-slate-50">
+      <div className="p-6 lg:p-8">
+        <div className="mx-auto max-w-7xl">
 
-        {/* Header */}
-        <div className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2
-              className="text-3xl font-bold tracking-tight text-earth"
-              style={{ fontFamily: "'Playfair Display', serif" }}
-            >
-              My Lands
-            </h2>
-            <p className="mt-2 text-slate-500">
-              Manage your land plots, track soil health, and monitor leasing status.
-            </p>
+          {/* Header */}
+          <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2
+                className="text-3xl font-bold tracking-tight text-earth"
+                style={{ fontFamily: "'Playfair Display', serif" }}
+              >
+                My Lands
+              </h2>
+              <p className="mt-2 text-sm text-slate-500">
+                Manage your land plots, track soil health, and monitor leasing status.
+              </p>
+            </div>
+            <div className="flex gap-2.5">
+              <button className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+                <span className="material-symbols-outlined text-[18px]">download</span>
+                Export
+              </button>
+              <button className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+                <span className="material-symbols-outlined text-[18px]">checklist_rtl</span>
+                Bulk Actions
+              </button>
+              <Link
+                href="/owner/lands/add"
+                className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark transition-colors"
+              >
+                <span className="material-symbols-outlined text-[18px]">add</span>
+                Add New Plot
+              </Link>
+            </div>
           </div>
-          <div className="flex gap-3">
-            <button className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-all">
-              <span className="material-symbols-outlined text-lg">download</span>
-              Export
-            </button>
-            <button className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-all">
-              <span className="material-symbols-outlined text-lg">checklist_rtl</span>
-              Bulk Actions
-            </button>
-            <Link
-              href="/owner/lands/add"
-              className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-primary/30 hover:bg-primary-dark transition-all"
-            >
-              <span className="material-symbols-outlined text-lg">add</span>
-              Add New Plot
-            </Link>
-          </div>
-        </div>
 
-        {/* Filters */}
-        <div className="mb-8 flex flex-col gap-4 rounded-xl bg-white p-4 shadow-sm border border-slate-200 lg:flex-row lg:items-center lg:justify-between">
+          {/* Filters */}
+          <div className="mb-8 flex flex-col gap-4 rounded-lg bg-white p-5 border border-slate-200 lg:flex-row lg:items-center lg:justify-between">
           {/* Search */}
           <div className="relative w-full lg:max-w-md">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
@@ -294,23 +185,63 @@ export default function MyLandsPage() {
         </div>
 
         {/* Land grid */}
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 
-          {filtered.map((a) => {
-            const { bg, icon } = STATUS_CONFIG[a.status];
+          {loading && (
+            <div className="col-span-full flex items-center justify-center py-20">
+              <div className="text-center">
+                <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
+                <p className="mt-4 text-sm text-slate-500">Loading your lands...</p>
+              </div>
+            </div>
+          )}
+
+          {error && (
+            <div className="col-span-full flex items-center justify-center py-20">
+              <div className="text-center">
+                <span className="material-symbols-outlined text-5xl text-red-500">error</span>
+                <p className="mt-4 text-sm text-red-600">{error}</p>
+              </div>
+            </div>
+          )}
+
+          {!loading && !error && filtered.length === 0 && (
+            <div className="col-span-full flex items-center justify-center py-20">
+              <div className="text-center">
+                <span className="material-symbols-outlined text-5xl text-slate-300">landscape</span>
+                <p className="mt-4 text-sm text-slate-500">
+                  {lands.length === 0 ? "No lands yet. Start by adding your first plot!" : "No lands match your filters."}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {!loading && !error && filtered.map((land) => {
+            const statusConfig = STATUS_CONFIG[land.status] || STATUS_CONFIG["Vacant"];
+            const { bg, icon } = statusConfig;
+            const soilType = getSoilType(land.soil_data?.ph_level);
+            const thumbnailImage = land.images?.[0]?.image || null;
+
             return (
               <div
-                key={a.id}
-                className={`group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-lg ${a.hoverBorder}`}
+                key={land.id}
+                className={`group relative flex flex-col overflow-hidden rounded-lg border border-slate-200 bg-white hover:shadow-md hover:border-primary/40 transition-all`}
               >
                 {/* Map thumbnail */}
                 <div className="relative h-48 w-full overflow-hidden bg-slate-100 mini-map-pattern">
+                  {thumbnailImage && (
+                    <img 
+                      src={thumbnailImage} 
+                      alt={land.title}
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                  )}
                   <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/10 to-transparent" />
 
                   {/* Plot ID chip */}
                   <div className="absolute top-3 left-3">
                     <span className="rounded-md bg-white/90 backdrop-blur-sm px-2 py-1 text-xs font-bold text-slate-700 shadow-sm">
-                      ID: {a.id}
+                      ID: PL-{land.id}
                     </span>
                   </div>
 
@@ -322,7 +253,7 @@ export default function MyLandsPage() {
                       <span className="material-symbols-outlined text-xs mr-1">
                         {icon}
                       </span>
-                      {a.status}
+                      {land.status}
                     </span>
                   </div>
 
@@ -332,9 +263,11 @@ export default function MyLandsPage() {
                       className="text-lg font-bold"
                       style={{ fontFamily: "'Playfair Display', serif" }}
                     >
-                      {a.name}
+                      {land.title}
                     </h3>
-                    <p className="text-xs font-medium opacity-90">{a.location}</p>
+                    <p className="text-xs font-medium opacity-90">
+                      {land.latitude.toFixed(4)}°, {land.longitude.toFixed(4)}°
+                    </p>
                   </div>
                 </div>
 
@@ -343,34 +276,67 @@ export default function MyLandsPage() {
                   <div className="mb-4 grid grid-cols-2 gap-4 border-b border-slate-100 pb-4">
                     <div>
                       <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Size</p>
-                      <p className="text-sm font-semibold text-slate-800">{a.size}</p>
+                      <p className="text-sm font-semibold text-slate-800">{land.total_area} Acres</p>
                     </div>
                     <div>
                       <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Soil Type</p>
-                      <p className="text-sm font-semibold text-slate-800">{a.soilType}</p>
+                      <p className="text-sm font-semibold text-slate-800">{soilType}</p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium uppercase tracking-wider text-slate-500">
-                        {a.col3Label}
-                      </p>
-                      {a.col3Value}
+                      <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Verified</p>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <span className={`material-symbols-outlined text-sm ${land.is_verified ? 'text-primary' : 'text-slate-400'}`}>
+                          {land.is_verified ? 'verified' : 'pending'}
+                        </span>
+                        <span className="text-sm font-semibold text-slate-800">
+                          {land.is_verified ? 'Yes' : 'Pending'}
+                        </span>
+                      </div>
                     </div>
                     <div>
-                      <p className="text-xs font-medium uppercase tracking-wider text-slate-500">
-                        {a.col4Label}
-                      </p>
-                      <p className="text-sm font-semibold text-slate-800">{a.col4Value}</p>
+                      <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Duration</p>
+                      <p className="text-sm font-semibold text-slate-800">{land.preferred_duration}</p>
                     </div>
+                  </div>
+
+                  {/* Amenities */}
+                  <div className="mb-4 flex flex-wrap gap-2">
+                    {land.has_irrigation && (
+                      <span className="inline-flex items-center gap-1 rounded bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700">
+                        <span className="material-symbols-outlined text-xs">water_drop</span>
+                        Irrigation
+                      </span>
+                    )}
+                    {land.has_electricity && (
+                      <span className="inline-flex items-center gap-1 rounded bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-700">
+                        <span className="material-symbols-outlined text-xs">bolt</span>
+                        Power
+                      </span>
+                    )}
+                    {land.has_road_access && (
+                      <span className="inline-flex items-center gap-1 rounded bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
+                        <span className="material-symbols-outlined text-xs">route</span>
+                        Road
+                      </span>
+                    )}
+                    {land.has_fencing && (
+                      <span className="inline-flex items-center gap-1 rounded bg-green-50 px-2 py-1 text-xs font-medium text-green-700">
+                        <span className="material-symbols-outlined text-xs">fence</span>
+                        Fenced
+                      </span>
+                    )}
                   </div>
 
                   {/* Footer */}
                   <div className="mt-auto flex items-center justify-between">
                     <div>
-                      <p className="text-xs text-slate-500">{a.revenueLabel}</p>
-                      <p className={`text-lg font-bold ${a.revenueColor}`}>{a.revenueValue}</p>
+                      <p className="text-xs text-slate-500">Monthly Price</p>
+                      <p className="text-lg font-bold text-primary">
+                        Ksh {land.price_per_month.toLocaleString()}
+                      </p>
                     </div>
-                    <button className={ACTION_STYLES[a.actionStyle]}>
-                      {a.actionLabel}
+                    <button className="rounded-lg bg-slate-50 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-primary transition-colors">
+                      Manage
                     </button>
                   </div>
                 </div>
@@ -419,6 +385,7 @@ export default function MyLandsPage() {
         </div>
 
       </div>
+    </div>
     </div>
   );
 }

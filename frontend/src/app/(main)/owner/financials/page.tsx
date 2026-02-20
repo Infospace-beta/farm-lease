@@ -16,8 +16,9 @@ const MAX = 320;
 
 export default function FinancialsPage() {
   return (
-    <div className="p-6 lg:p-10">
-      <div className="mx-auto max-w-6xl">
+    <div className="min-h-screen bg-slate-50">
+      <div className="p-6 lg:p-8">
+        <div className="mx-auto max-w-6xl">
         <PageHeader
           title="Financials"
           description="Track your revenue, escrow releases and payment history."
@@ -28,7 +29,7 @@ export default function FinancialsPage() {
         />
 
         {/* Stats */}
-        <div className="mb-10 grid gap-6 sm:grid-cols-3">
+        <div className="mb-6 grid gap-4 sm:grid-cols-3">
           <StatCard label="Total Revenue (YTD)" value="Ksh 1.94M" badge="+22.4%" badgeUp={true} sub="vs last year"
             chart={
               <svg className="h-10 w-24 text-primary" fill="none" stroke="currentColor" viewBox="0 0 100 40">
@@ -53,7 +54,7 @@ export default function FinancialsPage() {
         </div>
 
         {/* Revenue chart */}
-        <div className="mb-10 rounded-2xl bg-white border border-slate-200 shadow-sm p-6">
+        <div className="mb-6 rounded-lg bg-white border border-slate-200 p-5">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-bold text-earth" style={{ fontFamily: "'Playfair Display', serif" }}>Revenue Trend</h3>
             <span className="text-xs text-slate-400">Last 7 months</span>
@@ -74,7 +75,7 @@ export default function FinancialsPage() {
         </div>
 
         {/* Transactions table */}
-        <div className="rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden">
+        <div className="rounded-lg bg-white border border-slate-200 overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
             <h3 className="text-base font-bold text-earth" style={{ fontFamily: "'Playfair Display', serif" }}>Transaction History</h3>
             <button className="text-xs font-semibold text-primary hover:underline">View All</button>
@@ -116,6 +117,7 @@ export default function FinancialsPage() {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 }
