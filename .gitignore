@@ -1,34 +1,6 @@
-# Node modules
-node_modules
 
-# Python cache files
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-
-# Django stuff
-*.log
-db.sqlite3
-db.sqlite3-journal
-
-# Virtual environments
-venv/
-env/
-ENV/
-.venv
-
-# IDE
-.vscode/
-.idea/
+# Editor/OS junk
 *.swp
 *.swo
-
-# OS files
-.DS_Store
-Thumbs.db
-
-
-#db
-.sqlite3
+nul
+0

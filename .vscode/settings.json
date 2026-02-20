@@ -1,0 +1,11 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/backend/farmlease/venv/Scripts/python.exe",
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/backend/farmlease",
+    "${workspaceFolder}/backend/farmlease/venv/Lib/site-packages"
+  ],
+  "python.analysis.ignore": ["**/venv/**"],
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.python"
+  }
+}
