@@ -54,8 +54,9 @@ export default function AgreementsPage() {
   );
 
   return (
-    <div className="p-6 lg:p-10">
-      <div className="mx-auto max-w-5xl">
+    <div className="min-h-screen bg-slate-50">
+      <div className="p-6 lg:p-8">
+        <div className="mx-auto max-w-5xl">
         <PageHeader
           title="Agreements"
           description="View, review and manage all lease contracts for your land assets."
@@ -65,14 +66,14 @@ export default function AgreementsPage() {
         />
 
         {/* Stats */}
-        <div className="mb-8 grid gap-4 sm:grid-cols-4">
+        <div className="mb-6 grid gap-3 sm:grid-cols-4">
           {[
             { label: "Total",        value: agreements.length,                                       color: "text-slate-800" },
             { label: "Signed",       value: agreements.filter((a) => a.status === "signed").length,  color: "text-emerald-600" },
             { label: "Draft",        value: agreements.filter((a) => a.status === "draft").length,   color: "text-slate-600" },
             { label: "Pending Sign", value: agreements.filter((a) => a.status === "pending").length, color: "text-amber-600" },
           ].map((s) => (
-            <div key={s.label} className="rounded-2xl bg-white border border-slate-200 shadow-sm p-4 text-center">
+            <div key={s.label} className="rounded-lg bg-white border border-slate-200 p-4 text-center">
               <p className={`text-3xl font-bold ${s.color}`}>{s.value}</p>
               <p className="text-xs font-medium text-slate-400 mt-1">{s.label}</p>
             </div>
@@ -155,6 +156,5 @@ export default function AgreementsPage() {
           )}
         </div>
       </div>
-    </div>
-  );
+    </div>    </div>  );
 }

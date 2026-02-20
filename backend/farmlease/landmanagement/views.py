@@ -49,6 +49,14 @@ def upload_land_images(request, land_id):
         LandImage.objects.create(land=land, image=img)
     return Response({"message": f"{len(images)} images uploaded successfully"}, status=status.HTTP_201_CREATED)
 
+# --- LIST USER LANDS ---
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def list_user_lands(request):
+    lands = LandListing.objects.filter(owner=request.user).order_by('-created_at')
+    serializer = LandListingSerializer(lands, many=True, context={'request': request})
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
 # --- DASHBOARD STATS ---
 class LandownerDashboardStats(APIView):
     permission_classes = [permissions.IsAuthenticated]

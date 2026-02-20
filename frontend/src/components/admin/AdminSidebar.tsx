@@ -1,144 +1,83 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { memo } from "react";
-import {
-  LayoutDashboard,
-  Users,
-  ShieldCheck,
-  Store,
-  CreditCard,
-  Gavel,
-  FileText,
-  BarChart2,
-  Settings,
-  LogOut,
-  ShieldAlert,
-} from "lucide-react";
+import { memo, useMemo } from "react";
 import { useAuth } from "@/providers";
 
-const navItems = [
-  {
-    label: "Dashboard",
-    href: "/admin/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    label: "User Management",
-    href: "/admin/users",
-    icon: Users,
-  },
-  {
-    label: "Land Verifications",
-    href: "/admin/land-verifications",
-    icon: ShieldCheck,
-    badge: "12",
-    badgeColor: "bg-[#5D4037]",
-  },
-  {
-    label: "Agro-Dealer Oversight",
-    href: "/admin/dealer-oversight",
-    icon: Store,
-  },
-  {
-    label: "Payments & Escrow",
-    href: "/admin/payments",
-    icon: CreditCard,
-  },
-  {
-    label: "Dispute Resolution",
-    href: "/admin/disputes",
-    icon: Gavel,
-    badge: "3",
-    badgeColor: "bg-red-500/80",
-  },
-  {
-    label: "Agreements & Contracts",
-    href: "/admin/agreements",
-    icon: FileText,
-  },
-  {
-    label: "Reports",
-    href: "/admin/analytics",
-    icon: BarChart2,
-  },
-  {
-    label: "System Settings",
-    href: "/admin/settings",
-    icon: Settings,
-  },
+const navLinks = [
+  { href: "/admin/dashboard", label: "Dashboard", icon: "dashboard", badge: 0 },
+  { href: "/admin/users", label: "User Management", icon: "group", badge: 0 },
+  { href: "/admin/land-verifications", label: "Land Verifications", icon: "verified", badge: 12 },
+  { href: "/admin/dealer-oversight", label: "Agro-Dealer Oversight", icon: "store", badge: 0 },
+  { href: "/admin/payments", label: "Payments & Escrow", icon: "payments", badge: 0 },
+  { href: "/admin/agreements", label: "Agreements & Contracts", icon: "description", badge: 0 },
+  { href: "/admin/analytics", label: "Reports", icon: "bar_chart", badge: 0 },
 ];
 
 function AdminSidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
 
-  const isActive = (href: string) => {
-    if (href === "#") return false;
-    return pathname.startsWith(href);
-  };
+  const displayName = useMemo(() => {
+    return user
+      ? `${user.first_name} ${user.last_name}`.trim() || user.username || user.email
+      : "Admin User";
+  }, [user]);
 
-  const displayName = user
-    ? `${user.first_name} ${user.last_name}`.trim() || user.username
-    : "Admin";
-
-  const initials = displayName
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
+  const avatarSrc = useMemo(() => {
+    return user?.profile_picture ??
+      `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=10b981&color=fff`;
+  }, [user?.profile_picture, displayName]);
 
   return (
-    <aside className="w-20 lg:w-72 bg-sidebar-bg h-full flex flex-col py-6 px-3 lg:px-5 shadow-xl z-20 border-r border-white/5 shrink-0">
+    <aside className="fixed left-0 top-0 h-screen w-64 flex flex-col border-r border-slate-800 bg-sidebar-bg overflow-y-auto z-30 shadow-lg text-white">
       {/* Logo */}
-      <div className="flex items-center gap-3 mb-10 px-2 mt-2">
-        <div className="w-10 h-10 rounded-lg bg-[#13ec80] flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(19,236,128,0.25)]">
-          <ShieldAlert className="w-5 h-5 text-sidebar-bg" />
+      <div className="flex items-center gap-3 px-6 py-5">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/20">
+          <span className="material-symbols-outlined text-2xl">admin_panel_settings</span>
         </div>
-        <div className="hidden lg:block">
-          <h1 className="text-xl font-bold text-white tracking-tight leading-none font-serif">
-            Farm<span className="text-gray-300 font-normal">Lease</span>
+        <div className="flex flex-col">
+          <h1
+            className="text-xl font-bold text-white tracking-tight"
+            style={{ fontFamily: "var(--font-playfair), serif" }}
+          >
+            FarmLease
           </h1>
-          <p className="text-[10px] uppercase tracking-widest text-gray-400 mt-0.5">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-300/70">
             Admin Console
-          </p>
+          </span>
         </div>
       </div>
 
-      {/* Nav */}
-      <nav className="space-y-0.5 flex-1 overflow-y-auto no-scrollbar">
-        {navItems.map((item) => {
-          const active = isActive(item.href);
-          const Icon = item.icon;
+      {/* Nav links */}
+      <nav className="flex-1 space-y-1 px-4 py-2">
+        {navLinks.map(({ href, label, icon, badge }) => {
+          const isActive =
+            pathname === href ||
+            (href !== "/admin/dashboard" && pathname.startsWith(href));
+
           return (
             <Link
-              key={item.href + item.label}
-              href={item.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group ${
-                active
+              key={href}
+              href={href}
+              className={`relative flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors ${
+                isActive
                   ? "bg-white/10 text-white"
-                  : "text-gray-400 hover:text-white hover:bg-white/5"
+                  : "text-slate-300 hover:bg-white/5 hover:text-white"
               }`}
             >
-              <Icon
-                className={`w-5 h-5 shrink-0 transition-transform group-hover:scale-110 ${
-                  active ? "text-[#13ec80]" : ""
-                }`}
-              />
               <span
-                className={`hidden lg:block text-sm truncate ${
-                  active ? "font-bold text-white" : "font-medium"
-                }`}
+                className="material-symbols-outlined"
+                style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
               >
-                {item.label}
+                {icon}
               </span>
-              {item.badge && (
-                <span
-                  className={`hidden lg:flex ml-auto ${item.badgeColor} text-white text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0`}
-                >
-                  {item.badge}
+              {label}
+              {badge > 0 && (
+                <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                  {badge}
                 </span>
               )}
             </Link>
@@ -146,29 +85,38 @@ function AdminSidebar() {
         })}
       </nav>
 
-      {/* Footer */}
-      <div className="mt-4 pt-4 border-t border-white/10">
-        <div className="bg-black/20 rounded-xl p-3 flex items-center gap-3 mb-3">
-          <div className="w-9 h-9 rounded-full bg-emerald-700 text-white flex items-center justify-center font-bold text-sm shrink-0 border-2 border-[#13ec80]/30">
-            {initials}
+      {/* User section */}
+      <div className="mt-auto border-t border-white/10 p-4">
+        <Link
+          href="/admin/profile"
+          className="flex items-center gap-3 rounded-xl bg-white/5 p-3 hover:bg-white/10 transition-colors cursor-pointer group mb-2"
+        >
+          <Image
+            src={avatarSrc}
+            alt={displayName}
+            width={40}
+            height={40}
+            className="h-10 w-10 rounded-full border-2 border-emerald-500 shadow-sm object-cover"
+            priority={false}
+            loading="lazy"
+          />
+          <div className="flex flex-col flex-1 min-w-0">
+            <span className="text-sm font-semibold text-white truncate">{displayName}</span>
+            <span className="text-xs text-slate-400 group-hover:text-slate-300 transition-colors">
+              {user?.role === "admin" || user?.is_staff ? "Super Admin" : "Administrator"}
+            </span>
           </div>
-          <div className="hidden lg:block overflow-hidden">
-            <p className="text-sm font-semibold text-white leading-tight truncate">
-              {displayName}
-            </p>
-            <p className="text-[10px] text-gray-400 uppercase tracking-wider truncate">
-              {user?.role === "admin" || user?.is_staff ? "Super Admin" : "Admin"}
-            </p>
-          </div>
-        </div>
+          <span className="material-symbols-outlined text-sm text-emerald-500" title="Admin">
+            verified
+          </span>
+        </Link>
+
         <button
           onClick={() => logout()}
-          className="flex items-center gap-3 px-3 py-2 text-gray-400 hover:text-white transition-colors w-full rounded-lg hover:bg-white/5 group"
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-colors"
         >
-          <LogOut className="w-4 h-4 shrink-0" />
-          <span className="hidden lg:block text-xs uppercase tracking-wide font-medium">
-            Logout
-          </span>
+          <span className="material-symbols-outlined text-lg">logout</span>
+          Logout
         </button>
       </div>
     </aside>

@@ -81,18 +81,19 @@ export default function ProfilePage() {
     )}&background=047857&color=fff&size=128`;
 
   return (
-    <div className="p-6 lg:p-10">
-      <div className="mx-auto max-w-3xl">
-        {/* Header */}
-        <div className="mb-8">
-          <h2
-            className="text-3xl font-bold tracking-tight text-earth"
-            style={{ fontFamily: "'Playfair Display', serif" }}
-          >
-            Profile & Settings
-          </h2>
-          <p className="mt-2 text-slate-500">Manage your account information and security settings.</p>
-        </div>
+    <div className="min-h-screen bg-slate-50">
+      <div className="p-6 lg:p-8">
+        <div className="mx-auto max-w-3xl">
+          {/* Header */}
+          <div className="mb-6">
+            <h2
+              className="text-3xl font-bold tracking-tight text-earth"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+            >
+              Profile & Settings
+            </h2>
+            <p className="mt-1.5 text-sm text-slate-500">Manage your account information and security settings.</p>
+          </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-20">
@@ -269,6 +270,7 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 }
