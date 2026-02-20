@@ -89,6 +89,12 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['is_staff'] = user.is_staff
         return token
 
+    def create(self, validated_data):
+        raise NotImplementedError
+
+    def update(self, instance, validated_data):
+        raise NotImplementedError
+
 
 class ChangePasswordSerializer(serializers.Serializer):
     """Serializer for password change"""
@@ -100,6 +106,12 @@ class ChangePasswordSerializer(serializers.Serializer):
         validators=[validate_password],
     )
     new_password2 = serializers.CharField(required=True, write_only=True)
+
+    def create(self, validated_data):
+        raise NotImplementedError
+
+    def update(self, instance, validated_data):
+        raise NotImplementedError
 
     def validate(self, attrs):
         if attrs['new_password'] != attrs['new_password2']:
