@@ -26,16 +26,21 @@ class UserSerializer(serializers.ModelSerializer):
             'county',
             'id_number',
             'is_verified',
+            'is_staff',
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at', 'is_verified']
+        read_only_fields = [
+            'id', 'created_at', 'updated_at', 'is_verified', 'is_staff',
+        ]
 
 
 class RegisterSerializer(serializers.ModelSerializer):
     """Serializer for user registration"""
 
-    password = serializers.CharField(write_only=True, validators=[validate_password])
+    password = serializers.CharField(
+        write_only=True, validators=[validate_password]
+    )
     password2 = serializers.CharField(write_only=True, required=False)
     username = serializers.CharField(required=False)
 
@@ -84,6 +89,12 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['is_staff'] = user.is_staff
         return token
 
+    def create(self, validated_data):
+        raise NotImplementedError
+
+    def update(self, instance, validated_data):
+        raise NotImplementedError
+
 
 class ChangePasswordSerializer(serializers.Serializer):
     """Serializer for password change"""
@@ -95,6 +106,12 @@ class ChangePasswordSerializer(serializers.Serializer):
         validators=[validate_password],
     )
     new_password2 = serializers.CharField(required=True, write_only=True)
+
+    def create(self, validated_data):
+        raise NotImplementedError
+
+    def update(self, instance, validated_data):
+        raise NotImplementedError
 
     def validate(self, attrs):
         if attrs['new_password'] != attrs['new_password2']:
