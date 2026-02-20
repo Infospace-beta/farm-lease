@@ -49,6 +49,23 @@ def upload_land_images(request, land_id):
         LandImage.objects.create(land=land, image=img)
     return Response({"message": f"{len(images)} images uploaded successfully"}, status=status.HTTP_201_CREATED)
 
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from .models import LandListing
+from .serializers import LandListingSerializer
+
+# --- LESSEE VIEW: Browse land ---
+@api_view(['GET'])
+@permission_classes([AllowAny]) # Allows unregistered users to see the listings
+def browse_land(request):
+    """
+    Uses PublicLandListingSerializer to hide sensitive documents.
+    """
+    lands = LandListing.objects.filter(is_verified=True, status='Vacant')
+    serializer = PublicLandListingSerializer(lands, many=True) 
+    return Response(serializer.data)
+
 # --- DASHBOARD STATS ---
 class LandownerDashboardStats(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -62,4 +79,4 @@ class LandownerDashboardStats(APIView):
             "monthly_revenue": "Ksh 450k",  # Placeholder for actual payment logic
         })
 
-# Create your views here.
+
