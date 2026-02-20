@@ -1,3 +1,11 @@
+<<<<<<< HEAD
+export default function OwnerLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return <>{children}</>;
+=======
 "use client";
 
 import dynamic from "next/dynamic";
@@ -19,6 +27,7 @@ function OwnerLayout({ children }: { children: React.ReactNode }) {
       <main className="flex-1 overflow-y-auto bg-background-light ml-64">{children}</main>
     </div>
   );
+>>>>>>> e2269ebb6308a545d8aa182880ac2ac8363b8ec2
 }
 
 export default OwnerLayout;

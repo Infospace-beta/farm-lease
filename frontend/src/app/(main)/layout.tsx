@@ -1,3 +1,10 @@
+<<<<<<< HEAD
+export default function MainLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+=======
 "use client";
 
 import { useEffect, useMemo } from "react";
@@ -28,5 +35,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   // Don't show anything while redirecting to login
   if (!isAuthenticated) return null;
 
+>>>>>>> e2269ebb6308a545d8aa182880ac2ac8363b8ec2
   return <>{children}</>;
 }
