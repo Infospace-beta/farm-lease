@@ -5,7 +5,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
 const api = axios.create({
   baseURL: API_BASE,
   headers: { "Content-Type": "application/json" },
-  timeout: 15000, // 15 seconds timeout
+  timeout: 10000, // 10 s — reduced for snappier feel
 });
 
 /* ── Attach JWT access token from localStorage on every request ── */
@@ -95,6 +95,7 @@ export const accountsApi = {
 };
 
 export const landsApi = {
+  // Owner — multi-step upload
   createBasic: (data: object) => api.post("/lands/create-basic/", data),
   addSoil: (landId: number, data: object) =>
     api.post(`/lands/${landId}/add-soil/`, data),
@@ -102,6 +103,25 @@ export const landsApi = {
     api.post(`/lands/${landId}/upload-photos/`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     }),
+
+  // Owner — lists & dashboard
   myLands: () => api.get("/lands/my-lands/"),
   ownerDashboard: () => api.get("/lands/ownerdashboard/"),
+
+  // Public — verified listings for lessees
+  publicListings: () => api.get("/lands/listings/"),
+
+  // Admin — land management
+  adminAllLands: () => api.get("/lands/admin/all/"),
+  adminStats: () => api.get("/lands/admin/stats/"),
+  verifyLand: (landId: number) =>
+    api.post(`/lands/admin/${landId}/verify/`),
+  flagLand: (landId: number, reason: string) =>
+    api.post(`/lands/admin/${landId}/flag/`, { reason }),
+};
+
+export const adminApi = {
+  // Placeholder — extend when notification endpoints are added to the backend
+  unreadCount: () =>
+    Promise.resolve({ data: { unread_count: 0 } }),
 };

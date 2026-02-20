@@ -266,8 +266,7 @@ export default function MyLandsPage() {
                       {land.title}
                     </h3>
                     <p className="text-xs font-medium opacity-90">
-                      {land.latitude.toFixed(4)}°, {land.longitude.toFixed(4)}°
-                    </p>
+{Number(land.latitude).toFixed(4)}°, {Number(land.longitude).toFixed(4)}°                    </p>
                   </div>
                 </div>
 

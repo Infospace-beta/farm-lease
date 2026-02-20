@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Users,
   FileWarning,
@@ -12,6 +14,8 @@ import {
   Search,
 } from "lucide-react";
 import Link from "next/link";
+import { useState, useEffect } from "react";
+import { adminApi } from "@/lib/services/api";
 
 const statCards = [
   {
@@ -168,6 +172,24 @@ const activityPulse = [
 ];
 
 export default function AdminDashboardPage() {
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const { data } = await adminApi.unreadCount();
+        setUnreadCount(data.unread_count);
+      } catch (error) {
+        console.error("Failed to fetch unread count:", error);
+      }
+    };
+
+    fetchUnreadCount();
+    // Poll every 30 seconds for new notifications
+    const interval = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="p-4 md:p-6 lg:p-8">
@@ -191,10 +213,17 @@ export default function AdminDashboardPage() {
               className="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-bg/20 w-56 shadow-sm"
             />
           </div>
-          <button className="relative p-2.5 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition shadow-sm">
+          <Link href="/admin/notifications" className="relative p-2.5 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition shadow-sm">
             <Bell className="w-5 h-5 text-gray-600" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
-          </button>
+            {unreadCount > 0 && (
+              <>
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              </>
+            )}
+          </Link>
         </div>
       </header>
 

@@ -19,56 +19,6 @@ interface LandData {
 }
 
 /* ─── Static data ─────────────────────────────────────── */
-const stats = [
-  {
-    label: "Total Valuation",
-    value: "Ksh 45.2M",
-    badge: "+12.5%",
-    badgeUp: true,
-    sub: "vs last year",
-    chart: (
-      <svg className="h-10 w-24 text-primary" fill="none" stroke="currentColor" viewBox="0 0 100 40">
-        <path d="M0 35 Q 25 35 35 20 T 70 25 T 100 5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-        <path
-          d="M0 35 Q 25 35 35 20 T 70 25 T 100 5 V 40 H 0 Z"
-          fill="#047857"
-          opacity="0.1"
-          stroke="none"
-        />
-      </svg>
-    ),
-  },
-  {
-    label: "Monthly Revenue",
-    value: "Ksh 450k",
-    badge: "+8.2%",
-    badgeUp: true,
-    sub: "vs last month",
-    chart: (
-      <svg className="h-10 w-24 text-primary" fill="none" stroke="currentColor" viewBox="0 0 100 40">
-        <path
-          d="M0 30 L 20 25 L 40 32 L 60 15 L 80 20 L 100 5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-        />
-      </svg>
-    ),
-  },
-  {
-    label: "Occupancy Rate",
-    value: "92%",
-    badge: "0.0%",
-    badgeUp: null,
-    sub: "vs last month",
-    chart: (
-      <svg className="h-10 w-24 text-primary" fill="none" stroke="currentColor" viewBox="0 0 100 40">
-        <path d="M0 20 H 100" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-      </svg>
-    ),
-  },
-];
-
 const activities = [
   {
     dotColor: "bg-[#047857]",
@@ -141,24 +91,91 @@ const getStatusColor = (status: string) => {
 export default function OwnerDashboardPage() {
   const [lands, setLands] = useState<LandData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dashboardStats, setDashboardStats] = useState({
+    total_lands: 0,
+    active_leases: 0,
+    vacant_lands: 0,
+    pending_verifications: 0,
+    total_area: 0,
+    monthly_revenue: 0,
+  });
 
   useEffect(() => {
-    const fetchLands = async () => {
+    const fetchData = async () => {
       try {
-        const { data } = await landsApi.myLands();
-        setLands(data);
+        // Fetch both lands and dashboard stats in parallel
+        const [landsResponse, statsResponse] = await Promise.all([
+          landsApi.myLands(),
+          landsApi.ownerDashboard(),
+        ]);
+        
+        setLands(landsResponse.data);
+        setDashboardStats(statsResponse.data);
       } catch (error) {
-        console.error("Failed to fetch lands:", error);
+        console.error("Failed to fetch data:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchLands();
+    fetchData();
   }, []);
 
   // Show only first 3 lands on dashboard
   const displayLands = lands.slice(0, 3);
+  
+  // Calculate real stats from dashboard data
+  const stats = [
+    {
+      label: "Total Land Area",
+      value: `${dashboardStats.total_area.toFixed(1)} Acres`,
+      badge: `${dashboardStats.total_lands} plots`,
+      badgeUp: null,
+      sub: "total portfolio",
+      chart: (
+        <svg className="h-10 w-24 text-primary" fill="none" stroke="currentColor" viewBox="0 0 100 40">
+          <path d="M0 35 Q 25 35 35 20 T 70 25 T 100 5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+          <path
+            d="M0 35 Q 25 35 35 20 T 70 25 T 100 5 V 40 H 0 Z"
+            fill="#047857"
+            opacity="0.1"
+            stroke="none"
+          />
+        </svg>
+      ),
+    },
+    {
+      label: "Monthly Revenue",
+      value: `Ksh ${dashboardStats.monthly_revenue.toLocaleString()}`,
+      badge: `${dashboardStats.active_leases} leased`,
+      badgeUp: dashboardStats.active_leases > 0,
+      sub: "from active leases",
+      chart: (
+        <svg className="h-10 w-24 text-primary" fill="none" stroke="currentColor" viewBox="0 0 100 40">
+          <path
+            d="M0 30 L 20 25 L 40 32 L 60 15 L 80 20 L 100 5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+          />
+        </svg>
+      ),
+    },
+    {
+      label: "Occupancy Rate",
+      value: dashboardStats.total_lands > 0 
+        ? `${Math.round((dashboardStats.active_leases / dashboardStats.total_lands) * 100)}%`
+        : "0%",
+      badge: `${dashboardStats.vacant_lands} vacant`,
+      badgeUp: null,
+      sub: "portfolio status",
+      chart: (
+        <svg className="h-10 w-24 text-primary" fill="none" stroke="currentColor" viewBox="0 0 100 40">
+          <path d="M0 20 H 100" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+        </svg>
+      ),
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -190,14 +207,44 @@ export default function OwnerDashboardPage() {
             </div>
           </div>
 
+          {/* Pending verification alert */}
+          {!loading && dashboardStats.pending_verifications > 0 && (
+            <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+              <span className="material-symbols-outlined text-amber-500 text-xl mt-0.5">pending</span>
+              <div>
+                <p className="text-sm font-semibold text-amber-800">
+                  {dashboardStats.pending_verifications} land listing{dashboardStats.pending_verifications > 1 ? "s" : ""} awaiting admin verification
+                </p>
+                <p className="text-xs text-amber-600 mt-0.5">
+                  Your land will be visible to lessees once the admin verifies your Title Deed Number.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Stats row */}
           <div className="mb-6 grid gap-4 sm:grid-cols-3">
-            {stats.map((s) => (
-              <div
-                key={s.label}
-                className="relative overflow-hidden rounded-xl bg-white p-4 md:p-5 shadow-sm border border-slate-200 hover:shadow-md transition-shadow"
-              >
-              <div className="flex flex-col h-full justify-between">
+            {loading ? (
+              // Loading skeleton for stats
+              <>
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="rounded-xl bg-white p-4 md:p-5 shadow-sm border border-slate-200 animate-pulse">
+                    <div className="h-4 bg-slate-200 rounded w-24 mb-4"></div>
+                    <div className="h-8 bg-slate-200 rounded w-32 mb-6"></div>
+                    <div className="flex justify-between items-end">
+                      <div className="h-6 bg-slate-200 rounded w-16"></div>
+                      <div className="h-10 bg-slate-200 rounded w-24"></div>
+                    </div>
+                  </div>
+                ))}
+              </>
+            ) : (
+              stats.map((s) => (
+                <div
+                  key={s.label}
+                  className="relative overflow-hidden rounded-xl bg-white p-4 md:p-5 shadow-sm border border-slate-200 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex flex-col h-full justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{s.label}</p>
                   <h3 className="mt-2 text-2xl md:text-3xl font-bold text-earth">{s.value}</h3>
@@ -228,7 +275,7 @@ export default function OwnerDashboardPage() {
                 </div>
               </div>
               </div>
-            ))}
+            )))}
           </div>
 
         {/* Portfolio + Activity */}
