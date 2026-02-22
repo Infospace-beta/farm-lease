@@ -1,3 +1,5 @@
+"""Admin configuration for the landmanagement app."""
+# pylint: disable=import-error
 from django.contrib import admin
 from .models import LandListing
 

@@ -1,116 +1,24 @@
+"use client";
+
 import Link from "next/link";
+import { useState, useEffect } from "react";
+import { landsApi } from "@/lib/services/api";
+
+/* ─── Types ───────────────────────────────────────────── */
+interface LandData {
+  id: number;
+  title: string;
+  total_area: number;
+  price_per_month: number;
+  status: string;
+  is_verified: boolean;
+  soil_data?: {
+    ph_level: number;
+  };
+  images: Array<{id: number; image: string}>;
+}
 
 /* ─── Static data ─────────────────────────────────────── */
-const stats = [
-  {
-    label: "Total Valuation",
-    value: "Ksh 45.2M",
-    badge: "+12.5%",
-    badgeUp: true,
-    sub: "vs last year",
-    chart: (
-      <svg className="h-10 w-24 text-primary" fill="none" stroke="currentColor" viewBox="0 0 100 40">
-        <path d="M0 35 Q 25 35 35 20 T 70 25 T 100 5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-        <path
-          d="M0 35 Q 25 35 35 20 T 70 25 T 100 5 V 40 H 0 Z"
-          fill="#047857"
-          opacity="0.1"
-          stroke="none"
-        />
-      </svg>
-    ),
-  },
-  {
-    label: "Monthly Revenue",
-    value: "Ksh 450k",
-    badge: "+8.2%",
-    badgeUp: true,
-    sub: "vs last month",
-    chart: (
-      <svg className="h-10 w-24 text-primary" fill="none" stroke="currentColor" viewBox="0 0 100 40">
-        <path
-          d="M0 30 L 20 25 L 40 32 L 60 15 L 80 20 L 100 5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-        />
-      </svg>
-    ),
-  },
-  {
-    label: "Occupancy Rate",
-    value: "92%",
-    badge: "0.0%",
-    badgeUp: null,
-    sub: "vs last month",
-    chart: (
-      <svg className="h-10 w-24 text-primary" fill="none" stroke="currentColor" viewBox="0 0 100 40">
-        <path d="M0 20 H 100" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-      </svg>
-    ),
-  },
-];
-
-const assets = [
-  {
-    name: "Plot A4 - North",
-    meta: "3.5 Acres • Soil: Loam",
-    status: "Leased",
-    statusColor: "bg-emerald-500/90",
-    svgPath: "M10,10 L90,20 L80,80 L20,90 Z",
-    svgFill: "fill-emerald-500/30",
-    personLabel: "Tenant",
-    personName: "John Doe",
-    personAvatar:
-      "https://ui-avatars.com/api/?name=John+Doe&background=e2e8f0&color=475569&size=32",
-    valueLabel: "Lease Value",
-    value: "Ksh 50k",
-    valueSuffix: "/yr",
-    valueColor: "text-[#047857]",
-    footerLeft: "Ends: Dec 2024",
-    footerLeftColor: "text-slate-400",
-    footerAction: { label: "Manage Land", style: "link", href: "/owner/lands" },
-  },
-  {
-    name: "Plot B2 - East",
-    meta: "2.0 Acres • Soil: Clay",
-    status: "Pending",
-    statusColor: "bg-amber-500/90",
-    svgPath: "M15,15 L85,10 L95,70 L25,85 Z",
-    svgFill: "fill-amber-500/30",
-    personLabel: "Highest Bidder",
-    personName: "Jane Smith",
-    personAvatar:
-      "https://ui-avatars.com/api/?name=Jane+Smith&background=e2e8f0&color=475569&size=32",
-    valueLabel: "Offer",
-    value: "Ksh 45k",
-    valueSuffix: "/yr",
-    valueColor: "text-amber-600",
-    footerLeft: "Action Required",
-    footerLeftColor: "text-amber-600 font-medium",
-    footerAction: { label: "Review", style: "button", href: "/owner/lease-requests" },
-  },
-  {
-    name: "Plot C1 - Valley",
-    meta: "5.0 Acres • Soil: Silt",
-    status: "Reviewing",
-    statusColor: "bg-blue-500/90",
-    svgPath: "M30,10 L80,10 L90,90 L10,80 Z",
-    svgFill: "fill-blue-500/30",
-    personLabel: "Potential Tenant",
-    personName: "Michael K.",
-    personAvatar: null,
-    personInitials: "MK",
-    valueLabel: "Offer",
-    value: "Ksh 60k",
-    valueSuffix: "/yr",
-    valueColor: "text-blue-600",
-    footerLeft: "Docs Submitted",
-    footerLeftColor: "text-blue-600 font-medium",
-    footerAction: { label: "View Docs", style: "link", href: "/owner/agreements" },
-  },
-];
-
 const activities = [
   {
     dotColor: "bg-[#047857]",
@@ -162,48 +70,184 @@ const activities = [
   },
 ];
 
+/* ─── Helper functions ────────────────────────────────── */
+const getSoilType = (ph?: number): string => {
+  if (!ph) return "Unknown";
+  if (ph < 5.5) return "Acidic";
+  if (ph > 7.5) return "Alkaline";
+  return "Neutral";
+};
+
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case "Leased": return "bg-emerald-500/90";
+    case "Pending": return "bg-amber-500/90";
+    case "Under Review": return "bg-blue-500/90";
+    default: return "bg-slate-500/90";
+  }
+};
+
 /* ─── Page ────────────────────────────────────────────── */
 export default function OwnerDashboardPage() {
+  const [lands, setLands] = useState<LandData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dashboardStats, setDashboardStats] = useState({
+    total_lands: 0,
+    active_leases: 0,
+    vacant_lands: 0,
+    pending_verifications: 0,
+    total_area: 0,
+    monthly_revenue: 0,
+  });
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch both lands and dashboard stats in parallel
+        const [landsResponse, statsResponse] = await Promise.all([
+          landsApi.myLands(),
+          landsApi.ownerDashboard(),
+        ]);
+        
+        setLands(landsResponse.data);
+        setDashboardStats(statsResponse.data);
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Show only first 3 lands on dashboard
+  const displayLands = lands.slice(0, 3);
+  
+  // Calculate real stats from dashboard data
+  const stats = [
+    {
+      label: "Total Land Area",
+      value: `${dashboardStats.total_area.toFixed(1)} Acres`,
+      badge: `${dashboardStats.total_lands} plots`,
+      badgeUp: null,
+      sub: "total portfolio",
+      chart: (
+        <svg className="h-10 w-24 text-primary" fill="none" stroke="currentColor" viewBox="0 0 100 40">
+          <path d="M0 35 Q 25 35 35 20 T 70 25 T 100 5" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+          <path
+            d="M0 35 Q 25 35 35 20 T 70 25 T 100 5 V 40 H 0 Z"
+            fill="#047857"
+            opacity="0.1"
+            stroke="none"
+          />
+        </svg>
+      ),
+    },
+    {
+      label: "Monthly Revenue",
+      value: `Ksh ${dashboardStats.monthly_revenue.toLocaleString()}`,
+      badge: `${dashboardStats.active_leases} leased`,
+      badgeUp: dashboardStats.active_leases > 0,
+      sub: "from active leases",
+      chart: (
+        <svg className="h-10 w-24 text-primary" fill="none" stroke="currentColor" viewBox="0 0 100 40">
+          <path
+            d="M0 30 L 20 25 L 40 32 L 60 15 L 80 20 L 100 5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+          />
+        </svg>
+      ),
+    },
+    {
+      label: "Occupancy Rate",
+      value: dashboardStats.total_lands > 0 
+        ? `${Math.round((dashboardStats.active_leases / dashboardStats.total_lands) * 100)}%`
+        : "0%",
+      badge: `${dashboardStats.vacant_lands} vacant`,
+      badgeUp: null,
+      sub: "portfolio status",
+      chart: (
+        <svg className="h-10 w-24 text-primary" fill="none" stroke="currentColor" viewBox="0 0 100 40">
+          <path d="M0 20 H 100" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+        </svg>
+      ),
+    },
+  ];
+
   return (
-    <div className="p-6 lg:p-10">
-      <div className="mx-auto max-w-7xl">
+    <div className="min-h-screen bg-slate-50">
+      <div className="p-4 md:p-6 lg:p-8">
+        <div className="mx-auto max-w-7xl">
 
-        {/* Header */}
-        <div className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2
-              className="text-4xl font-bold tracking-tight text-earth"
-              style={{ fontFamily: "'Playfair Display', serif" }}
-            >
-              Dashboard
-            </h2>
-            <p className="mt-2 text-slate-500 max-w-2xl">
-              Monitor your land portfolio performance, manage lease agreements, and track escrow payments in real-time.
-            </p>
+          {/* Header */}
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2
+                className="text-2xl md:text-3xl font-bold tracking-tight text-earth"
+                style={{ fontFamily: "'Playfair Display', serif" }}
+              >
+                Dashboard
+              </h2>
+              <p className="mt-1.5 text-sm text-slate-500 max-w-2xl">
+                Monitor your land portfolio performance, manage lease agreements, and track escrow payments in real-time.
+              </p>
+            </div>
+            <div className="flex gap-2.5">
+              <button className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+                <span className="material-symbols-outlined text-[18px]">download</span>
+                Report
+              </button>
+              <Link href="/owner/lands/add" className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark transition-colors">
+                <span className="material-symbols-outlined text-[18px]">add_location_alt</span>
+                List New Land
+              </Link>
+            </div>
           </div>
-          <div className="flex gap-3">
-            <button className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-all">
-              <span className="material-symbols-outlined text-[20px]">download</span>
-              Report
-            </button>
-            <Link href="/owner/lands/add" className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary/30 hover:bg-primary-dark transition-all">
-              <span className="material-symbols-outlined text-[20px]">add_location_alt</span>
-              List New Land
-            </Link>
-          </div>
-        </div>
 
-        {/* Stats row */}
-        <div className="mb-10 grid gap-6 sm:grid-cols-3">
-          {stats.map((s) => (
-            <div
-              key={s.label}
-              className="relative overflow-hidden rounded-2xl bg-white p-6 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-slate-100"
-            >
-              <div className="flex flex-col h-full justify-between">
+          {/* Pending verification alert */}
+          {!loading && dashboardStats.pending_verifications > 0 && (
+            <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+              <span className="material-symbols-outlined text-amber-500 text-xl mt-0.5">pending</span>
+              <div>
+                <p className="text-sm font-semibold text-amber-800">
+                  {dashboardStats.pending_verifications} land listing{dashboardStats.pending_verifications > 1 ? "s" : ""} awaiting admin verification
+                </p>
+                <p className="text-xs text-amber-600 mt-0.5">
+                  Your land will be visible to lessees once the admin verifies your Title Deed Number.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Stats row */}
+          <div className="mb-6 grid gap-4 sm:grid-cols-3">
+            {loading ? (
+              // Loading skeleton for stats
+              <>
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="rounded-xl bg-white p-4 md:p-5 shadow-sm border border-slate-200 animate-pulse">
+                    <div className="h-4 bg-slate-200 rounded w-24 mb-4"></div>
+                    <div className="h-8 bg-slate-200 rounded w-32 mb-6"></div>
+                    <div className="flex justify-between items-end">
+                      <div className="h-6 bg-slate-200 rounded w-16"></div>
+                      <div className="h-10 bg-slate-200 rounded w-24"></div>
+                    </div>
+                  </div>
+                ))}
+              </>
+            ) : (
+              stats.map((s) => (
+                <div
+                  key={s.label}
+                  className="relative overflow-hidden rounded-xl bg-white p-4 md:p-5 shadow-sm border border-slate-200 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex flex-col h-full justify-between">
                 <div>
-                  <p className="text-sm font-semibold uppercase tracking-wider text-slate-400">{s.label}</p>
-                  <h3 className="mt-2 text-3xl font-bold text-earth">{s.value}</h3>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{s.label}</p>
+                  <h3 className="mt-2 text-2xl md:text-3xl font-bold text-earth">{s.value}</h3>
                 </div>
                 <div className="mt-6 flex items-end justify-between">
                   <div>
@@ -230,18 +274,18 @@ export default function OwnerDashboardPage() {
                   {s.chart}
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+              </div>
+            )))}
+          </div>
 
         {/* Portfolio + Activity */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
 
           {/* Land Portfolio */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center justify-between">
               <h3
-                className="text-xl font-bold text-earth"
+                className="text-base md:text-lg font-bold text-earth"
                 style={{ fontFamily: "'Playfair Display', serif" }}
               >
                 My Land Portfolio
@@ -256,80 +300,85 @@ export default function OwnerDashboardPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Land cards */}
-              {assets.map((a) => (
-                <div
-                  key={a.name}
-                  className="group relative rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition-all hover:shadow-md hover:border-primary/30"
-                >
-                  <div className="relative h-40 w-full overflow-hidden rounded-xl mini-map-pattern">
-                    <div className="absolute inset-0 bg-linear-to-t from-black/50 to-transparent" />
-                    <div className="absolute bottom-3 left-3 text-white">
-                      <p className="font-bold text-lg">{a.name}</p>
-                      <p className="text-xs opacity-90">{a.meta}</p>
-                    </div>
-                    <div className="absolute top-3 right-3">
-                      <span
-                        className={`inline-flex items-center rounded-full ${a.statusColor} backdrop-blur-sm px-2.5 py-1 text-xs font-bold text-white shadow-sm`}
-                      >
-                        {a.status}
-                      </span>
-                    </div>
-                    <svg
-                      className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-24 stroke-white ${a.svgFill} drop-shadow-lg`}
-                      viewBox="0 0 100 100"
-                    >
-                      <path d={a.svgPath} strokeWidth="2" />
-                    </svg>
-                  </div>
+              {loading ? (
+                <div className="col-span-full flex items-center justify-center py-10">
+                  <div className="inline-block h-6 w-6 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
+                </div>
+              ) : displayLands.length === 0 ? (
+                <div className="col-span-full text-center py-10">
+                  <p className="text-sm text-slate-500">No lands yet. Add your first plot!</p>
+                </div>
+              ) : (
+                displayLands.map((land) => {
+                  const soilType = getSoilType(land.soil_data?.ph_level);
+                  const statusColor = getStatusColor(land.status);
+                  const thumbnailImage = land.images?.[0]?.image;
 
-                  <div className="mt-4 flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-slate-500">{a.personLabel}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        {a.personAvatar ? (
-                          <img
-                            src={a.personAvatar}
-                            alt={a.personName}
-                            className="h-6 w-6 rounded-full object-cover bg-slate-200"
+                  return (
+                    <div
+                      key={land.id}
+                      className="group relative rounded-xl border border-slate-200 bg-white p-4 hover:shadow-md hover:border-primary/40 transition-all"
+                    >
+                      <div className="relative h-40 w-full overflow-hidden rounded-xl mini-map-pattern">
+                        {thumbnailImage && (
+                          <img 
+                            src={thumbnailImage} 
+                            alt={land.title}
+                            className="absolute inset-0 w-full h-full object-cover"
                           />
-                        ) : (
-                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-600 text-[10px]">
-                            {a.personInitials}
-                          </div>
                         )}
-                        <span className="text-sm font-medium text-slate-800">{a.personName}</span>
+                        <div className="absolute inset-0 bg-linear-to-t from-black/50 to-transparent" />
+                        <div className="absolute bottom-3 left-3 text-white">
+                          <p className="font-bold text-lg">{land.title}</p>
+                          <p className="text-xs opacity-90">{land.total_area} Acres • Soil: {soilType}</p>
+                        </div>
+                        <div className="absolute top-3 right-3">
+                          <span
+                            className={`inline-flex items-center rounded-full ${statusColor} backdrop-blur-sm px-2.5 py-1 text-xs font-bold text-white shadow-sm`}
+                          >
+                            {land.status}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-slate-500">Verification</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className={`material-symbols-outlined text-sm ${land.is_verified ? 'text-primary' : 'text-slate-400'}`}>
+                              {land.is_verified ? 'verified' : 'pending'}
+                            </span>
+                            <span className="text-sm font-medium text-slate-800">
+                              {land.is_verified ? 'Verified' : 'Pending'}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-slate-500">Monthly Price</p>
+                          <p className="text-sm font-bold text-primary">
+                            Ksh {land.price_per_month.toLocaleString()}
+                            <span className="text-slate-400 font-normal">/mo</span>
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center">
+                        <span className="text-xs text-slate-400">ID: PL-{land.id}</span>
+                        <Link href="/owner/lands" className="text-xs font-semibold text-primary hover:text-primary-dark hover:underline">
+                          Manage Land
+                        </Link>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xs text-slate-500">{a.valueLabel}</p>
-                      <p className={`text-sm font-bold ${a.valueColor}`}>
-                        {a.value}
-                        <span className="text-slate-400 font-normal">{a.valueSuffix}</span>
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center">
-                    <span className={`text-xs ${a.footerLeftColor}`}>{a.footerLeft}</span>
-                    {a.footerAction.style === "link" ? (
-                      <Link href={(a.footerAction as { href?: string }).href ?? "/owner/lands"} className="text-xs font-semibold text-primary hover:text-primary-dark hover:underline">
-                        {a.footerAction.label}
-                      </Link>
-                    ) : (
-                      <Link href={(a.footerAction as { href?: string }).href ?? "/owner/lands"} className="rounded bg-slate-900 px-3 py-1 text-xs font-semibold text-white hover:bg-slate-700">
-                        {a.footerAction.label}
-                      </Link>
-                    )}
-                  </div>
-                </div>
-              ))}
+                  );
+                })
+              )}
 
               {/* Add New Land tile */}
               <Link
                 href="/owner/lands/add"
-                className="group relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-4 transition-all hover:border-primary hover:bg-primary/5"
+                className="group relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-white p-4 transition-all hover:border-primary hover:bg-primary/5"
               >
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-sm mb-4 group-hover:scale-110 transition-transform">
                   <span className="material-symbols-outlined text-primary text-3xl">add</span>
@@ -344,7 +393,7 @@ export default function OwnerDashboardPage() {
 
           {/* Activity Pulse */}
           <div className="lg:col-span-1">
-            <div className="sticky top-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="sticky top-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="mb-6 flex items-center gap-2">
                 <div className="relative flex h-3 w-3">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
@@ -382,6 +431,7 @@ export default function OwnerDashboardPage() {
 
         </div>
       </div>
+    </div>
     </div>
   );
 }

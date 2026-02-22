@@ -27,7 +27,7 @@ urlpatterns = [
     path('favicon.ico', favicon_view),
     path('admin/', admin.site.urls),
     path('api/auth/', include('accounts.urls')),
-    path('api/land/', include('landmanagement.urls')),
+    path('api/lands/', include('landmanagement.urls')),
 ]
 
 if settings.DEBUG:

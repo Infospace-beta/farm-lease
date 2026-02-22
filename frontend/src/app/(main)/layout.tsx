@@ -1,6 +1,13 @@
+<<<<<<< HEAD
+export default function MainLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+=======
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/providers";
 
@@ -10,19 +17,24 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.replace("/login");
+      router.push("/login");
     }
   }, [isAuthenticated, isLoading, router]);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <span className="text-gray-400 text-sm animate-pulse">Loading…</span>
+  const loadingUI = useMemo(() => (
+    <div className="min-h-screen flex items-center justify-center bg-[#102219]">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
+        <span className="text-gray-400 text-sm">Authenticating…</span>
       </div>
-    );
-  }
+    </div>
+  ), []);
 
+  if (isLoading) return loadingUI;
+
+  // Don't show anything while redirecting to login
   if (!isAuthenticated) return null;
 
+>>>>>>> e2269ebb6308a545d8aa182880ac2ac8363b8ec2
   return <>{children}</>;
 }
