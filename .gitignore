@@ -1,6 +1,9 @@
-
 # Editor/OS junk
 *.swp
 *.swo
 nul
 0
+
+__pycache__/
+*.pyc
+db.sqlite3

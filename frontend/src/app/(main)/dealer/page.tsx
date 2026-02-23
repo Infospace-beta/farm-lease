@@ -1,7 +1,5 @@
-export default function Page() {
-  return (
-    <div className="p-8 text-gray-500 text-sm">
-      <p>Coming soon…</p>
-    </div>
-  );
+import { redirect } from "next/navigation";
+
+export default function DealerPage() {
+  redirect("/dealer/dashboard");
 }
