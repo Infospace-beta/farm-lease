@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter, Space_Grotesk, Playfair_Display } from "next/font/google";
 import "./globals.css";
+import Providers from "@/providers/Providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -52,18 +53,14 @@ export default function RootLayout({
           rel="stylesheet"
         />
         <link
-<<<<<<< HEAD
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
-=======
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&display=swap"
->>>>>>> e2269ebb6308a545d8aa182880ac2ac8363b8ec2
           rel="stylesheet"
         />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${spaceGrotesk.variable} ${playfair.variable} antialiased`}
       >
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
