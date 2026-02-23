@@ -191,8 +191,24 @@ def flag_land(request, land_id):
         status=status.HTTP_200_OK,
     )
 
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from .models import LandListing
+from .serializers import LandListingSerializer
 
-# ─── Owner: DASHBOARD STATS ───────────────────────────────────
+# --- LESSEE VIEW: Browse land ---
+@api_view(['GET'])
+@permission_classes([AllowAny]) # Allows unregistered users to see the listings
+def browse_land(request):
+    """
+    Uses PublicLandListingSerializer to hide sensitive documents.
+    """
+    lands = LandListing.objects.filter(is_verified=True, status='Vacant')
+    serializer = PublicLandListingSerializer(lands, many=True) 
+    return Response(serializer.data)
+
+# --- DASHBOARD STATS ---
 class LandownerDashboardStats(APIView):
     """Return aggregated stats for the authenticated land owner's portfolio."""
 
@@ -230,23 +246,3 @@ class LandownerDashboardStats(APIView):
         })
 
 
-# ─── Admin: DASHBOARD STATS ───────────────────────────────────
-class AdminDashboardStats(APIView):
-    """Return platform-wide land listing stats for the admin dashboard."""
-
-    permission_classes = [IsAdminUser]
-
-    def get(self, request):  # pylint: disable=unused-argument
-        """Handle GET — return counts across all land listings."""
-        total_lands = LandListing.objects.count()
-        pending = LandListing.objects.filter(
-            is_verified=False, is_flagged=False
-        ).count()
-        verified = LandListing.objects.filter(is_verified=True).count()
-        flagged = LandListing.objects.filter(is_flagged=True).count()
-        return Response({
-            'total_lands': total_lands,
-            'pending_verification': pending,
-            'verified': verified,
-            'flagged': flagged,
-        })
