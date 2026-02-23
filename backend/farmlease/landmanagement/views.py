@@ -13,6 +13,7 @@ from .serializers import (
     LandListingSerializer,
     SoilClimateSerializer,
     AdminLandListingSerializer,
+    PublicLandListingSerializer,
 )
 
 
@@ -110,7 +111,9 @@ def list_user_lands(request):
     """Return all land listings belonging to the authenticated owner."""
     lands = LandListing.objects.filter(
         owner=request.user
-    ).order_by('-created_at')
+    ).select_related('soil_data').prefetch_related('images').order_by(
+        '-created_at'
+    )
     serializer = LandListingSerializer(
         lands, many=True, context={'request': request}
     )
@@ -127,7 +130,7 @@ def public_land_listings(request):
     ).select_related('soil_data').prefetch_related('images').order_by(
         '-created_at'
     )
-    serializer = LandListingSerializer(
+    serializer = PublicLandListingSerializer(
         lands, many=True, context={'request': request}
     )
     return Response(serializer.data, status=status.HTTP_200_OK)
@@ -191,24 +194,23 @@ def flag_land(request, land_id):
         status=status.HTTP_200_OK,
     )
 
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
-from rest_framework.response import Response
-from .models import LandListing
-from .serializers import LandListingSerializer
 
-# --- LESSEE VIEW: Browse land ---
+# ─── LESSEE VIEW: Browse land ─────────────────────────────────
 @api_view(['GET'])
-@permission_classes([AllowAny]) # Allows unregistered users to see the listings
-def browse_land(request):
+@permission_classes([permissions.AllowAny])
+def browse_land(request):  # pylint: disable=unused-argument
     """
+    Return available lands for lessees.
     Uses PublicLandListingSerializer to hide sensitive documents.
     """
-    lands = LandListing.objects.filter(is_verified=True, status='Vacant')
-    serializer = PublicLandListingSerializer(lands, many=True) 
+    lands = LandListing.objects.filter(
+        is_verified=True, status='Vacant'
+    ).select_related('soil_data').prefetch_related('images')
+    serializer = PublicLandListingSerializer(lands, many=True)
     return Response(serializer.data)
 
-# --- DASHBOARD STATS ---
+
+# ─── DASHBOARD STATS ──────────────────────────────────────────
 class LandownerDashboardStats(APIView):
     """Return aggregated stats for the authenticated land owner's portfolio."""
 
@@ -244,5 +246,3 @@ class LandownerDashboardStats(APIView):
             'total_area': total_area,
             'monthly_revenue': monthly_revenue,
         })
-
-
