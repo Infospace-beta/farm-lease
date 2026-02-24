@@ -19,12 +19,12 @@ import {
   setTokens,
 } from "@/lib/auth";
 import { accountsApi } from "@/lib/services/api";
-import type { AuthState, LoginCredentials, RegisterData, User } from "@/types";
+import type { AuthState, LoginCredentials, SignupData, User } from "@/types";
 
 // ─── Context shape ─────────────────────────────────────────────────────────────
 interface AuthContextValue extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
+  signup: (data: SignupData) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -93,11 +93,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [router]
   );
 
-  // ── Register ────────────────────────────────────────────────────────────────
-  const register = useCallback(
-    async (formData: RegisterData) => {
-      await accountsApi.register(formData);
-      // Auto-login after successful registration
+  // ── Signup ──────────────────────────────────────────────────────────────────
+  const signup = useCallback(
+    async (formData: SignupData) => {
+      await accountsApi.signup(formData);
+      // Auto-login after successful signup
       await login({ email: formData.email, password: formData.password });
     },
     [login]
@@ -119,8 +119,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [router]);
 
   const value = useMemo(
-    () => ({ ...state, login, register, logout, refreshUser }),
-    [state, login, register, logout, refreshUser]
+    () => ({ ...state, login, signup, logout, refreshUser }),
+    [state, login, signup, logout, refreshUser]
   );
 
   return (

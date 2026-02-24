@@ -9,7 +9,7 @@ import { toast } from "react-toastify";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 import { useAuth } from "@/providers";
-import type { RegisterData, UserRole } from "@/types";
+import type { SignupData, UserRole } from "@/types";
 
 // ─── Validation schema ─────────────────────────────────────────────────────────
 const schema = yup.object({
@@ -34,15 +34,7 @@ const schema = yup.object({
     .required("Please confirm your password"),
 });
 
-type FormData = {
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone_number: string;
-  role: UserRole;
-  password: string;
-  password2: string;
-};
+type FormData = SignupData & { password2: string };
 
 const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
   { value: "farmer", label: "Farmer / Lessee" },
@@ -52,7 +44,7 @@ const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
 
 // ─── Component ─────────────────────────────────────────────────────────────────
 export default function SignupPage() {
-  const { register: registerUser, isAuthenticated, logout } = useAuth();
+  const { signup: signupUser, isAuthenticated, logout } = useAuth();
   const [showPw, setShowPw] = useState(false);
   const [showPw2, setShowPw2] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -68,14 +60,14 @@ export default function SignupPage() {
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
-      await registerUser(data as RegisterData);
+      await signupUser(data as SignupData);
       toast.success("Account created! Redirecting…", { autoClose: 1500 });
       // Keep loading state until redirect completes
     } catch (err: unknown) {
       const errData = (err as { response?: { data?: Record<string, string[]> } })?.response?.data;
       const firstMsg = errData
         ? Object.values(errData).flat()[0]
-        : "Registration failed. Please try again.";
+        : "Signup failed. Please try again.";
       toast.error(firstMsg as string);
       setLoading(false);
     }
