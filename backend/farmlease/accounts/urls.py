@@ -6,7 +6,7 @@ from .views import (
     ChangePasswordView,
     LogoutView,
     MyTokenObtainPairView,
-    RegisterView,
+    SignupView,
     UserProfileView,
     get_user_profile,
 )
@@ -14,7 +14,7 @@ from .views import (
 app_name = 'accounts'
 
 urlpatterns = [
-    path('register/', RegisterView.as_view(), name='register'),
+    path('signup/', SignupView.as_view(), name='signup'),
     path('login/', MyTokenObtainPairView.as_view(), name='login'),
     path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('logout/', LogoutView.as_view(), name='logout'),

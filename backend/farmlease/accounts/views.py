@@ -10,18 +10,18 @@ from .permissions import IsSystemAdmin
 from .serializers import (
     ChangePasswordSerializer,
     MyTokenObtainPairSerializer,
-    RegisterSerializer,
+    SignupSerializer,
     UserSerializer,
 )
 
 User = get_user_model()
 
 
-class RegisterView(generics.CreateAPIView):
-    """API endpoint for user registration"""
+class SignupView(generics.CreateAPIView):
+    """API endpoint for user signup"""
 
     queryset = User.objects.all()
-    serializer_class = RegisterSerializer
+    serializer_class = SignupSerializer
     permission_classes = [permissions.AllowAny]
 
 
