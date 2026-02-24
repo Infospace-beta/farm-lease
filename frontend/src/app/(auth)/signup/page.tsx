@@ -9,7 +9,7 @@ import { toast } from "react-toastify";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 import { useAuth } from "@/providers";
-import type { RegisterData, UserRole } from "@/types";
+import type { SignupData, UserRole } from "@/types";
 
 // ─── Validation schema ─────────────────────────────────────────────────────────
 const schema = yup.object({
@@ -34,7 +34,7 @@ const schema = yup.object({
     .required("Please confirm your password"),
 });
 
-type FormData = RegisterData & { password2: string };
+type FormData = SignupData & { password2: string };
 
 const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
   { value: "farmer", label: "Farmer / Lessee" },
@@ -44,7 +44,7 @@ const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
 
 // ─── Component ─────────────────────────────────────────────────────────────────
 export default function SignupPage() {
-  const { register: registerUser } = useAuth();
+  const { signup: signupUser } = useAuth();
   const [showPw, setShowPw] = useState(false);
   const [showPw2, setShowPw2] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -58,13 +58,13 @@ export default function SignupPage() {
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
-      await registerUser(data as RegisterData);
+      await signupUser(data as SignupData);
       toast.success("Account created! Redirecting…");
     } catch (err: unknown) {
       const errData = (err as { response?: { data?: Record<string, string[]> } })?.response?.data;
       const firstMsg = errData
         ? Object.values(errData).flat()[0]
-        : "Registration failed. Please try again.";
+        : "Signup failed. Please try again.";
       toast.error(firstMsg as string);
     } finally {
       setLoading(false);

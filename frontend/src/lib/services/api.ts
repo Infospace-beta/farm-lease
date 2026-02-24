@@ -47,7 +47,7 @@ export const accountsApi = {
   // Auth
   login: (email: string, password: string) =>
     api.post("/auth/login/", { email, password }),
-  register: (data: object) => api.post("/auth/register/", data),
+  signup: (data: object) => api.post("/auth/signup/", data),
   logout: (refresh: string) => api.post("/auth/logout/", { refresh }),
   refreshToken: (refresh: string) =>
     api.post("/auth/refresh/", { refresh }),
