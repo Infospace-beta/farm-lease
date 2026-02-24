@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import LesseePageHeader from "@/components/lessee/LesseePageHeader";
 
 const categories = [
   "All Categories",
@@ -103,41 +104,31 @@ export default function ShopPage() {
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       {/* Header */}
-      <header className="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-8 flex-shrink-0">
-        <div>
-          <h2
-            className="text-3xl font-bold text-gray-900"
-            style={{ fontFamily: "Playfair Display, serif" }}
-          >
-            Agro-Dealer Marketplace
-          </h2>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Source quality inputs from certified dealers
-          </p>
+      <LesseePageHeader
+        title="Agro-Dealer Marketplace"
+        subtitle="Source quality inputs from certified dealers"
+      >
+        <div className="relative w-72">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 material-icons-round text-xl">
+            search
+          </span>
+          <input
+            type="text"
+            placeholder="Search products..."
+            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#047857]/20 focus:border-[#047857] text-gray-700 placeholder-gray-400"
+          />
         </div>
-        <div className="flex items-center gap-4">
-          <div className="relative w-72">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 material-icons-round text-xl">
-              search
+        <button className="relative p-2.5 text-gray-700 hover:bg-gray-100 rounded-xl transition-colors border border-gray-200">
+          <span className="material-icons-round text-[22px]">
+            shopping_cart
+          </span>
+          {cartCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-[#13ec80] text-[#0f392b] text-[10px] font-extrabold w-5 h-5 rounded-full flex items-center justify-center shadow">
+              {cartCount}
             </span>
-            <input
-              type="text"
-              placeholder="Search products..."
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#047857]/20 focus:border-[#047857] text-gray-700 placeholder-gray-400"
-            />
-          </div>
-          <button className="relative p-2.5 text-gray-700 hover:bg-gray-100 rounded-xl transition-colors border border-gray-200">
-            <span className="material-icons-round text-[22px]">
-              shopping_cart
-            </span>
-            {cartCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-[#13ec80] text-[#0f392b] text-[10px] font-extrabold w-5 h-5 rounded-full flex items-center justify-center shadow">
-                {cartCount}
-              </span>
-            )}
-          </button>
-        </div>
-      </header>
+          )}
+        </button>
+      </LesseePageHeader>
 
       <div className="flex-1 overflow-y-auto p-8 bg-[#f8fafc]">
         {/* Category Filter Pills */}
@@ -146,11 +137,10 @@ export default function ShopPage() {
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${
-                activeCategory === cat
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${activeCategory === cat
                   ? "bg-[#0f392b] text-white border-[#0f392b] shadow-md"
                   : "bg-white text-gray-600 border-gray-200 hover:border-[#047857] hover:text-[#047857]"
-              }`}
+                }`}
             >
               {cat}
             </button>

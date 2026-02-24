@@ -5,7 +5,7 @@ import { Suspense } from "react";
 
 const AdminSidebar = dynamic(() => import("@/components/admin/AdminSidebar"), {
   loading: () => (
-    <div className="w-64 bg-sidebar-bg h-full shrink-0 border-r border-slate-800 animate-pulse" />
+    <div className="w-20 lg:w-72 bg-[#0f392b] h-full shrink-0 border-r border-white/5 animate-pulse" />
   ),
   ssr: false,
 });
@@ -16,11 +16,11 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-background-light">
-      <Suspense fallback={<div className="w-64 bg-sidebar-bg h-full shrink-0" />}>
+    <div className="bg-[#f8fafc] text-gray-800 antialiased overflow-hidden h-screen flex">
+      <Suspense fallback={<div className="w-20 lg:w-72 bg-[#0f392b] h-full shrink-0" />}>
         <AdminSidebar />
       </Suspense>
-      <main className="flex-1 overflow-y-auto bg-background-light ml-64">{children}</main>
+      <main className="flex-1 flex flex-col h-full bg-[#f8fafc] overflow-hidden">{children}</main>
     </div>
   );
 }
