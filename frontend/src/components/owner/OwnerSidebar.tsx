@@ -1,20 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { memo, useMemo } from "react";
 import { useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/providers";
 
 const navLinks = [
-  { href: "/owner/dashboard",      label: "Dashboard",      icon: "dashboard",             badge: 0 },
-  { href: "/owner/lands",          label: "My Lands",       icon: "map",                   badge: 0 },
-  { href: "/owner/lands/add",      label: "Upload Land",    icon: "upload_file",           badge: 0 },
-  { href: "/owner/lease-requests", label: "Lease Requests", icon: "pending_actions",       badge: 3 },
-  { href: "/owner/financials",     label: "Financials",     icon: "account_balance_wallet", badge: 0 },
-  { href: "/owner/escrow",         label: "Escrow Status",  icon: "verified_user",         badge: 0 },
-  { href: "/owner/agreements",     label: "Agreements",     icon: "handshake",             badge: 0 },
+  { href: "/owner/dashboard",      label: "Dashboard",      icon: "dashboard",              badge: "" },
+  { href: "/owner/lands",          label: "My Lands",        icon: "map",                    badge: "" },
+  { href: "/owner/lands/add",      label: "Upload Land",     icon: "upload_file",            badge: "" },
+  { href: "/owner/lease-requests", label: "Lease Requests",  icon: "pending_actions",        badge: "3" },
+  { href: "/owner/financials",     label: "Financials",      icon: "account_balance_wallet", badge: "" },
+  { href: "/owner/escrow",         label: "Escrow Status",   icon: "verified_user",          badge: "" },
+  { href: "/owner/agreements",     label: "Agreements",      icon: "handshake",              badge: "" },
 ];
 
 function OwnerSidebar() {
@@ -28,99 +27,98 @@ function OwnerSidebar() {
       : loading ? "..." : "James M.";
   }, [profile, loading]);
 
-  const avatarSrc = useMemo(() => {
-    return profile?.profile_picture ??
-      `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=047857&color=fff`;
-  }, [profile?.profile_picture, displayName]);
+  const roleLabel = useMemo(() => {
+    return profile?.role === "landowner" ? "Premium Owner" : (profile?.role ?? "Land Owner");
+  }, [profile?.role]);
+
+  const isActive = (href: string) => {
+    if (href === "/owner/dashboard") return pathname === href;
+    return pathname === href || pathname.startsWith(href + "/");
+  };
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 flex flex-col border-r border-slate-800 bg-sidebar-bg overflow-y-auto z-30 shadow-lg text-white">
-      {/* Logo */}
-      <div className="flex items-center gap-3 px-6 py-5">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-white shadow-lg shadow-black/20">
-          <span className="material-symbols-outlined text-2xl">agriculture</span>
+    <aside className="w-20 lg:w-72 bg-[#0f392b] h-full flex flex-col py-6 px-4 lg:px-6 shadow-xl z-20 transition-all duration-300 border-r border-white/5 shrink-0 overflow-y-auto">
+      <div>
+        {/* Logo */}
+        <div className="flex items-center gap-3 mb-10 px-2 mt-2">
+          <div className="w-10 h-10 rounded-lg bg-[#13ec80] flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(19,236,128,0.2)]">
+            <span className="material-icons-round text-[#0f392b] text-2xl">agriculture</span>
+          </div>
+          <div className="hidden lg:block">
+            <h1
+              className="text-xl font-bold text-white tracking-tight leading-none"
+              style={{ fontFamily: "Playfair Display, serif" }}
+            >
+              Farm
+              <span
+                className="text-gray-300 font-normal"
+                style={{ fontFamily: "Space Grotesk, sans-serif" }}
+              >
+                Lease
+              </span>
+            </h1>
+            <p className="text-[10px] uppercase tracking-widest text-gray-400 mt-0.5">
+              Land Management
+            </p>
+          </div>
         </div>
-        <div className="flex flex-col">
-          <h1
-            className="text-xl font-bold text-white tracking-tight"
-            style={{ fontFamily: "var(--font-playfair), serif" }}
-          >
-            FarmLease
-          </h1>
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-300/70">
-            Land Management
-          </span>
-        </div>
+
+        {/* Nav links */}
+        <nav className="space-y-1">
+          {navLinks.map(({ href, label, icon, badge }) => {
+            const active = isActive(href);
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`flex items-center gap-4 px-4 py-3 rounded-lg transition-all group ${
+                  active
+                    ? "bg-white/10 text-white shadow-sm backdrop-blur-sm"
+                    : "text-gray-400 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <span
+                  className={`material-icons-round text-xl group-hover:scale-110 transition-transform ${
+                    active ? "text-white" : ""
+                  }`}
+                >
+                  {icon}
+                </span>
+                <span className="font-medium hidden lg:block text-sm">{label}</span>
+                {badge && (
+                  <span className="hidden lg:flex ml-auto bg-[#13ec80]/20 text-[#13ec80] text-[10px] px-2 py-0.5 rounded-full font-bold">
+                    {badge}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
       </div>
 
-      {/* Nav links */}
-      <nav className="flex-1 space-y-1 px-4 py-2">
-        {navLinks.map(({ href, label, icon, badge }) => {
-          const isActive =
-            pathname === href ||
-            (href !== "/owner/dashboard" && pathname.startsWith(href));
-
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={`relative flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors ${
-                isActive
-                  ? "bg-white/10 text-white"
-                  : "text-slate-300 hover:bg-white/5 hover:text-white"
-              }`}
-            >
-              <span
-                className="material-symbols-outlined"
-                style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
-              >
-                {icon}
-              </span>
-              {label}
-              {badge > 0 && (
-                <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-white">
-                  {badge}
-                </span>
-              )}
-            </Link>
-          );
-        })}
-      </nav>
-
       {/* User section */}
-      <div className="mt-auto border-t border-white/10 p-4">
+      <div className="mt-auto space-y-4">
         <Link
           href="/owner/profile"
-          className="flex items-center gap-3 rounded-xl bg-white/5 p-3 hover:bg-white/10 transition-colors cursor-pointer group mb-2"
+          className="bg-black/20 rounded-xl p-3 flex items-center gap-3 cursor-pointer hover:bg-black/30 transition-colors"
         >
-          <Image
-            src={avatarSrc}
-            alt={displayName}
-            width={40}
-            height={40}
-            className="h-10 w-10 rounded-full border-2 border-primary shadow-sm object-cover"
-            priority={false}
-            loading="lazy"
-          />
-          <div className="flex flex-col flex-1 min-w-0">
-            <span className="text-sm font-semibold text-white truncate">{displayName}</span>
-            <span className="text-xs text-slate-400 group-hover:text-slate-300 transition-colors capitalize">
-              {profile?.role === "landowner" ? "Premium Owner" : (profile?.role ?? "Land Owner")}
-            </span>
+          <div className="w-10 h-10 rounded-full bg-[#13ec80]/20 border-2 border-[#13ec80]/20 flex items-center justify-center shrink-0 overflow-hidden">
+            <span className="material-icons-round text-[#13ec80]">person</span>
           </div>
-          {profile?.is_verified && (
-            <span className="material-symbols-outlined text-sm text-primary" title="Verified">
-              verified
-            </span>
-          )}
+          <div className="hidden lg:block overflow-hidden">
+            <p className="text-sm font-semibold text-white truncate">{displayName}</p>
+            <p className="text-[10px] text-gray-400 uppercase tracking-wider">{roleLabel}</p>
+          </div>
         </Link>
-
+        <div className="h-px bg-white/10 w-full"></div>
         <button
           onClick={() => logout()}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+          className="flex items-center gap-3 px-2 py-1 text-gray-400 hover:text-white transition-all w-full group/btn pl-3"
         >
-          <span className="material-symbols-outlined text-lg">logout</span>
-          Logout
+          <span className="material-icons-round text-lg group-hover/btn:-translate-x-1 transition-transform">
+            logout
+          </span>
+          <span className="font-medium hidden lg:block text-xs uppercase tracking-wide">Logout</span>
         </button>
       </div>
     </aside>

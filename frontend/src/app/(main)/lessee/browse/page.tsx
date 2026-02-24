@@ -1,3 +1,7 @@
+"use client";
+import { useState } from "react";
+import LesseePageHeader from "@/components/lessee/LesseePageHeader";
+
 const listings = [
   {
     name: "Green Valley Plot A",
@@ -58,37 +62,30 @@ const listings = [
 ];
 
 export default function BrowseLandPage() {
+  const [minAcres, setMinAcres] = useState(5);
+  const [maxAcres, setMaxAcres] = useState(50);
+
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       {/* Top Header */}
-      <header className="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-8 flex-shrink-0 z-10">
-        <div>
-          <h2
-            className="text-3xl font-bold text-gray-900"
-            style={{ fontFamily: "Playfair Display, serif" }}
-          >
-            Find Land
-          </h2>
-          <p className="text-xs text-gray-500 mt-1">
-            Browse available leasing opportunities matched to your preferences
-          </p>
+      <LesseePageHeader
+        title="Find Land"
+        subtitle="Browse available leasing opportunities matched to your preferences"
+      >
+        <div className="relative w-80">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 material-icons-round text-xl">
+            search
+          </span>
+          <input
+            type="text"
+            placeholder="Search location or keyword..."
+            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#047857]/20 focus:border-[#047857] text-gray-700 placeholder-gray-400"
+          />
         </div>
-        <div className="flex items-center gap-6">
-          <div className="relative w-80">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 material-icons-round text-xl">
-              search
-            </span>
-            <input
-              type="text"
-              placeholder="Search location or keyword..."
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#047857]/20 focus:border-[#047857] text-gray-700 placeholder-gray-400"
-            />
-          </div>
-          <button className="relative p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors">
-            <span className="material-icons-round">close</span>
-          </button>
-        </div>
-      </header>
+        <button className="relative p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors">
+          <span className="material-icons-round">close</span>
+        </button>
+      </LesseePageHeader>
 
       <div className="flex-1 overflow-hidden flex">
         {/* Left Filters Panel */}
@@ -154,82 +151,84 @@ export default function BrowseLandPage() {
                 Gemini AI
               </span>
             </div>
-            <div className="bg-gradient-to-br from-amber-50/50 to-orange-50/50 rounded-xl p-3 border border-amber-100">
-              <p className="text-[10px] text-[#5D4037] mb-2.5">
+            <div className="bg-gradient-to-br from-emerald-100 to-green-50 rounded-xl p-4 border-2 border-emerald-200">
+              <p className="text-[10px] text-[#0f392b] font-medium mb-2.5">
                 Based on soil data & climate history for{" "}
-                <span className="font-bold text-amber-700">
+                <span className="font-bold text-[#047857]">
                   Rift Valley & Central
                 </span>
                 :
               </p>
               <div className="flex flex-wrap gap-2">
                 {["Maize", "Wheat", "Avocado"].map((crop) => (
-                  <button
+                  <div
                     key={crop}
-                    className="inline-flex items-center bg-white text-[#5D4037] px-3 py-1.5 rounded-full text-xs font-medium border border-gray-200 hover:border-amber-400 hover:text-amber-700 transition-all shadow-sm"
+                    className="inline-flex items-center bg-[#0f392b] text-emerald-100 px-3 py-1.5 rounded-full text-xs font-medium shadow-sm"
                   >
-                    <span className="material-icons-round text-[14px] mr-1.5 text-amber-600">
+                    <span className="material-icons-round text-[13px] mr-1.5 text-[#13ec80]">
                       auto_awesome
                     </span>
                     {crop}
-                    <span className="material-icons-round text-xs ml-1.5 text-gray-300">
-                      add
-                    </span>
-                  </button>
+                  </div>
                 ))}
-              </div>
-            </div>
-            <div className="pt-2">
-              <label className="text-[10px] font-bold text-[#5D4037] uppercase tracking-wider block mb-2">
-                My Selection
-              </label>
-              <div className="flex flex-wrap gap-2">
-                <div className="inline-flex items-center bg-[#047857] text-white px-3 py-1.5 rounded-full text-xs font-medium shadow-sm">
-                  Maize
-                  <button className="ml-1.5 hover:text-emerald-100">
-                    <span className="material-icons-round text-sm">close</span>
-                  </button>
-                </div>
-                <button className="inline-flex items-center bg-transparent text-[#5D4037] px-3 py-1.5 rounded-full text-xs font-medium hover:bg-gray-50 transition-colors border border-dashed border-[#5D4037]/30">
-                  <span className="material-icons-round text-sm mr-1">add</span>{" "}
-                  Custom Crop
-                </button>
               </div>
             </div>
           </div>
 
           {/* Target Acreage */}
-          <div className="space-y-3">
+          <div className="space-y-4">
             <label className="text-xs font-bold text-[#5D4037] uppercase tracking-wider block">
               Target Acreage
             </label>
-            <div className="relative pt-1 pb-2">
-              <div className="h-1.5 bg-gray-200 rounded-full w-full"></div>
-              <div className="absolute top-1 left-[10%] right-[30%] h-1.5 bg-[#047857]/60 rounded-full"></div>
-              <div className="absolute top-[0px] left-[45%] w-4 h-4 bg-white border-2 border-[#047857] rounded-full shadow cursor-pointer hover:scale-110 transition-transform"></div>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <div className="w-full">
-                <label className="text-[10px] text-gray-400 block mb-1">
+            {/* Min slider */}
+            <div>
+              <div className="flex justify-between items-center mb-1.5">
+                <span className="text-[10px] text-gray-500 font-medium">
                   Min (Acres)
-                </label>
-                <input
-                  type="number"
-                  defaultValue={5}
-                  className="w-full text-center py-1.5 px-2 text-sm border border-gray-200 bg-white rounded-lg text-gray-700 focus:border-[#047857] focus:ring-0 focus:outline-none"
-                />
+                </span>
+                <span className="text-[11px] font-bold text-[#047857]">
+                  {minAcres} ac
+                </span>
               </div>
-              <span className="text-gray-300 font-light">—</span>
-              <div className="w-full">
-                <label className="text-[10px] text-gray-400 block mb-1">
+              <input
+                type="range"
+                min="1"
+                max="100"
+                value={minAcres}
+                onChange={(e) =>
+                  setMinAcres(Math.min(Number(e.target.value), maxAcres - 1))
+                }
+                className="w-full h-2 rounded-full appearance-none cursor-pointer"
+                style={{
+                  background: `linear-gradient(to right, #047857 0%, #047857 ${((minAcres - 1) / 99) * 100}%, #e5e7eb ${((minAcres - 1) / 99) * 100}%, #e5e7eb 100%)`,
+                  accentColor: "#047857",
+                }}
+              />
+            </div>
+            {/* Max slider */}
+            <div>
+              <div className="flex justify-between items-center mb-1.5">
+                <span className="text-[10px] text-gray-500 font-medium">
                   Max (Acres)
-                </label>
-                <input
-                  type="number"
-                  defaultValue={50}
-                  className="w-full text-center py-1.5 px-2 text-sm border border-gray-200 bg-white rounded-lg text-gray-700 focus:border-[#047857] focus:ring-0 focus:outline-none"
-                />
+                </span>
+                <span className="text-[11px] font-bold text-[#047857]">
+                  {maxAcres} ac
+                </span>
               </div>
+              <input
+                type="range"
+                min="1"
+                max="100"
+                value={maxAcres}
+                onChange={(e) =>
+                  setMaxAcres(Math.max(Number(e.target.value), minAcres + 1))
+                }
+                className="w-full h-2 rounded-full appearance-none cursor-pointer"
+                style={{
+                  background: `linear-gradient(to right, #047857 0%, #047857 ${((maxAcres - 1) / 99) * 100}%, #e5e7eb ${((maxAcres - 1) / 99) * 100}%, #e5e7eb 100%)`,
+                  accentColor: "#047857",
+                }}
+              />
             </div>
           </div>
 

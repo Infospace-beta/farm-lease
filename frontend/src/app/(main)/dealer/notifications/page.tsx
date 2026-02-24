@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import DealerPageHeader from "@/components/dealer/DealerPageHeader";
 
 const notifications = {
   today: [
@@ -182,11 +183,10 @@ export default function NotificationsPage() {
                               ? dismiss(notif.id)
                               : showToast(`${action.label}: action triggered`)
                           }
-                          className={`text-xs font-bold px-4 py-2 rounded-xl transition ${
-                            action.primary
+                          className={`text-xs font-bold px-4 py-2 rounded-xl transition ${action.primary
                               ? "bg-[#047857] text-white hover:opacity-90"
                               : "border border-gray-200 text-gray-600 hover:bg-gray-50"
-                          }`}
+                            }`}
                         >
                           {action.label}
                         </button>
@@ -203,7 +203,7 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 lg:p-8">
+    <div className="flex-1 flex flex-col h-full overflow-hidden">
       {toast && (
         <div className="fixed top-6 right-6 bg-[#0f392b] text-white text-sm px-4 py-3 rounded-xl shadow-xl z-50 flex items-center gap-2">
           <span className="material-icons-round text-sm">check_circle</span>
@@ -211,39 +211,31 @@ export default function NotificationsPage() {
         </div>
       )}
       {/* Header */}
-      <header className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4 mb-8">
-        <div>
-          <h2
-            className="text-3xl font-bold tracking-tight text-gray-900 mb-1"
-            style={{ fontFamily: "Playfair Display, serif" }}
-          >
-            Notifications
-          </h2>
-          <p className="text-gray-500 text-sm">
-            Stay updated with alerts, orders and platform announcements.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={markAllRead}
-            className="text-sm text-[#047857] font-bold hover:underline"
-          >
-            Mark all as read
-          </button>
-          <button
-            onClick={() => showToast("Filters applied")}
-            className="flex items-center gap-1.5 px-4 py-2 text-sm border border-gray-200 bg-white rounded-lg text-gray-500 hover:bg-gray-50"
-          >
-            <span className="material-icons-round text-base">filter_list</span>
-            Filter
-          </button>
-        </div>
-      </header>
+      <DealerPageHeader
+        title="Notifications"
+        subtitle="Stay updated with alerts, orders and platform announcements."
+      >
+        <button
+          onClick={markAllRead}
+          className="text-sm text-[#047857] font-bold hover:underline"
+        >
+          Mark all as read
+        </button>
+        <button
+          onClick={() => showToast("Filters applied")}
+          className="flex items-center gap-1.5 px-4 py-2 text-sm border border-gray-200 bg-white rounded-lg text-gray-500 hover:bg-gray-50"
+        >
+          <span className="material-icons-round text-base">filter_list</span>
+          Filter
+        </button>
+      </DealerPageHeader>
 
-      <div className="max-w-3xl">
-        {renderSection("Today", allNotifications.today, "3 New")}
-        {renderSection("Yesterday", allNotifications.yesterday)}
-        {renderSection("Earlier This Week", allNotifications.earlier)}
+      <div className="flex-1 overflow-y-auto p-4 lg:p-8 bg-[#f8fafc]">
+        <div className="max-w-3xl">
+          {renderSection("Today", allNotifications.today, "3 New")}
+          {renderSection("Yesterday", allNotifications.yesterday)}
+          {renderSection("Earlier This Week", allNotifications.earlier)}
+        </div>
       </div>
     </div>
   );
