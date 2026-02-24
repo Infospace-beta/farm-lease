@@ -1,5 +1,6 @@
 "use client";
 import { useState, useRef } from "react";
+import DealerPageHeader from "@/components/dealer/DealerPageHeader";
 
 const tabs = ["Store Details", "Personal Info", "Bank & Payments", "Security"];
 
@@ -54,34 +55,24 @@ export default function DealerProfilePage() {
         className="hidden"
       />
       {/* Header */}
-      <header className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4 mb-8">
-        <div>
-          <h2
-            className="text-3xl font-bold tracking-tight text-gray-900 mb-1"
-            style={{ fontFamily: "Playfair Display, serif" }}
-          >
-            Profile Settings
-          </h2>
-          <p className="text-gray-500 text-sm">
-            Manage your store identity, documents and payment details.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleCancel}
-            className="flex px-4 py-2.5 text-sm border border-gray-200 text-gray-600 rounded-lg items-center gap-2 hover:bg-gray-50 bg-white"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            className="flex px-5 py-2.5 text-sm bg-[#047857] text-white rounded-lg items-center gap-2 hover:opacity-90 shadow-lg shadow-[#047857]/20"
-          >
-            <span className="material-icons-round text-sm">save</span>
-            Save Changes
-          </button>
-        </div>
-      </header>
+      <DealerPageHeader
+        title="Profile Settings"
+        subtitle="Manage your store identity, documents and payment details."
+      >
+        <button
+          onClick={handleCancel}
+          className="flex px-4 py-2.5 text-sm border border-gray-200 text-gray-600 rounded-lg items-center gap-2 hover:bg-gray-50 bg-white"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSave}
+          className="flex px-5 py-2.5 text-sm bg-[#047857] text-white rounded-lg items-center gap-2 hover:opacity-90 shadow-lg shadow-[#047857]/20"
+        >
+          <span className="material-icons-round text-sm">save</span>
+          Save Changes
+        </button>
+      </DealerPageHeader>
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-gray-200 mb-8 overflow-x-auto">

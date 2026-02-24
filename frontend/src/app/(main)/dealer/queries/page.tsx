@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import DealerPageHeader from "@/components/dealer/DealerPageHeader";
 
 const tabs = ["All", "New", "In Progress", "Resolved"];
 
@@ -101,12 +102,12 @@ export default function QueriesPage() {
       prev.map((q) =>
         q.id === selectedId
           ? {
-              ...q,
-              status: "In Progress",
-              statusClass: "bg-blue-100 text-blue-700",
-              unread: false,
-              replies: [...(q.replies || []), replyText],
-            }
+            ...q,
+            status: "In Progress",
+            statusClass: "bg-blue-100 text-blue-700",
+            unread: false,
+            replies: [...(q.replies || []), replyText],
+          }
           : q,
       ),
     );
@@ -123,45 +124,35 @@ export default function QueriesPage() {
   const active = allQueries.find((q) => q.id === selectedId) || selectedQuery;
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 lg:p-8">
+    <div className="flex-1 flex flex-col h-full overflow-hidden">
       {toast && (
         <div className="fixed top-6 right-6 bg-[#0f392b] text-white text-sm px-4 py-3 rounded-xl shadow-xl z-50 flex items-center gap-2">
           <span className="material-icons-round text-sm">check_circle</span>
           {toast}
         </div>
       )}
-      <header className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4 mb-8">
-        <div>
-          <h2
-            className="text-3xl font-bold tracking-tight text-gray-900 mb-1"
-            style={{ fontFamily: "Playfair Display, serif" }}
-          >
-            Customer Queries
-          </h2>
-          <p className="text-gray-500 text-sm">
-            Respond to buyer messages and manage customer support.
-          </p>
+      <DealerPageHeader
+        title="Customer Queries"
+        subtitle="Respond to buyer messages and manage customer support."
+      >
+        <div className="relative">
+          <span className="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-base">
+            search
+          </span>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search queries..."
+            className="pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm w-52 focus:outline-none focus:ring-2 focus:ring-[#047857]/20 focus:border-[#047857]"
+          />
         </div>
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <span className="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-base">
-              search
-            </span>
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search queries..."
-              className="pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm w-52 focus:outline-none focus:ring-2 focus:ring-[#047857]/20 focus:border-[#047857]"
-            />
-          </div>
-          <button className="flex items-center gap-1.5 px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50">
-            <span className="material-icons-round text-base">filter_list</span>
-            Filter
-          </button>
-        </div>
-      </header>
+        <button className="flex items-center gap-1.5 px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50">
+          <span className="material-icons-round text-base">filter_list</span>
+          Filter
+        </button>
+      </DealerPageHeader>
 
-      <div className="flex gap-6 h-[calc(100vh-220px)] min-h-[600px]">
+      <div className="flex gap-6 flex-1 min-h-0 p-4 lg:p-8 bg-[#f8fafc]">
         {/* Left — query list */}
         <div className="w-80 xl:w-96 flex flex-col bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex-shrink-0">
           {/* Tabs */}

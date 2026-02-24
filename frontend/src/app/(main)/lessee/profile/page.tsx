@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import LesseePageHeader from "@/components/lessee/LesseePageHeader";
 
 export default function ProfilePage() {
   const [twoFAEnabled, setTwoFAEnabled] = useState(true);
@@ -7,23 +8,15 @@ export default function ProfilePage() {
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       {/* Header */}
-      <header className="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-8 flex-shrink-0">
-        <div>
-          <h2
-            className="text-3xl font-bold text-gray-900"
-            style={{ fontFamily: "Playfair Display, serif" }}
-          >
-            Profile & Settings
-          </h2>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Manage your personal information, security and payment preferences
-          </p>
-        </div>
+      <LesseePageHeader
+        title="Profile & Settings"
+        subtitle="Manage your personal information, security and payment preferences"
+      >
         <button className="flex items-center gap-2 bg-[#0f392b] hover:bg-[#1c4a3a] text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow transition-colors">
           <span className="material-icons-round text-lg">save</span>
           Save Changes
         </button>
-      </header>
+      </LesseePageHeader>
 
       <div className="flex-1 overflow-y-auto p-8 bg-[#f8fafc]">
         <div className="max-w-3xl mx-auto space-y-6">

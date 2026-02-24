@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/providers";
 
 const navItems = [
   { href: "/dealer/dashboard", icon: "dashboard", label: "Dashboard" },
@@ -35,6 +36,15 @@ export default function DealerLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, logout } = useAuth();
+  const displayName = user
+    ? (user as any).first_name || (user as any).email?.split("@")[0] || "User"
+    : "User";
+  const handleLogout = async () => {
+    await logout();
+    router.replace("/login");
+  };
 
   const isActive = (href: string) => {
     if (href === "/dealer/products/add") return pathname === href;
@@ -125,14 +135,17 @@ export default function DealerLayout({
               </span>
             </div>
             <div className="hidden lg:block overflow-hidden">
-              <p className="text-sm font-semibold text-white">David M.</p>
+              <p className="text-sm font-semibold text-white">{displayName}</p>
               <p className="text-[10px] text-gray-400 truncate uppercase tracking-wider">
                 Store Manager
               </p>
             </div>
           </Link>
           <div className="h-px bg-white/10 w-full my-2"></div>
-          <button className="flex items-center gap-3 px-2 py-1 text-gray-300 hover:text-white transition-all w-full group/btn pl-3">
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-2 py-1 text-gray-300 hover:text-white transition-all w-full group/btn pl-3"
+          >
             <span className="material-icons-round text-lg group-hover/btn:-translate-x-1 transition-transform">
               logout
             </span>

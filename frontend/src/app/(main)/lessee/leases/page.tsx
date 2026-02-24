@@ -1,3 +1,5 @@
+import LesseePageHeader from "@/components/lessee/LesseePageHeader";
+
 const leases = [
   {
     id: 1,
@@ -61,23 +63,15 @@ export default function LeasesPage() {
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       {/* Header */}
-      <header className="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-8 flex-shrink-0">
-        <div>
-          <h2
-            className="text-3xl font-bold text-gray-900"
-            style={{ fontFamily: "Playfair Display, serif" }}
-          >
-            My Leases
-          </h2>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Track and manage all your active land lease agreements
-          </p>
-        </div>
+      <LesseePageHeader
+        title="My Leases"
+        subtitle="Track and manage all your active land lease agreements"
+      >
         <button className="flex items-center gap-2 bg-[#0f392b] hover:bg-[#1c4a3a] text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow transition-colors">
           <span className="material-icons-round text-lg">add</span>
           New Lease
         </button>
-      </header>
+      </LesseePageHeader>
 
       <div className="flex-1 overflow-y-auto p-8 bg-[#f8fafc]">
         {/* Stats Row */}
@@ -186,7 +180,9 @@ export default function LeasesPage() {
                   <th className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider px-6 py-3">
                     Next Payment
                   </th>
-                  <th className="px-6 py-3"></th>
+                  <th className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider px-6 py-3">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -264,7 +260,7 @@ export default function LeasesPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-2 transition-opacity">
                         <button
                           className="p-1.5 text-[#047857] hover:bg-emerald-50 rounded-lg transition-colors"
                           title="View Agreement"

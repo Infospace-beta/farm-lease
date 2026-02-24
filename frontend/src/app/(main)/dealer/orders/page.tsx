@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import DealerPageHeader from "@/components/dealer/DealerPageHeader";
 
 type Order = {
   id: string;
@@ -247,7 +248,7 @@ export default function OrdersPage() {
     selected.status !== "Delivered";
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 lg:p-8">
+    <div className="flex-1 flex flex-col h-full overflow-hidden">
       {/* Toast */}
       {toast && (
         <div className="fixed top-6 right-6 bg-[#0f392b] text-white text-sm px-4 py-3 rounded-xl shadow-xl z-50 flex items-center gap-2">
@@ -256,43 +257,31 @@ export default function OrdersPage() {
         </div>
       )}
       {/* Header */}
-      <header className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4 mb-8">
-        <div>
-          <h2
-            className="text-3xl font-bold tracking-tight text-gray-900 leading-tight"
-            style={{ fontFamily: "Playfair Display, serif" }}
-          >
-            Incoming
-            <br />
-            Orders
-          </h2>
-          <p className="text-gray-500 text-sm mt-1">
-            Review, process and track customer orders.
-          </p>
+      <DealerPageHeader
+        title="Incoming Orders"
+        subtitle="Review, process and track customer orders."
+      >
+        <div className="relative">
+          <span className="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-base">
+            search
+          </span>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search orders..."
+            className="pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm w-52 focus:outline-none focus:ring-2 focus:ring-[#047857]/20 focus:border-[#047857]"
+          />
         </div>
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <span className="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-base">
-              search
-            </span>
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search orders..."
-              className="pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm w-52 focus:outline-none focus:ring-2 focus:ring-[#047857]/20 focus:border-[#047857]"
-            />
-          </div>
-          <button className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-500">
-            <span className="material-icons-round text-base">tune</span>
-          </button>
-          <button className="flex px-4 py-2 text-sm bg-[#0f392b] text-white rounded-lg items-center gap-2 hover:opacity-90 shadow-lg shadow-[#0f392b]/20">
-            <span className="material-icons-round text-sm">download</span>
-            Export
-          </button>
-        </div>
-      </header>
+        <button className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-500">
+          <span className="material-icons-round text-base">tune</span>
+        </button>
+        <button className="flex px-4 py-2 text-sm bg-[#0f392b] text-white rounded-lg items-center gap-2 hover:opacity-90 shadow-lg shadow-[#0f392b]/20">
+          <span className="material-icons-round text-sm">download</span>
+          Export
+        </button>
+      </DealerPageHeader>
 
-      <div className="flex gap-6 h-[calc(100vh-220px)] min-h-[600px]">
+      <div className="flex gap-6 flex-1 min-h-0 p-4 lg:p-8 bg-[#f8fafc]">
         {/* Left — Orders Table */}
         <div className="flex-1 flex flex-col min-w-0 bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
           {/* Tabs */}
