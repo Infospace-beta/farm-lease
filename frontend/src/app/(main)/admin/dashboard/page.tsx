@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Users,
   FileWarning,
@@ -12,6 +14,8 @@ import {
   Search,
 } from "lucide-react";
 import Link from "next/link";
+import { useState, useEffect } from "react";
+import { adminApi } from "@/lib/services/api";
 
 const statCards = [
   {
@@ -168,15 +172,34 @@ const activityPulse = [
 ];
 
 export default function AdminDashboardPage() {
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const { data } = await adminApi.unreadCount();
+        setUnreadCount(data.unread_count);
+      } catch (error) {
+        console.error("Failed to fetch unread count:", error);
+      }
+    };
+
+    fetchUnreadCount();
+    // Poll every 30 seconds for new notifications
+    const interval = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <div className="p-5 lg:p-8">
+    <div className="min-h-screen bg-slate-50">
+      <div className="p-4 md:p-6 lg:p-8">
       {/* Header */}
-      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 gap-4">
+      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-6 gap-4">
         <div>
-          <h2 className="text-2xl lg:text-3xl font-bold text-earth tracking-tight font-serif">
+          <h2 className="text-2xl md:text-3xl font-bold text-earth tracking-tight font-serif">
             Admin Control Center
           </h2>
-          <p className="text-gray-500 text-sm mt-1 max-w-lg">
+          <p className="text-gray-500 text-sm mt-1.5 max-w-lg">
             Operational oversight, user verification queues, and system-wide
             financial monitoring.
           </p>
@@ -190,21 +213,28 @@ export default function AdminDashboardPage() {
               className="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-bg/20 w-56 shadow-sm"
             />
           </div>
-          <button className="relative p-2.5 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition shadow-sm">
+          <Link href="/admin/notifications" className="relative p-2.5 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition shadow-sm">
             <Bell className="w-5 h-5 text-gray-600" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
-          </button>
+            {unreadCount > 0 && (
+              <>
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              </>
+            )}
+          </Link>
         </div>
       </header>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 mb-6">
         {statCards.map((card) => {
           const Icon = card.icon;
           return (
             <div
               key={card.label}
-              className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition flex flex-col justify-between h-28"
+              className="bg-white p-3 md:p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition flex flex-col justify-between h-24 md:h-28"
             >
               <div className="flex justify-between items-start">
                 <h3 className="text-gray-400 text-[10px] font-bold uppercase tracking-widest leading-tight">
@@ -217,7 +247,7 @@ export default function AdminDashboardPage() {
                 </span>
               </div>
               <div>
-                <span className="text-xl font-bold text-gray-800">
+                <span className="text-lg md:text-xl font-bold text-gray-800">
                   {card.value}
                 </span>
                 <div
@@ -239,13 +269,13 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Main Grid */}
-      <div className="grid grid-cols-12 gap-6">
+      <div className="grid grid-cols-12 gap-4 md:gap-6">
         {/* Left Column */}
-        <div className="col-span-12 lg:col-span-8 space-y-6">
+        <div className="col-span-12 lg:col-span-8 space-y-4 md:space-y-6">
           {/* Verification Queue */}
-          <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-            <div className="flex justify-between items-center mb-5">
-              <h3 className="text-lg font-bold text-earth font-serif">
+          <div className="bg-white rounded-2xl p-4 md:p-5 border border-gray-100 shadow-sm">
+            <div className="flex justify-between items-center mb-4 md:mb-5">
+              <h3 className="text-base md:text-lg font-bold text-earth font-serif">
                 Verification Queue
               </h3>
               <Link href="/admin/land-verifications" className="text-xs font-bold text-sidebar-bg hover:underline flex items-center gap-1">
@@ -450,6 +480,7 @@ export default function AdminDashboardPage() {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

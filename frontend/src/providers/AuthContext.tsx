@@ -5,6 +5,7 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
@@ -75,6 +76,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setTokens({ access: data.access, refresh: data.refresh });
 
       const { data: user } = await accountsApi.me();
+      const dashboardPath = dashboardPathFor(user.role);
+      
       setState({
         user,
         tokens: { access: data.access, refresh: data.refresh },
@@ -82,7 +85,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading: false,
       });
 
-      router.replace(dashboardPathFor(user.role));
+      // Use replace for instant navigation without adding to history
+      router.replace(dashboardPath);
+      // Force immediate navigation
+      window.location.href = dashboardPath;
     },
     [router]
   );
@@ -112,8 +118,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.replace("/login");
   }, [router]);
 
+  const value = useMemo(
+    () => ({ ...state, login, signup, logout, refreshUser }),
+    [state, login, signup, logout, refreshUser]
+  );
+
   return (
-    <AuthContext.Provider value={{ ...state, login, signup, logout, refreshUser }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

@@ -44,7 +44,7 @@ const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
 
 // ─── Component ─────────────────────────────────────────────────────────────────
 export default function SignupPage() {
-  const { signup: signupUser } = useAuth();
+  const { signup: signupUser, isAuthenticated, logout } = useAuth();
   const [showPw, setShowPw] = useState(false);
   const [showPw2, setShowPw2] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -53,23 +53,45 @@ export default function SignupPage() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<FormData>({ resolver: yupResolver(schema) });
+  } = useForm<FormData>({ 
+    resolver: yupResolver(schema) as any,
+  });
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
       await signupUser(data as SignupData);
-      toast.success("Account created! Redirecting…");
+      toast.success("Account created! Redirecting…", { autoClose: 1500 });
+      // Keep loading state until redirect completes
     } catch (err: unknown) {
       const errData = (err as { response?: { data?: Record<string, string[]> } })?.response?.data;
       const firstMsg = errData
         ? Object.values(errData).flat()[0]
         : "Signup failed. Please try again.";
       toast.error(firstMsg as string);
-    } finally {
       setLoading(false);
     }
   };
+
+  // If already logged in, show logout option
+  if (isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-md p-8 text-center">
+          <h2 className="text-2xl font-bold text-green-700 mb-4">Already Logged In</h2>
+          <p className="text-gray-600 mb-6">
+            You are currently logged in. Logout to create a new account.
+          </p>
+          <button
+            onClick={() => logout()}
+            className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg py-2.5 text-sm transition-colors"
+          >
+            Logout
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Reusable field wrapper
   const Field = ({
@@ -94,7 +116,17 @@ export default function SignupPage() {
     "w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent";
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-10">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-10 relative">
+      {/* Redirect Overlay */}
+      {loading && (
+        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 size={40} className="animate-spin text-green-600" />
+            <p className="text-sm font-medium text-gray-700">Creating account and redirecting...</p>
+          </div>
+        </div>
+      )}
+      
       <div className="w-full max-w-lg bg-white rounded-2xl shadow-md p-8">
         {/* Header */}
         <div className="mb-8 text-center">

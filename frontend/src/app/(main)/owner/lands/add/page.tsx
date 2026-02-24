@@ -15,8 +15,6 @@ interface BasicForm {
   price_per_month: string;
   preferred_duration: string;
   title_deed_number: string;
-  latitude: string;
-  longitude: string;
   has_irrigation: boolean;
   has_electricity: boolean;
   has_road_access: boolean;
@@ -24,6 +22,7 @@ interface BasicForm {
 }
 
 interface SoilForm {
+  soil_type: string;
   ph_level: string;
   nitrogen: string;
   phosphorus: string;
@@ -31,12 +30,18 @@ interface SoilForm {
   moisture: string;
   temperature: string;
   rainfall: string;
+  latitude: string;
+  longitude: string;
 }
 
 /* ─── Shared input classes ───────────────────────────── */
 const INPUT =
   "w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-700 placeholder-slate-400 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition";
 const LABEL = "block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5";
+
+const SOIL_TYPES = [
+  "Sandy", "Clay", "Loamy", "Silt", "Peat", "Chalk", "Sandy Loam", "Clay Loam", "Other",
+];
 
 export default function UploadLandPage() {
   const router = useRouter();
@@ -49,26 +54,51 @@ export default function UploadLandPage() {
   const [basic, setBasic] = useState<BasicForm>({
     title: "", description: "", total_area: "", price_per_month: "",
     preferred_duration: "1 Year", title_deed_number: "",
-    latitude: "", longitude: "",
     has_irrigation: false, has_electricity: false,
     has_road_access: false, has_fencing: false,
   });
 
   const [soil, setSoil] = useState<SoilForm>({
-    ph_level: "", nitrogen: "", phosphorus: "", potassium: "",
+    soil_type: "", ph_level: "", nitrogen: "", phosphorus: "", potassium: "",
     moisture: "", temperature: "", rainfall: "",
+    latitude: "", longitude: "",
   });
+
+  /* ── Helpers ────────────────────────────────────────── */
+  /** Returns null for empty string so the backend gets null not "" */
+  const numOrNull = (v: string): number | null =>
+    v.trim() === "" ? null : parseFloat(v);
+
+  const strOrNull = (v: string): string | null =>
+    v.trim() === "" ? null : v.trim();
 
   /* ── Handlers ───────────────────────────────────────── */
   const handleBasicSubmit = async () => {
+    // Validate required fields
+    if (!basic.title.trim()) { setError("Plot title is required."); return; }
+    if (!basic.description.trim()) { setError("Description is required."); return; }
+    if (!basic.total_area) { setError("Total area is required."); return; }
+    if (!basic.price_per_month) { setError("Monthly price is required."); return; }
+    if (!basic.title_deed_number.trim()) {
+      setError("Title Deed Number is required for verification.");
+      return;
+    }
+
     setLoading(true); setError(null);
     try {
       const { data } = await landsApi.createBasic(basic);
-      setLandId(data.id);
+      setLandId(data.land_id);
       setStep(1);
     } catch (e: unknown) {
-      const msg = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      setError(msg ?? "Failed to save basic info. Check your inputs.");
+      const errData = (e as { response?: { data?: Record<string, unknown> } })?.response?.data;
+      if (errData) {
+        const msgs = Object.entries(errData)
+          .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
+          .join(" | ");
+        setError(msgs);
+      } else {
+        setError("Failed to save basic info. Check your inputs.");
+      }
     } finally { setLoading(false); }
   };
 
@@ -76,7 +106,20 @@ export default function UploadLandPage() {
     if (!landId) return;
     setLoading(true); setError(null);
     try {
-      await landsApi.addSoil(landId, soil);
+      // Send null for any empty field — all optional
+      const payload = {
+        soil_type: strOrNull(soil.soil_type),
+        ph_level: numOrNull(soil.ph_level),
+        nitrogen: numOrNull(soil.nitrogen),
+        phosphorus: numOrNull(soil.phosphorus),
+        potassium: numOrNull(soil.potassium),
+        moisture: numOrNull(soil.moisture),
+        temperature: numOrNull(soil.temperature),
+        rainfall: numOrNull(soil.rainfall),
+        latitude: numOrNull(soil.latitude) ?? null,
+        longitude: numOrNull(soil.longitude) ?? null,
+      };
+      await landsApi.addSoil(landId, payload);
       setStep(2);
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
@@ -90,7 +133,7 @@ export default function UploadLandPage() {
     try {
       if (photos && photos.length > 0) {
         const fd = new FormData();
-        Array.from(photos).forEach((f) => fd.append("image", f));
+        Array.from(photos).forEach((f) => fd.append("images", f));
         await landsApi.uploadPhotos(landId, fd);
       }
       router.push("/owner/lands");
@@ -102,24 +145,25 @@ export default function UploadLandPage() {
 
   /* ── UI ─────────────────────────────────────────────── */
   return (
-    <div className="p-6 lg:p-10">
-      <div className="mx-auto max-w-3xl">
+    <div className="min-h-screen bg-slate-50">
+      <div className="p-6 lg:p-8">
+        <div className="mx-auto max-w-3xl">
 
-        {/* Header */}
-        <div className="mb-8">
-          <h2
-            className="text-3xl font-bold tracking-tight text-earth"
-            style={{ fontFamily: "'Playfair Display', serif" }}
-          >
-            List New Land
-          </h2>
-          <p className="mt-2 text-slate-500">
-            Upload your land details, soil data and photos to start receiving lease requests.
-          </p>
-        </div>
+          {/* Header */}
+          <div className="mb-6">
+            <h2
+              className="text-3xl font-bold tracking-tight text-earth"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+            >
+              List New Land
+            </h2>
+            <p className="mt-1.5 text-sm text-slate-500">
+              Upload your land details, soil data and photos to start receiving lease requests.
+            </p>
+          </div>
 
-        {/* Step indicator */}
-        <div className="mb-10 flex items-center gap-0">
+          {/* Step indicator */}
+          <div className="mb-6 flex items-center gap-0">
           {STEPS.map((s, i) => (
             <div key={s} className="flex flex-1 items-center">
               <div className="flex flex-col items-center">
@@ -163,27 +207,27 @@ export default function UploadLandPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="sm:col-span-2">
-                <label className={LABEL}>Plot Title *</label>
+                <label className={LABEL}>Plot Title <span className="text-red-500">*</span></label>
                 <input className={INPUT} placeholder="e.g. Highland North Plot" value={basic.title}
                   onChange={(e) => setBasic({ ...basic, title: e.target.value })} />
               </div>
               <div className="sm:col-span-2">
-                <label className={LABEL}>Description *</label>
+                <label className={LABEL}>Description <span className="text-red-500">*</span></label>
                 <textarea rows={3} className={INPUT + " resize-none"} placeholder="Describe the land..." value={basic.description}
                   onChange={(e) => setBasic({ ...basic, description: e.target.value })} />
               </div>
               <div>
-                <label className={LABEL}>Total Area (Acres) *</label>
+                <label className={LABEL}>Total Area (Acres) <span className="text-red-500">*</span></label>
                 <input type="number" min="0" step="0.1" className={INPUT} placeholder="e.g. 3.5" value={basic.total_area}
                   onChange={(e) => setBasic({ ...basic, total_area: e.target.value })} />
               </div>
               <div>
-                <label className={LABEL}>Price / Month (Ksh) *</label>
+                <label className={LABEL}>Price / Month (Ksh) <span className="text-red-500">*</span></label>
                 <input type="number" min="0" className={INPUT} placeholder="e.g. 50000" value={basic.price_per_month}
                   onChange={(e) => setBasic({ ...basic, price_per_month: e.target.value })} />
               </div>
               <div>
-                <label className={LABEL}>Preferred Lease Duration *</label>
+                <label className={LABEL}>Preferred Lease Duration <span className="text-red-500">*</span></label>
                 <select className={INPUT} value={basic.preferred_duration}
                   onChange={(e) => setBasic({ ...basic, preferred_duration: e.target.value })}>
                   {["6 Months","1 Year","2 Years","3 Years","5 Years","Flexible"].map((d) => (
@@ -192,19 +236,21 @@ export default function UploadLandPage() {
                 </select>
               </div>
               <div>
-                <label className={LABEL}>Title Deed Number</label>
-                <input className={INPUT} placeholder="For admin verification" value={basic.title_deed_number}
-                  onChange={(e) => setBasic({ ...basic, title_deed_number: e.target.value })} />
-              </div>
-              <div>
-                <label className={LABEL}>Latitude *</label>
-                <input type="number" step="0.000001" className={INPUT} placeholder="-1.286389" value={basic.latitude}
-                  onChange={(e) => setBasic({ ...basic, latitude: e.target.value })} />
-              </div>
-              <div>
-                <label className={LABEL}>Longitude *</label>
-                <input type="number" step="0.000001" className={INPUT} placeholder="36.817223" value={basic.longitude}
-                  onChange={(e) => setBasic({ ...basic, longitude: e.target.value })} />
+                <label className={LABEL}>
+                  Title Deed Number <span className="text-red-500">*</span>
+                  <span className="ml-1 text-slate-400 font-normal normal-case tracking-normal">
+                    (admin verification only — kept private)
+                  </span>
+                </label>
+                <input
+                  className={INPUT + (basic.title_deed_number.trim() === "" ? " border-red-300" : "")}
+                  placeholder="e.g. KJI-9928-XX"
+                  value={basic.title_deed_number}
+                  onChange={(e) => setBasic({ ...basic, title_deed_number: e.target.value })}
+                />
+                <p className="mt-1 text-xs text-slate-400">
+                  Required for verification. Never shown to lessees.
+                </p>
               </div>
             </div>
 
@@ -246,8 +292,10 @@ export default function UploadLandPage() {
                 disabled={loading}
                 className="flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60 transition-all"
               >
-                {loading ? "Saving..." : "Continue"}
-                <span className="material-symbols-outlined text-lg">arrow_forward</span>
+                {loading
+                  ? <><span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-r-transparent" /> Saving…</>
+                  : <>Continue <span className="material-symbols-outlined text-lg">arrow_forward</span></>
+                }
               </button>
             </div>
           </div>
@@ -256,21 +304,38 @@ export default function UploadLandPage() {
         {/* ── STEP 1: Soil & Climate ─────────────────── */}
         {step === 1 && (
           <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-8 space-y-6">
-            <h3 className="text-lg font-bold text-slate-800">Soil & Climate Data</h3>
-            <p className="text-sm text-slate-500">
-              Fill in available soil test data. This helps lessees assess the land's suitability.
-            </p>
+            <div>
+              <h3 className="text-lg font-bold text-slate-800">Soil & Climate Data</h3>
+              <p className="text-sm text-slate-500 mt-1">
+                All fields below are <span className="font-semibold text-primary">optional</span>.
+                Fill in what you know — incomplete data is fine. This helps lessees assess suitability.
+              </p>
+            </div>
 
+            {/* Soil Type */}
+            <div>
+              <label className={LABEL}>Type of Soil</label>
+              <select
+                className={INPUT}
+                value={soil.soil_type}
+                onChange={(e) => setSoil({ ...soil, soil_type: e.target.value })}
+              >
+                <option value="">— Select soil type (optional) —</option>
+                {SOIL_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+
+            {/* Numeric soil fields */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {(
                 [
-                  { key: "ph_level",    label: "Soil pH Level",      placeholder: "6.5",   unit: "pH" },
-                  { key: "nitrogen",    label: "Nitrogen (N)",         placeholder: "200",   unit: "ppm" },
-                  { key: "phosphorus",  label: "Phosphorus (P)",       placeholder: "50",    unit: "ppm" },
-                  { key: "potassium",   label: "Potassium (K)",        placeholder: "150",   unit: "ppm" },
-                  { key: "moisture",    label: "Soil Moisture",        placeholder: "45",    unit: "%" },
-                  { key: "temperature", label: "Avg Temperature",      placeholder: "24",    unit: "°C" },
-                  { key: "rainfall",    label: "Annual Rainfall",      placeholder: "800",   unit: "mm" },
+                  { key: "ph_level",    label: "Soil pH Level",   placeholder: "e.g. 6.5",  unit: "pH" },
+                  { key: "nitrogen",    label: "Nitrogen (N)",     placeholder: "e.g. 200",  unit: "ppm" },
+                  { key: "phosphorus",  label: "Phosphorus (P)",   placeholder: "e.g. 50",   unit: "ppm" },
+                  { key: "potassium",   label: "Potassium (K)",    placeholder: "e.g. 150",  unit: "ppm" },
+                  { key: "moisture",    label: "Soil Moisture",    placeholder: "e.g. 45",   unit: "%" },
+                  { key: "temperature", label: "Avg Temperature",  placeholder: "e.g. 24",   unit: "°C" },
+                  { key: "rainfall",    label: "Annual Rainfall",  placeholder: "e.g. 800",  unit: "mm" },
                 ] as { key: keyof SoilForm; label: string; placeholder: string; unit: string }[]
               ).map(({ key, label, placeholder, unit }) => (
                 <div key={key}>
@@ -278,7 +343,7 @@ export default function UploadLandPage() {
                   <div className="relative">
                     <input
                       type="number" step="0.1" min="0"
-                      className={INPUT + " pr-12"}
+                      className={INPUT + " pr-14"}
                       placeholder={placeholder}
                       value={soil[key]}
                       onChange={(e) => setSoil({ ...soil, [key]: e.target.value })}
@@ -291,6 +356,41 @@ export default function UploadLandPage() {
               ))}
             </div>
 
+            {/* Coordinates — optional, under soil section */}
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-4">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-slate-400">my_location</span>
+                <p className="text-sm font-semibold text-slate-700">
+                  GPS Coordinates <span className="text-slate-400 font-normal">(optional)</span>
+                </p>
+              </div>
+              <p className="text-xs text-slate-500">
+                If you know the GPS location add it here. You can skip this if you're unsure.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className={LABEL}>Latitude</label>
+                  <input
+                    type="number" step="0.000001"
+                    className={INPUT}
+                    placeholder="e.g. -1.286389"
+                    value={soil.latitude}
+                    onChange={(e) => setSoil({ ...soil, latitude: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className={LABEL}>Longitude</label>
+                  <input
+                    type="number" step="0.000001"
+                    className={INPUT}
+                    placeholder="e.g. 36.817223"
+                    value={soil.longitude}
+                    onChange={(e) => setSoil({ ...soil, longitude: e.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
+
             <div className="flex justify-between pt-2">
               <button onClick={() => setStep(0)}
                 className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all">
@@ -299,8 +399,10 @@ export default function UploadLandPage() {
               </button>
               <button onClick={handleSoilSubmit} disabled={loading}
                 className="flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60 transition-all">
-                {loading ? "Saving..." : "Continue"}
-                <span className="material-symbols-outlined text-lg">arrow_forward</span>
+                {loading
+                  ? <><span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-r-transparent" /> Saving…</>
+                  : <>Continue <span className="material-symbols-outlined text-lg">arrow_forward</span></>
+                }
               </button>
             </div>
           </div>
@@ -312,6 +414,7 @@ export default function UploadLandPage() {
             <h3 className="text-lg font-bold text-slate-800">Upload Photos</h3>
             <p className="text-sm text-slate-500">
               Add up to 10 photos of your land. High-quality images attract more lessees.
+              Photos are <span className="font-semibold text-primary">optional</span> — you can submit without them.
             </p>
 
             <label className="group flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/50 p-10 cursor-pointer hover:border-primary hover:bg-primary/5 transition-all">
@@ -336,13 +439,14 @@ export default function UploadLandPage() {
               </div>
             )}
 
-            {/* Confirmation card */}
-            <div className="rounded-xl bg-primary/5 border border-primary/20 p-4 flex items-center gap-4">
-              <span className="material-symbols-outlined text-primary text-3xl">task_alt</span>
+            {/* Status card */}
+            <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 flex items-start gap-4">
+              <span className="material-symbols-outlined text-amber-500 text-3xl mt-0.5">info</span>
               <div>
-                <p className="text-sm font-semibold text-slate-800">Ready to submit</p>
+                <p className="text-sm font-semibold text-slate-800">Listing hidden until verified</p>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Your listing will be reviewed by the FarmLease team before going live.
+                  Your listing will be <span className="font-bold">hidden from lessees</span> until the
+                  admin verifies your Title Deed Number. You will be notified once approved.
                 </p>
               </div>
             </div>
@@ -355,14 +459,17 @@ export default function UploadLandPage() {
               </button>
               <button onClick={handlePhotosSubmit} disabled={loading}
                 className="flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60 transition-all shadow-lg shadow-primary/30">
-                {loading ? "Submitting..." : "Submit Listing"}
-                <span className="material-symbols-outlined text-lg">check_circle</span>
+                {loading
+                  ? <><span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-r-transparent" /> Submitting…</>
+                  : <>Submit Listing <span className="material-symbols-outlined text-lg">check_circle</span></>
+                }
               </button>
             </div>
           </div>
         )}
 
       </div>
+    </div>
     </div>
   );
 }
