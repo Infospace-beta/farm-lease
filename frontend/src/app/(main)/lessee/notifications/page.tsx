@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import LesseePageHeader from "@/components/lessee/LesseePageHeader";
 
 const tabs = [
   { key: "all", label: "All Notifications", count: 12 },
@@ -111,29 +112,21 @@ export default function NotificationsPage() {
     activeTab === "all"
       ? notifications
       : notifications.filter(
-          (n) => n.category === activeTab || n.category === "all",
-        );
+        (n) => n.category === activeTab || n.category === "all",
+      );
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       {/* Header */}
-      <header className="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-8 flex-shrink-0">
-        <div>
-          <h2
-            className="text-3xl font-bold text-gray-900"
-            style={{ fontFamily: "Playfair Display, serif" }}
-          >
-            Notifications
-          </h2>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Stay updated on payments, AI reports and lease activity
-          </p>
-        </div>
+      <LesseePageHeader
+        title="Notifications"
+        subtitle="Stay updated on payments, AI reports and lease activity"
+      >
         <button className="text-xs text-[#047857] font-semibold hover:text-emerald-700 flex items-center gap-1">
           <span className="material-icons-round text-base">done_all</span>
           Mark all as read
         </button>
-      </header>
+      </LesseePageHeader>
 
       <div className="flex-1 overflow-hidden flex flex-col bg-[#f8fafc]">
         {/* Tabs */}
@@ -142,19 +135,17 @@ export default function NotificationsPage() {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`relative flex items-center gap-2 px-4 py-4 text-sm font-semibold transition-colors border-b-2 -mb-px ${
-                activeTab === tab.key
+              className={`relative flex items-center gap-2 px-4 py-4 text-sm font-semibold transition-colors border-b-2 -mb-px ${activeTab === tab.key
                   ? "text-[#047857] border-[#047857]"
                   : "text-gray-500 border-transparent hover:text-gray-800"
-              }`}
+                }`}
             >
               {tab.label}
               <span
-                className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full ${
-                  activeTab === tab.key
+                className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full ${activeTab === tab.key
                     ? "bg-[#047857] text-white"
                     : "bg-gray-100 text-gray-500"
-                }`}
+                  }`}
               >
                 {tab.count}
               </span>
@@ -163,7 +154,7 @@ export default function NotificationsPage() {
         </div>
 
         {/* Notification List */}
-        <div className="flex-1 overflow-y-auto p-6 max-w-3xl mx-auto w-full">
+        <div className="flex-1 overflow-y-auto p-6 w-full max-w-7xl mx-auto">
           {groups.map((group) => {
             const items = filtered.filter((n) => n.group === group);
             if (items.length === 0) return null;
@@ -176,11 +167,10 @@ export default function NotificationsPage() {
                   {items.map((notif) => (
                     <div
                       key={notif.id}
-                      className={`flex items-start gap-4 p-4 rounded-2xl border transition-all ${
-                        notif.unread
+                      className={`flex items-start gap-4 p-4 rounded-2xl border transition-all ${notif.unread
                           ? "bg-white border-[#047857]/20 shadow-sm"
                           : "bg-white/60 border-gray-100 hover:bg-white hover:border-gray-200"
-                      }`}
+                        }`}
                     >
                       <div
                         className={`w-11 h-11 ${notif.iconBg} rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5`}

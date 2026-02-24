@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import DealerPageHeader from "@/components/dealer/DealerPageHeader";
 
 const categories = [
   "All Products",
@@ -111,7 +112,7 @@ export default function ProductsPage() {
   });
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 lg:p-8">
+    <div className="flex-1 flex flex-col h-full overflow-hidden">
       {/* Toast */}
       {toast && (
         <div className="fixed top-6 right-6 bg-[#0f392b] text-white text-sm px-4 py-3 rounded-xl shadow-xl z-50 flex items-center gap-2">
@@ -120,132 +121,126 @@ export default function ProductsPage() {
         </div>
       )}
       {/* Header */}
-      <header className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4 mb-8">
-        <div>
-          <h2
-            className="text-3xl font-bold tracking-tight text-gray-900 mb-1"
-            style={{ fontFamily: "Playfair Display, serif" }}
-          >
-            My Products
-          </h2>
-          <p className="text-gray-500 text-sm">
-            Manage your product catalog, pricing and stock visibility.
-          </p>
+      <DealerPageHeader
+        title="My Products"
+        subtitle="Manage your product catalog, pricing and stock visibility."
+      >
+        <div className="relative">
+          <span className="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-base">
+            search
+          </span>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search products..."
+            className="pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm w-52 focus:outline-none focus:ring-2 focus:ring-[#047857]/20 focus:border-[#047857]"
+          />
         </div>
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <span className="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-base">
-              search
-            </span>
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search products..."
-              className="pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm w-52 focus:outline-none focus:ring-2 focus:ring-[#047857]/20 focus:border-[#047857]"
-            />
-          </div>
-          <Link
-            href="/dealer/products/add"
-            className="flex px-5 py-2.5 text-sm bg-[#0f392b] text-white rounded-lg items-center gap-2 hover:opacity-90 shadow-lg shadow-[#0f392b]/20"
-          >
-            <span className="material-icons-round text-sm">add</span>
-            New Product
-          </Link>
-        </div>
-      </header>
+        <Link
+          href="/dealer/products/add"
+          className="flex px-5 py-2.5 text-sm bg-[#0f392b] text-white rounded-lg items-center gap-2 hover:opacity-90 shadow-lg shadow-[#0f392b]/20"
+        >
+          <span className="material-icons-round text-sm">add</span>
+          New Product
+        </Link>
+      </DealerPageHeader>
 
-      {/* Category Filter + Filters button */}
-      <div className="flex items-center gap-2 mb-8 flex-wrap">
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setActiveCategory(cat)}
-            className={`px-4 py-2 text-sm font-semibold rounded-xl transition ${activeCategory === cat ? "bg-[#0f392b] text-white shadow-md" : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"}`}
-          >
-            {cat}
+      <div className="flex-1 overflow-y-auto p-4 lg:p-8 bg-[#f8fafc]">
+        {/* Category Filter + Filters button */}
+        <div className="flex items-center gap-2 mb-8 flex-wrap">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              className={`px-4 py-2 text-sm font-semibold rounded-xl transition ${activeCategory === cat ? "bg-[#0f392b] text-white shadow-md" : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"}`}
+            >
+              {cat}
+            </button>
+          ))}
+          <button className="ml-auto flex items-center gap-1.5 px-4 py-2 text-sm border border-gray-200 bg-white rounded-xl text-gray-500 hover:bg-gray-50">
+            <span className="material-icons-round text-base">tune</span>
+            Filters
           </button>
-        ))}
-        <button className="ml-auto flex items-center gap-1.5 px-4 py-2 text-sm border border-gray-200 bg-white rounded-xl text-gray-500 hover:bg-gray-50">
-          <span className="material-icons-round text-base">tune</span>
-          Filters
-        </button>
-      </div>
+        </div>
 
-      {/* Products Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filtered.map((product) => (
-          <div
-            key={product.id}
-            className="bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl transition-shadow duration-300 overflow-hidden group flex flex-col"
-          >
-            {/* Image Area */}
-            <div className="relative h-44 bg-gray-50 flex items-center justify-center overflow-hidden">
-              <span className="material-icons-round text-[80px] text-gray-200 group-hover:scale-110 transition-transform duration-500">
-                {product.icon}
-              </span>
-              <div className="absolute top-3 left-3">
-                <span
-                  className={`text-[9px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${product.statusClass}`}
-                >
-                  {product.status}
+        {/* Products Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filtered.map((product) => (
+            <div
+              key={product.id}
+              className="bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl transition-shadow duration-300 overflow-hidden group flex flex-col"
+            >
+              {/* Image Area */}
+              <div className="relative h-44 bg-gray-50 flex items-center justify-center overflow-hidden">
+                <span className="material-icons-round text-[80px] text-gray-200 group-hover:scale-110 transition-transform duration-500">
+                  {product.icon}
                 </span>
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="p-4 flex flex-col flex-1">
-              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">
-                {product.category}
-              </p>
-              <h3
-                className="font-bold text-gray-800 mb-1.5 text-sm leading-tight"
-                style={{ fontFamily: "Playfair Display, serif" }}
-              >
-                {product.name}
-              </h3>
-              <p className="text-xs text-gray-400 line-clamp-2 mb-3 flex-1">
-                {product.desc}
-              </p>
-
-              <div className="flex justify-between items-center text-xs py-3 border-t border-gray-100 mb-3">
-                <div>
-                  <p className="text-[9px] uppercase tracking-widest text-gray-400 font-bold mb-0.5">
-                    Price
-                  </p>
-                  <p className="font-bold text-gray-800">
-                    Ksh {product.price.toLocaleString()}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[9px] uppercase tracking-widest text-gray-400 font-bold mb-0.5">
-                    Stock
-                  </p>
-                  <p
-                    className={`font-bold ${product.stock === 0 ? "text-red-600" : product.stock < 20 ? "text-orange-600" : "text-gray-800"}`}
+                <div className="absolute top-3 left-3">
+                  <span
+                    className={`text-[9px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${product.statusClass}`}
                   >
-                    {product.stock} {product.unit}
-                  </p>
+                    {product.status}
+                  </span>
                 </div>
               </div>
 
-              <div className="flex gap-2">
-                <Link
-                  href={`/dealer/products/add?id=${product.id}`}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-[#047857] text-white text-xs font-bold rounded-xl hover:opacity-90 transition"
+              {/* Content */}
+              <div className="p-4 flex flex-col flex-1">
+                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">
+                  {product.category}
+                </p>
+                <h3
+                  className="font-bold text-gray-800 mb-1.5 text-sm leading-tight"
+                  style={{ fontFamily: "Playfair Display, serif" }}
                 >
-                  <span className="material-icons-round text-sm">edit</span>
-                  Edit
-                </Link>
-                <button
-                  onClick={() => deleteProduct(product.id)}
-                  className="p-2 border border-gray-200 rounded-xl text-gray-400 hover:bg-red-50 hover:text-red-500 hover:border-red-100 transition"
-                >
-                  <span className="material-icons-round text-base">delete</span>
-                </button>
+                  {product.name}
+                </h3>
+                <p className="text-xs text-gray-400 line-clamp-2 mb-3 flex-1">
+                  {product.desc}
+                </p>
+
+                <div className="flex justify-between items-center text-xs py-3 border-t border-gray-100 mb-3">
+                  <div>
+                    <p className="text-[9px] uppercase tracking-widest text-gray-400 font-bold mb-0.5">
+                      Price
+                    </p>
+                    <p className="font-bold text-gray-800">
+                      Ksh {product.price.toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[9px] uppercase tracking-widest text-gray-400 font-bold mb-0.5">
+                      Stock
+                    </p>
+                    <p
+                      className={`font-bold ${product.stock === 0 ? "text-red-600" : product.stock < 20 ? "text-orange-600" : "text-gray-800"}`}
+                    >
+                      {product.stock} {product.unit}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <Link
+                    href={`/dealer/products/add?id=${product.id}`}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-[#047857] text-white text-xs font-bold rounded-xl hover:opacity-90 transition"
+                  >
+                    <span className="material-icons-round text-sm">edit</span>
+                    Edit
+                  </Link>
+                  <button
+                    onClick={() => deleteProduct(product.id)}
+                    className="p-2 border border-gray-200 rounded-xl text-gray-400 hover:bg-red-50 hover:text-red-500 hover:border-red-100 transition"
+                  >
+                    <span className="material-icons-round text-base">
+                      delete
+                    </span>
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );

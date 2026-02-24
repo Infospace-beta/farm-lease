@@ -1,3 +1,5 @@
+import LesseePageHeader from "@/components/lessee/LesseePageHeader";
+
 const transactions = [
   {
     id: "TXN-0041",
@@ -56,23 +58,15 @@ export default function FinancialsPage() {
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       {/* Header */}
-      <header className="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-8 flex-shrink-0">
-        <div>
-          <h2
-            className="text-3xl font-bold text-gray-900"
-            style={{ fontFamily: "Playfair Display, serif" }}
-          >
-            Financials
-          </h2>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Track payments, escrow balances and expenditure trends
-          </p>
-        </div>
+      <LesseePageHeader
+        title="Financials"
+        subtitle="Track payments, escrow balances and expenditure trends"
+      >
         <button className="flex items-center gap-2 border border-gray-200 hover:border-[#047857] text-gray-700 hover:text-[#047857] text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors">
           <span className="material-icons-round text-lg">file_download</span>
           Export Statement
         </button>
-      </header>
+      </LesseePageHeader>
 
       <div className="flex-1 overflow-y-auto p-8 bg-[#f8fafc]">
         <div className="grid grid-cols-12 gap-6">
