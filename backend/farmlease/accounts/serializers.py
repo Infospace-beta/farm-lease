@@ -35,8 +35,8 @@ class UserSerializer(serializers.ModelSerializer):
         ]
 
 
-class RegisterSerializer(serializers.ModelSerializer):
-    """Serializer for user registration"""
+class SignupSerializer(serializers.ModelSerializer):
+    """Serializer for user signup"""
 
     password = serializers.CharField(
         write_only=True, validators=[validate_password]
