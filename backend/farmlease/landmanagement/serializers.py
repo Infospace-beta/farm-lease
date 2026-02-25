@@ -42,10 +42,11 @@ class LandListingSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'owner', 'owner_username', 'title', 'description',
             'total_area', 'price_per_month', 'preferred_duration',
-            'has_irrigation', 'has_electricity', 'has_road_access',
-            'has_fencing', 'location_name', 'latitude', 'longitude',
-            'status', 'is_verified', 'is_flagged', 'flag_reason',
-            'current_lessee', 'created_at', 'soil_data', 'images'
+            'title_deed_number', 'has_irrigation', 'has_electricity',
+            'has_road_access', 'has_fencing', 'location_name',
+            'latitude', 'longitude', 'status', 'is_verified',
+            'is_flagged', 'flag_reason', 'current_lessee',
+            'created_at', 'soil_data', 'images'
         ]
         read_only_fields = ['owner', 'created_at', 'is_verified']
 

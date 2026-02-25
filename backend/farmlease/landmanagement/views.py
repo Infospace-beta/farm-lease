@@ -1,5 +1,6 @@
 """API views for the landmanagement app."""
 # pylint: disable=import-error
+from datetime import date
 from django.db.models import Sum
 from rest_framework import status, permissions
 from rest_framework.decorators import (
@@ -165,7 +166,8 @@ def verify_land(request, land_id):  # pylint: disable=unused-argument
     land.is_verified = True
     land.is_flagged = False
     land.flag_reason = None
-    land.save(update_fields=['is_verified', 'is_flagged', 'flag_reason'])
+    land.status = 'Vacant'
+    land.save(update_fields=['is_verified', 'is_flagged', 'flag_reason', 'status'])
     return Response(
         {'message': f"Land '{land.title}' verified successfully."},
         status=status.HTTP_200_OK,
@@ -246,3 +248,148 @@ class LandownerDashboardStats(APIView):
             'total_area': total_area,
             'monthly_revenue': monthly_revenue,
         })
+
+
+# ─── ADMIN DASHBOARD STATS ────────────────────────────────────
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def admin_stats(request):  # pylint: disable=unused-argument
+    """Return aggregated stats for admin dashboard."""
+    all_lands = LandListing.objects.all()
+    
+    total_lands = all_lands.count()
+    pending_verification = all_lands.filter(
+        is_verified=False,
+        is_flagged=False
+    ).count()
+    verified = all_lands.filter(is_verified=True).count()
+    flagged = all_lands.filter(is_flagged=True).count()
+    
+    return Response({
+        'total_lands': total_lands,
+        'pending_verification': pending_verification,
+        'verified': verified,
+        'flagged': flagged,
+    })
+
+
+# ─── OWNER NOTIFICATIONS ──────────────────────────────────────
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def owner_notifications(request):
+    """Return notifications for the authenticated land owner."""
+    lands = LandListing.objects.filter(owner=request.user)
+    notifications = []
+    
+    # Pending verifications
+    pending = lands.filter(is_verified=False, is_flagged=False).count()
+    if pending > 0:
+        notifications.append({
+            'id': f'pending-{pending}',
+            'icon': 'pending_actions',
+            'iconBg': 'bg-amber-50',
+            'iconColor': 'text-amber-600',
+            'title': f'{pending} land listing{"s" if pending > 1 else ""} awaiting admin verification',
+            'msg': 'Your land will be visible to lessees once the admin verifies your Title Deed Number.',
+            'time': 'Pending',
+            'read': False,
+        })
+    
+    # Flagged lands
+    flagged_lands = lands.filter(is_flagged=True)
+    for land in flagged_lands:
+        notifications.append({
+            'id': f'flagged-{land.id}',
+            'icon': 'flag',
+            'iconBg': 'bg-red-50',
+            'iconColor': 'text-red-600',
+            'title': f'Land "{land.title}" has been flagged',
+            'msg': land.flag_reason or 'Please contact admin for details.',
+            'time': 'Recent',
+            'read': False,
+        })
+    
+    # Recently verified lands
+    verified = lands.filter(is_verified=True).order_by('-created_at')[:2]
+    for land in verified:
+        notifications.append({
+            'id': f'verified-{land.id}',
+            'icon': 'verified',
+            'iconBg': 'bg-green-50',
+            'iconColor': 'text-green-600',
+            'title': f'Land "{land.title}" verified',
+            'msg': 'Your land is now visible to potential lessees.',
+            'time': 'Recent',
+            'read': True,
+        })
+    
+    # Vacant lands reminder
+    vacant = lands.filter(status='Vacant', is_verified=True).count()
+    if vacant > 0:
+        notifications.append({
+            'id': f'vacant-{vacant}',
+            'icon': 'info',
+            'iconBg': 'bg-blue-50',
+            'iconColor': 'text-blue-600',
+            'title': f'{vacant} verified land{"s" if vacant > 1 else ""} available for lease',
+            'msg': 'Your lands are ready to receive lease requests.',
+            'time': 'Info',
+            'read': True,
+        })
+    
+    return Response(notifications[:10])  # Return max 10 notifications
+
+
+# ─── OWNER ACTIVITY FEED ──────────────────────────────────────
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def owner_activity_feed(request):
+    """Return recent activity feed for the authenticated land owner."""
+    lands = LandListing.objects.filter(owner=request.user).order_by('-created_at')
+    activities = []
+    
+    # Recently created lands
+    for land in lands[:3]:
+        days_ago = (date.today() - land.created_at.date()).days
+        time_str = (
+            'Today' if days_ago == 0 else
+            'Yesterday' if days_ago == 1 else
+            f'{days_ago} days ago'
+        )
+        
+        if land.is_verified:
+            activities.append({
+                'dotColor': 'bg-green-500',
+                'time': time_str,
+                'title': f'Land "{land.title}" listed successfully',
+                'body': f'Your {land.total_area} acre plot is now visible to lessees.',
+                'type': 'verified',
+            })
+        elif land.is_flagged:
+            activities.append({
+                'dotColor': 'bg-red-500',
+                'time': time_str,
+                'title': f'Land "{land.title}" flagged',
+                'body': land.flag_reason or 'Please contact admin.',
+                'type': 'flagged',
+            })
+        else:
+            activities.append({
+                'dotColor': 'bg-amber-500',
+                'time': time_str,
+                'title': f'Land "{land.title}" pending verification',
+                'body': 'Awaiting admin verification of Title Deed Number.',
+                'type': 'pending',
+            })
+    
+    # Add a welcome message if no lands
+    if not activities:
+        activities.append({
+            'dotColor': 'bg-blue-500',
+            'time': 'Now',
+            'title': 'Welcome to FarmLease',
+            'body': 'Start by listing your first land plot.',
+            'type': 'info',
+        })
+    
+    return Response(activities[:10])  # Return max 10 activities

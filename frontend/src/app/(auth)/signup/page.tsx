@@ -55,6 +55,15 @@ export default function SignupPage() {
     formState: { errors },
   } = useForm<FormData>({ 
     resolver: yupResolver(schema) as any,
+    defaultValues: {
+      first_name: "",
+      last_name: "",
+      email: "",
+      phone_number: "",
+      role: "" as any,
+      password: "",
+      password2: "",
+    },
   });
 
   const onSubmit = async (data: FormData) => {

@@ -127,7 +127,7 @@ export default function AnalyticsPage() {
       </AdminPageHeader>
 
       <div className="flex-1 overflow-y-auto p-5 lg:p-8 bg-slate-50">
-        {/* Stat Cards */}}
+        {/* Stat Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {statCards.map((s) => (
             <div

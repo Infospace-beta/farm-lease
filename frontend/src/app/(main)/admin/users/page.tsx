@@ -2,6 +2,18 @@
 
 import { useState } from "react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import {
+  Users,
+  Sprout,
+  Mountain,
+  Ban,
+  Eye,
+  Search,
+  RefreshCw,
+  FileDown,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 
 const statCards = [
   {
@@ -154,7 +166,7 @@ export default function UserManagementPage() {
       </AdminPageHeader>
 
       <div className="flex-1 overflow-y-auto p-5 lg:p-8 bg-slate-50">
-        {/* Stat Cards */}}
+        {/* Stat Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
           {statCards.map((card) => {
             const Icon = card.icon;
@@ -363,5 +375,6 @@ export default function UserManagementPage() {
           </div>
         </div>
       </div>
-      );
+    </div>
+  );
 }

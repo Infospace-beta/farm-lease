@@ -106,6 +106,8 @@ export const landsApi = {
   // Owner — lists & dashboard
   myLands: () => api.get("/lands/my-lands/"),
   ownerDashboard: () => api.get("/lands/ownerdashboard/"),
+  ownerNotifications: () => api.get("/lands/owner-notifications/"),
+  ownerActivity: () => api.get("/lands/owner-activity/"),
 
   // Public — verified listings for lessees
   publicListings: () => api.get("/lands/listings/"),
@@ -319,4 +321,68 @@ export const dealerApi = {
     api.patch("/dealer/profile/", data, {
       headers: { "Content-Type": "multipart/form-data" },
     }),
+};
+
+// ─── Owner API ────────────────────────────────────────────────────────────────
+export const ownerApi = {
+  // Dashboard
+  dashboard: () => api.get("/lands/ownerdashboard/"),
+
+  // My Lands
+  myLands: () => api.get("/lands/my-lands/"),
+  landDetail: (landId: number) => api.get(`/lands/${landId}/`),
+
+  // Lease Requests (These would come from contracts app when implemented)
+  leaseRequests: (params?: {
+    status?: string;
+    land?: number;
+    page?: number;
+  }) => api.get("/contracts/owner/lease-requests/", { params }),
+  leaseRequestDetail: (id: number) =>
+    api.get(`/contracts/owner/lease-requests/${id}/`),
+  approveLeaseRequest: (id: number, data?: { escrow_amount?: number }) =>
+    api.post(`/contracts/owner/lease-requests/${id}/approve/`, data),
+  rejectLeaseRequest: (id: number, reason: string) =>
+    api.post(`/contracts/owner/lease-requests/${id}/reject/`, { reason }),
+
+  // Agreements / Leases
+  myAgreements: (params?: { status?: string; page?: number }) =>
+    api.get("/contracts/owner/agreements/", { params }),
+  agreementDetail: (id: number) =>
+    api.get(`/contracts/owner/agreements/${id}/`),
+  signAgreement: (id: number) =>
+    api.post(`/contracts/owner/agreements/${id}/sign/`),
+  downloadAgreementPdf: (id: number) =>
+    api.get(`/contracts/owner/agreements/${id}/pdf/`, {
+      responseType: "blob",
+    }),
+
+  // Financials / Payments
+  transactions: (params?: {
+    period?: string;
+    type?: string;
+    status?: string;
+    page?: number;
+  }) => api.get("/payments/owner/transactions/", { params }),
+  transactionDetail: (id: string) =>
+    api.get(`/payments/owner/transactions/${id}/`),
+  revenueSummary: () => api.get("/payments/owner/revenue/"),
+  revenueChart: (period?: string) =>
+    api.get("/payments/owner/revenue/chart/", { params: { period } }),
+  requestWithdrawal: (amount: number, phone: string) =>
+    api.post("/payments/owner/withdraw/", { amount, phone }),
+
+  // Escrow
+  escrowStatus: (params?: { status?: string; page?: number }) =>
+    api.get("/payments/owner/escrow/", { params }),
+  escrowDetail: (id: number) => api.get(`/payments/owner/escrow/${id}/`),
+
+  // Notifications
+  notifications: (params?: { page?: number }) =>
+    api.get("/lands/owner-notifications/", { params }),
+  markNotificationRead: (id: number) =>
+    api.patch(`/notifications/${id}/`, { read: true }),
+
+  // Activity Feed
+  activityFeed: () => api.get("/lands/owner-activity/"),
 };

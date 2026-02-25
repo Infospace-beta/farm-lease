@@ -14,6 +14,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import { landsApi } from "@/lib/services/api";
 
 /* ─── Types ───────────────────────────────────────────── */
 interface LandListing {
@@ -301,7 +302,7 @@ export default function LandVerificationsPage() {
       )}
 
       {/* Page Header */}
-      <header className="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between flex-shrink-0">
+      <header className="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between shrink-0">
         <div>
           <h2
             className="text-2xl font-bold tracking-tight text-gray-900"
@@ -333,7 +334,6 @@ export default function LandVerificationsPage() {
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
             Refresh
           </button>
-          <NotificationBell href="/admin/notifications" />
         </div>
       </header>
       <div className="flex-1 overflow-y-auto p-4 lg:p-8 bg-[#f8fafc]">

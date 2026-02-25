@@ -16,6 +16,8 @@ interface BasicForm {
   price_per_month: string;
   preferred_duration: string;
   title_deed_number: string;
+  latitude: string;
+  longitude: string;
   has_irrigation: boolean;
   has_electricity: boolean;
   has_road_access: boolean;
@@ -31,8 +33,6 @@ interface SoilForm {
   moisture: string;
   temperature: string;
   rainfall: string;
-  latitude: string;
-  longitude: string;
 }
 
 /* ─── Shared input classes ───────────────────────────── */
@@ -68,6 +68,8 @@ export default function UploadLandPage() {
     price_per_month: "",
     preferred_duration: "1 Year",
     title_deed_number: "",
+    latitude: "0",
+    longitude: "0",
     has_irrigation: false,
     has_electricity: false,
     has_road_access: false,
@@ -83,8 +85,6 @@ export default function UploadLandPage() {
     moisture: "",
     temperature: "",
     rainfall: "",
-    latitude: "",
-    longitude: "",
   });
 
   /* ── Helpers ────────────────────────────────────────── */
@@ -156,8 +156,6 @@ export default function UploadLandPage() {
         moisture: numOrNull(soil.moisture),
         temperature: numOrNull(soil.temperature),
         rainfall: numOrNull(soil.rainfall),
-        latitude: numOrNull(soil.latitude) ?? null,
-        longitude: numOrNull(soil.longitude) ?? null,
       };
       await landsApi.addSoil(landId, payload);
       setStep(2);
@@ -180,7 +178,8 @@ export default function UploadLandPage() {
         Array.from(photos).forEach((f) => fd.append("images", f));
         await landsApi.uploadPhotos(landId, fd);
       }
-      router.push("/owner/lands");
+      // Success! Redirect to My Lands page with a success flag
+      router.push("/owner/lands?success=true");
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { detail?: string } } })?.response
         ?.data?.detail;
@@ -197,38 +196,35 @@ export default function UploadLandPage() {
         title="List New Land"
         subtitle="Upload your land details, soil data and photos to start receiving lease requests."
       />
-      <div className="flex-1 overflow-y-auto p-4 lg:p-8 bg-slate-50">
-        <div className="mx-auto max-w-3xl">
+      <div className="flex-1 overflow-y-auto p-3 md:p-4 lg:p-6 bg-slate-50">
+        <div className="mx-auto max-w-5xl">
           {/* Step indicator */}
-          <div className="mb-6 flex items-center gap-0">
+          <div className="mb-4 md:mb-6 flex items-center gap-0">
             {STEPS.map((s, i) => (
               <div key={s} className="flex flex-1 items-center">
                 <div className="flex flex-col items-center">
                   <div
-                    className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold transition-colors ${i < step
-                        ? "bg-primary text-white"
-                        : i === step
-                          ? "bg-primary text-white ring-4 ring-primary/20"
-                          : "bg-slate-100 text-slate-400"
-                      }`}
+                    className={`flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-full text-xs md:text-sm font-bold transition-colors ${
+                      i === step
+                        ? "bg-green-600 text-white ring-4 ring-green-600/20"
+                        : "bg-white text-slate-600 border-2 border-slate-300"
+                    }`}
                   >
-                    {i < step ? (
-                      <span className="material-symbols-outlined text-lg">
-                        check
-                      </span>
-                    ) : (
-                      i + 1
-                    )}
+                    {i + 1}
                   </div>
                   <span
-                    className={`mt-1.5 text-xs font-medium ${i <= step ? "text-primary" : "text-slate-400"}`}
+                    className={`mt-1 md:mt-1.5 text-[10px] md:text-xs font-medium hidden sm:block ${
+                      i === step ? "text-green-600 font-bold" : "text-slate-500"
+                    }`}
                   >
                     {s}
                   </span>
                 </div>
                 {i < STEPS.length - 1 && (
                   <div
-                    className={`mx-2 h-0.5 flex-1 mb-5 ${i < step ? "bg-primary" : "bg-slate-200"}`}
+                    className={`mx-1 md:mx-2 h-0.5 flex-1 mb-0 sm:mb-5 ${
+                      i < step ? "bg-green-600" : "bg-slate-200"
+                    }`}
                   />
                 )}
               </div>
@@ -237,19 +233,20 @@ export default function UploadLandPage() {
 
           {/* Error */}
           {error && (
-            <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {error}
+            <div className="mb-4 md:mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-xs md:text-sm text-red-700 flex items-start gap-3">
+              <span className="material-symbols-outlined text-red-500 shrink-0">error</span>
+              <div className="flex-1">{error}</div>
             </div>
           )}
 
           {/* ── STEP 0: Basic Info ─────────────────────── */}
           {step === 0 && (
-            <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-8 space-y-6">
-              <h3 className="text-lg font-bold text-slate-800">
+            <div className="rounded-xl md:rounded-2xl bg-white border border-slate-200 shadow-sm p-5 md:p-8 space-y-5 md:space-y-6">
+              <h3 className="text-base md:text-lg font-bold text-slate-800">
                 Basic Information
               </h3>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                 <div className="sm:col-span-2">
                   <label className={LABEL}>
                     Plot Title <span className="text-red-500">*</span>
@@ -361,7 +358,7 @@ export default function UploadLandPage() {
               {/* Amenities */}
               <div>
                 <label className={LABEL}>Amenities</label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
                   {(
                     [
                       {
@@ -388,12 +385,12 @@ export default function UploadLandPage() {
                         key={key}
                         type="button"
                         onClick={() => setBasic({ ...basic, [key]: !val })}
-                        className={`flex flex-col items-center gap-1 rounded-xl border-2 p-3 text-xs font-semibold transition-all ${val
+                        className={`flex flex-col items-center gap-1 rounded-lg md:rounded-xl border-2 p-2 md:p-3 text-xs font-semibold transition-all ${val
                             ? "border-primary bg-primary/5 text-primary"
                             : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
                           }`}
                       >
-                        <span className="material-symbols-outlined text-xl">
+                        <span className="material-symbols-outlined text-lg md:text-xl">
                           {icon}
                         </span>
                         {label}
@@ -403,23 +400,23 @@ export default function UploadLandPage() {
                 </div>
               </div>
 
-              <div className="flex justify-end pt-2">
+              {/* Navigation */}
+              <div className="flex items-center justify-end pt-6 border-t border-slate-100">
                 <button
                   onClick={handleBasicSubmit}
                   disabled={loading}
-                  className="flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60 transition-all"
+                  type="button"
+                  className="inline-flex items-center justify-center gap-2 md:gap-3 rounded-lg bg-green-600 px-6 md:px-8 py-3 md:py-3.5 text-sm md:text-base font-bold text-white hover:bg-green-700 disabled:opacity-60 transition-all shadow-lg hover:shadow-xl w-auto min-w-35 md:min-w-40"
                 >
                   {loading ? (
                     <>
-                      <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-r-transparent" />{" "}
-                      Saving…
+                      <span className="inline-block h-4 w-4 md:h-5 md:w-5 animate-spin rounded-full border-2 border-white border-r-transparent" />
+                      <span>Saving...</span>
                     </>
                   ) : (
                     <>
-                      Continue{" "}
-                      <span className="material-symbols-outlined text-lg">
-                        arrow_forward
-                      </span>
+                      <span>Next</span>
+                      <span className="material-symbols-outlined text-xl md:text-2xl">arrow_forward</span>
                     </>
                   )}
                 </button>
@@ -429,12 +426,12 @@ export default function UploadLandPage() {
 
           {/* ── STEP 1: Soil & Climate ─────────────────── */}
           {step === 1 && (
-            <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-8 space-y-6">
+            <div className="rounded-xl md:rounded-2xl bg-white border border-slate-200 shadow-sm p-5 md:p-8 space-y-5 md:space-y-6">
               <div>
-                <h3 className="text-lg font-bold text-slate-800">
+                <h3 className="text-base md:text-lg font-bold text-slate-800">
                   Soil & Climate Data
                 </h3>
-                <p className="text-sm text-slate-500 mt-1">
+                <p className="text-xs md:text-sm text-slate-500 mt-1">
                   All fields below are{" "}
                   <span className="font-semibold text-primary">optional</span>.
                   Fill in what you know — incomplete data is fine. This helps
@@ -462,7 +459,7 @@ export default function UploadLandPage() {
               </div>
 
               {/* Numeric soil fields */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                 {(
                   [
                     {
@@ -536,79 +533,31 @@ export default function UploadLandPage() {
                 ))}
               </div>
 
-              {/* Coordinates — optional, under soil section */}
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-4">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-slate-400">
-                    my_location
-                  </span>
-                  <p className="text-sm font-semibold text-slate-700">
-                    GPS Coordinates{" "}
-                    <span className="text-slate-400 font-normal">
-                      (optional)
-                    </span>
-                  </p>
-                </div>
-                <p className="text-xs text-slate-500">
-                  If you know the GPS location add it here. You can skip this if
-                  you're unsure.
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className={LABEL}>Latitude</label>
-                    <input
-                      type="number"
-                      step="0.000001"
-                      className={INPUT}
-                      placeholder="e.g. -1.286389"
-                      value={soil.latitude}
-                      onChange={(e) =>
-                        setSoil({ ...soil, latitude: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div>
-                    <label className={LABEL}>Longitude</label>
-                    <input
-                      type="number"
-                      step="0.000001"
-                      className={INPUT}
-                      placeholder="e.g. 36.817223"
-                      value={soil.longitude}
-                      onChange={(e) =>
-                        setSoil({ ...soil, longitude: e.target.value })
-                      }
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-between pt-2">
+              {/* Navigation */}
+              <div className="flex items-center justify-between pt-6 border-t border-slate-100 gap-3 md:gap-4">
                 <button
                   onClick={() => setStep(0)}
-                  className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all"
+                  type="button"
+                  className="inline-flex items-center justify-center gap-2 md:gap-3 rounded-lg bg-green-600 px-6 md:px-8 py-3 md:py-3.5 text-sm md:text-base font-bold text-white hover:bg-green-700 transition-all shadow-lg hover:shadow-xl flex-1 md:flex-initial min-w-30 md:min-w-35"
                 >
-                  <span className="material-symbols-outlined text-lg">
-                    arrow_back
-                  </span>
-                  Back
+                  <span className="material-symbols-outlined text-xl md:text-2xl">arrow_back</span>
+                  <span>Back</span>
                 </button>
                 <button
                   onClick={handleSoilSubmit}
                   disabled={loading}
-                  className="flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60 transition-all"
+                  type="button"
+                  className="inline-flex items-center justify-center gap-2 md:gap-3 rounded-lg bg-green-600 px-6 md:px-8 py-3 md:py-3.5 text-sm md:text-base font-bold text-white hover:bg-green-700 disabled:opacity-60 transition-all shadow-lg hover:shadow-xl flex-1 md:flex-initial min-w-30 md:min-w-35"
                 >
                   {loading ? (
                     <>
-                      <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-r-transparent" />{" "}
-                      Saving…
+                      <span className="inline-block h-4 w-4 md:h-5 md:w-5 animate-spin rounded-full border-2 border-white border-r-transparent" />
+                      <span>Saving...</span>
                     </>
                   ) : (
                     <>
-                      Continue{" "}
-                      <span className="material-symbols-outlined text-lg">
-                        arrow_forward
-                      </span>
+                      <span>Next</span>
+                      <span className="material-symbols-outlined text-xl md:text-2xl">arrow_forward</span>
                     </>
                   )}
                 </button>
@@ -618,11 +567,11 @@ export default function UploadLandPage() {
 
           {/* ── STEP 2: Photos ────────────────────────── */}
           {step === 2 && (
-            <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-8 space-y-6">
-              <h3 className="text-lg font-bold text-slate-800">
+            <div className="rounded-xl md:rounded-2xl bg-white border border-slate-200 shadow-sm p-5 md:p-8 space-y-5 md:space-y-6">
+              <h3 className="text-base md:text-lg font-bold text-slate-800">
                 Upload Photos
               </h3>
-              <p className="text-sm text-slate-500">
+              <p className="text-xs md:text-sm text-slate-500">
                 Add up to 10 photos of your land. High-quality images attract
                 more lessees. Photos are{" "}
                 <span className="font-semibold text-primary">optional</span> —
@@ -653,17 +602,18 @@ export default function UploadLandPage() {
               </label>
 
               {photos && photos.length > 0 && (
-                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
                   {Array.from(photos).map((f, i) => (
                     <div
                       key={i}
-                      className="relative aspect-square rounded-lg overflow-hidden bg-slate-100"
+                      className="relative aspect-square rounded-lg overflow-hidden bg-slate-100 shadow-sm"
                     >
                       <img
                         src={URL.createObjectURL(f)}
                         alt=""
                         className="object-cover w-full h-full"
                       />
+                      <div className="absolute inset-0 bg-linear-to-t from-black/20 to-transparent opacity-0 hover:opacity-100 transition-opacity" />
                     </div>
                   ))}
                 </div>
@@ -687,32 +637,31 @@ export default function UploadLandPage() {
                 </div>
               </div>
 
-              <div className="flex justify-between pt-2">
+              {/* Navigation */}
+              <div className="flex items-center justify-between pt-6 border-t border-slate-100 gap-3 md:gap-4">
                 <button
                   onClick={() => setStep(1)}
-                  className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all"
+                  type="button"
+                  className="inline-flex items-center justify-center gap-2 md:gap-3 rounded-lg bg-green-600 px-6 md:px-8 py-3 md:py-3.5 text-sm md:text-base font-bold text-white hover:bg-green-700 transition-all shadow-lg hover:shadow-xl flex-1 md:flex-initial min-w-30 md:min-w-35"
                 >
-                  <span className="material-symbols-outlined text-lg">
-                    arrow_back
-                  </span>
-                  Back
+                  <span className="material-symbols-outlined text-xl md:text-2xl">arrow_back</span>
+                  <span>Back</span>
                 </button>
                 <button
                   onClick={handlePhotosSubmit}
                   disabled={loading}
-                  className="flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60 transition-all shadow-lg shadow-primary/30"
+                  type="button"
+                  className="inline-flex items-center justify-center gap-2 md:gap-3 rounded-lg bg-green-600 px-6 md:px-8 py-3 md:py-3.5 text-sm md:text-base font-bold text-white hover:bg-green-700 disabled:opacity-60 transition-all shadow-lg hover:shadow-xl flex-1 md:flex-initial min-w-30 md:min-w-35"
                 >
                   {loading ? (
                     <>
-                      <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-r-transparent" />{" "}
-                      Submitting…
+                      <span className="inline-block h-4 w-4 md:h-5 md:w-5 animate-spin rounded-full border-2 border-white border-r-transparent" />
+                      <span>Submitting...</span>
                     </>
                   ) : (
                     <>
-                      Submit Listing{" "}
-                      <span className="material-symbols-outlined text-lg">
-                        check_circle
-                      </span>
+                      <span>Submit</span>
+                      <span className="material-symbols-outlined text-xl md:text-2xl">check_circle</span>
                     </>
                   )}
                 </button>

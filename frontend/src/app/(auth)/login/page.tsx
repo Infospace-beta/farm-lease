@@ -27,7 +27,13 @@ export default function LoginPage() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginCredentials>({ resolver: yupResolver(schema) });
+  } = useForm<LoginCredentials>({ 
+    resolver: yupResolver(schema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
 
   const onSubmit = async (data: LoginCredentials) => {
     setLoading(true);
