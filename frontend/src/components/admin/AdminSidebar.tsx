@@ -8,7 +8,7 @@ import { useAuth } from "@/providers";
 const navLinks = [
   { href: "/admin/dashboard",           label: "Dashboard",             icon: "dashboard",    badge: "" },
   { href: "/admin/users",               label: "User Management",        icon: "group",        badge: "" },
-  { href: "/admin/land-verifications",  label: "Land Verifications",     icon: "verified",     badge: "12" },
+  { href: "/admin/land-verifications",  label: "Land Verifications",     icon: "verified",     badge: "" },
   { href: "/admin/dealer-oversight",    label: "Agro-Dealer Oversight",  icon: "store",        badge: "" },
   { href: "/admin/payments",            label: "Payments & Escrow",      icon: "payments",     badge: "" },
   { href: "/admin/agreements",          label: "Agreements & Contracts", icon: "description",  badge: "" },

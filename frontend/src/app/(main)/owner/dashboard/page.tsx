@@ -14,72 +14,20 @@ interface LandData {
   status: string;
   is_verified: boolean;
   soil_data?: {
+    soil_type?: string;
     ph_level: number;
   };
   images: Array<{ id: number; image: string }>;
 }
 
-/* ─── Static data ─────────────────────────────────────── */
-const activities = [
-  {
-    dotColor: "bg-[#047857]",
-    time: "10 mins ago",
-    title: "Escrow Payment Released",
-    body: (
-      <p className="text-xs text-slate-500 mt-1">
-        Payment of{" "}
-        <span className="text-emerald-600 font-bold">Ksh 50,000</span> for Plot
-        A4 released to your wallet.
-      </p>
-    ),
-  },
-  {
-    dotColor: "bg-amber-500",
-    time: "2 hours ago",
-    title: "New Bid Received",
-    body: (
-      <div className="mt-2 rounded bg-slate-50 p-2">
-        <div className="flex items-center gap-2">
-          <img
-            src="https://ui-avatars.com/api/?name=Sarah+L&background=e2e8f0&color=475569&size=32"
-            alt="Sarah L."
-            className="h-6 w-6 rounded-full object-cover"
-          />
-          <span className="text-xs font-medium">Sarah L.</span>
-        </div>
-        <p className="text-xs text-slate-500 mt-1">
-          Bid placed on Plot B2 - East
-        </p>
-      </div>
-    ),
-  },
-  {
-    dotColor: "bg-blue-500",
-    time: "Yesterday",
-    title: "Agreement Draft Ready",
-    body: (
-      <>
-        <p className="text-xs text-slate-500 mt-1">
-          AI-generated lease agreement for Michael K. is ready for review.
-        </p>
-        <button className="mt-2 text-xs font-bold text-primary hover:underline">
-          Review PDF
-        </button>
-      </>
-    ),
-  },
-  {
-    dotColor: "bg-slate-300",
-    time: "2 days ago",
-    title: "Soil Report Updated",
-    body: (
-      <p className="text-xs text-slate-500 mt-1">
-        New nitrogen levels detected for Plot C1.
-      </p>
-    ),
-    last: true,
-  },
-];
+interface ActivityItem {
+  dotColor: string;
+  time: string;
+  title: string;
+  body: string;
+  type: string;
+  last?: boolean;
+}
 
 /* ─── Helper functions ────────────────────────────────── */
 const getSoilType = (ph?: number): string => {
@@ -89,13 +37,17 @@ const getSoilType = (ph?: number): string => {
   return "Neutral";
 };
 
+const formatStatus = (status: string): string => {
+  return status.replace(/_/g, " ");
+};
+
 const getStatusColor = (status: string) => {
   switch (status) {
     case "Leased":
       return "bg-emerald-500/90";
-    case "Pending":
+    case "Pending_Payment":
       return "bg-amber-500/90";
-    case "Under Review":
+    case "Under_Review":
       return "bg-blue-500/90";
     default:
       return "bg-slate-500/90";
@@ -106,6 +58,7 @@ const getStatusColor = (status: string) => {
 export default function OwnerDashboardPage() {
   const [lands, setLands] = useState<LandData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [dashboardStats, setDashboardStats] = useState({
     total_lands: 0,
     active_leases: 0,
@@ -118,14 +71,16 @@ export default function OwnerDashboardPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch both lands and dashboard stats in parallel
-        const [landsResponse, statsResponse] = await Promise.all([
+        // Fetch lands, dashboard stats, and activities in parallel
+        const [landsResponse, statsResponse, activitiesResponse] = await Promise.all([
           landsApi.myLands(),
           landsApi.ownerDashboard(),
+          landsApi.ownerActivity(),
         ]);
 
         setLands(landsResponse.data);
         setDashboardStats(statsResponse.data);
+        setActivities(activitiesResponse.data);
       } catch (error) {
         console.error("Failed to fetch data:", error);
       } finally {
@@ -225,12 +180,6 @@ export default function OwnerDashboardPage() {
         title="Dashboard"
         subtitle="Monitor your land portfolio performance, manage lease agreements, and track escrow payments in real-time."
       >
-        <button className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
-          <span className="material-symbols-outlined text-[18px]">
-            download
-          </span>
-          Report
-        </button>
         <Link
           href="/owner/lands/add"
           className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark transition-colors"
@@ -242,8 +191,8 @@ export default function OwnerDashboardPage() {
         </Link>
       </OwnerPageHeader>
 
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-slate-50">
-        <div className="mx-auto max-w-7xl">
+      <div className="flex-1 overflow-y-auto p-3 md:p-4 lg:p-6 bg-slate-50">
+        <div className="mx-auto max-w-full">
           {/* Pending verification alert */}
           {!loading && dashboardStats.pending_verifications > 0 && (
             <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
@@ -265,7 +214,7 @@ export default function OwnerDashboardPage() {
           )}
 
           {/* Stats row */}
-          <div className="mb-6 grid gap-4 sm:grid-cols-3">
+          <div className="mb-4 md:mb-6 grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {loading ? (
               // Loading skeleton for stats
               <>
@@ -339,7 +288,7 @@ export default function OwnerDashboardPage() {
           {/* Portfolio + Activity */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
             {/* Land Portfolio */}
-            <div className="lg:col-span-2 space-y-4">
+            <div className="lg:col-span-2 space-y-3 md:space-y-4">
               <div className="flex items-center justify-between">
                 <h3
                   className="text-base md:text-lg font-bold text-earth"
@@ -361,7 +310,7 @@ export default function OwnerDashboardPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                 {/* Land cards */}
                 {loading ? (
                   <div className="col-span-full flex items-center justify-center py-10">
@@ -403,7 +352,7 @@ export default function OwnerDashboardPage() {
                             <span
                               className={`inline-flex items-center rounded-full ${statusColor} backdrop-blur-sm px-2.5 py-1 text-xs font-bold text-white shadow-sm`}
                             >
-                              {land.status}
+                              {formatStatus(land.status)}
                             </span>
                           </div>
                         </div>
@@ -490,26 +439,38 @@ export default function OwnerDashboardPage() {
                 </div>
 
                 <div className="space-y-8">
-                  {activities.map((act, i) => (
-                    <div
-                      key={i}
-                      className={`relative pl-6 ${act.last
-                          ? ""
-                          : "before:absolute before:left-0 before:top-2 before:h-full before:w-px before:bg-slate-200"
-                        }`}
-                    >
+                  {activities.length > 0 ? (
+                    activities.map((act, i) => (
                       <div
-                        className={`absolute -left-1.25 top-1 h-2.5 w-2.5 rounded-full border-2 border-white ${act.dotColor}`}
-                      />
-                      <p className="text-xs font-medium text-slate-400">
-                        {act.time}
+                        key={i}
+                        className={`relative pl-6 ${
+                          i === activities.length - 1
+                            ? ""
+                            : "before:absolute before:left-0 before:top-2 before:h-full before:w-px before:bg-slate-200"
+                        }`}
+                      >
+                        <div
+                          className={`absolute -left-1.25 top-1 h-2.5 w-2.5 rounded-full border-2 border-white ${act.dotColor}`}
+                        />
+                        <p className="text-xs font-medium text-slate-400">
+                          {act.time}
+                        </p>
+                        <p className="text-sm font-semibold text-slate-800 mt-1">
+                          {act.title}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">{act.body}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <span className="material-symbols-outlined text-4xl text-slate-300">
+                        notifications_none
+                      </span>
+                      <p className="text-sm text-slate-500 mt-2">
+                        No recent activity
                       </p>
-                      <p className="text-sm font-semibold text-slate-800 mt-1">
-                        {act.title}
-                      </p>
-                      {act.body}
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             </div>

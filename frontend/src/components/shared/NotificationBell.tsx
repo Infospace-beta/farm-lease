@@ -1,60 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { landsApi } from "@/lib/services/api";
 
-const DEMO_NOTIFICATIONS = [
-  {
-    id: 1,
-    icon: "shopping_cart",
-    iconBg: "bg-blue-50",
-    iconColor: "text-blue-600",
-    title: "New Order Received",
-    msg: "Order #ORD-2490 from Grace N. — Ksh 72,500",
-    time: "5m ago",
-    read: false,
-  },
-  {
-    id: 2,
-    icon: "inventory",
-    iconBg: "bg-orange-50",
-    iconColor: "text-orange-600",
-    title: "Low Stock Alert",
-    msg: "DAP Fertilizer 50kg is below reorder level (4 units left)",
-    time: "1h ago",
-    read: false,
-  },
-  {
-    id: 3,
-    icon: "support_agent",
-    iconBg: "bg-purple-50",
-    iconColor: "text-purple-600",
-    title: "New Customer Query",
-    msg: "Samuel K. sent a new inquiry about bulk orders",
-    time: "2h ago",
-    read: false,
-  },
-  {
-    id: 4,
-    icon: "payments",
-    iconBg: "bg-emerald-50",
-    iconColor: "text-emerald-700",
-    title: "Payment Received",
-    msg: "Ksh 145,200 confirmed for Order #ORD-2487",
-    time: "Yesterday",
-    read: true,
-  },
-  {
-    id: 5,
-    icon: "task_alt",
-    iconBg: "bg-green-50",
-    iconColor: "text-green-700",
-    title: "Lease Application Approved",
-    msg: "Your application for Green Valley Plot A was approved",
-    time: "2 days ago",
-    read: true,
-  },
-];
+interface Notification {
+  id: string | number;
+  icon: string;
+  iconBg: string;
+  iconColor: string;
+  title: string;
+  msg: string;
+  time: string;
+  read: boolean;
+}
 
 interface NotificationBellProps {
   href: string;
@@ -63,15 +22,33 @@ interface NotificationBellProps {
 
 export default function NotificationBell({
   href,
-  variant = "dealer",
+  variant = "owner",
 }: NotificationBellProps) {
   const [open, setOpen] = useState(false);
-  const [notifications, setNotifications] = useState(DEMO_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch notifications when dropdown opens (for owner variant)
+  useEffect(() => {
+    if (open && variant === "owner" && notifications.length === 0) {
+      const fetchNotifications = async () => {
+        setLoading(true);
+        try {
+          const { data } = await landsApi.ownerNotifications();
+          setNotifications(data);
+        } catch (error) {
+          console.error("Failed to fetch notifications:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchNotifications();
+    }
+  }, [open, variant]);
 
   const unread = notifications.filter((n) => !n.read).length;
-  const accentColor = variant === "lessee" ? "#047857" : "#047857";
 
-  const markRead = (id: number) =>
+  const markRead = (id: string | number) =>
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
     );
@@ -128,7 +105,12 @@ export default function NotificationBell({
 
           {/* Notification List */}
           <div className="max-h-80 overflow-y-auto divide-y divide-gray-50">
-            {notifications.length === 0 ? (
+            {loading ? (
+              <div className="py-10 text-center">
+                <span className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-primary border-r-transparent" />
+                <p className="text-sm text-gray-400 mt-2">Loading...</p>
+              </div>
+            ) : notifications.length === 0 ? (
               <div className="py-10 text-center">
                 <span className="material-icons-round text-4xl text-gray-200 block mb-2">
                   notifications_off

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { landsApi } from "@/lib/services/api";
 import OwnerPageHeader from "@/components/owner/OwnerPageHeader";
 
@@ -25,6 +26,7 @@ interface LandData {
   has_road_access: boolean;
   has_fencing: boolean;
   soil_data?: {
+    soil_type?: string;
     ph_level: number;
     nitrogen: number;
     phosphorus: number;
@@ -39,8 +41,8 @@ interface LandData {
 /* ─── Status badge config ─────────────────────────────── */
 const STATUS_CONFIG: Record<string, { bg: string; icon: string }> = {
   Leased: { bg: "bg-emerald-500", icon: "check_circle" },
-  Pending: { bg: "bg-amber-500", icon: "schedule" },
-  "Under Review": { bg: "bg-blue-500", icon: "history_edu" },
+  Pending_Payment: { bg: "bg-amber-500", icon: "schedule" },
+  Under_Review: { bg: "bg-blue-500", icon: "history_edu" },
   Vacant: { bg: "bg-slate-500", icon: "crop_free" },
 };
 
@@ -52,8 +54,16 @@ const getSoilType = (ph?: number): string => {
   return "Neutral";
 };
 
+/* ─── Format status for display ────────────────────────── */
+const formatStatus = (status: string): string => {
+  return status.replace(/_/g, " ");
+};
+
 /* ─── Page ────────────────────────────────────────────── */
 export default function MyLandsPage() {
+  const searchParams = useSearchParams();
+  const showSuccess = searchParams.get("success") === "true";
+  
   const [lands, setLands] = useState<LandData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -66,6 +76,9 @@ export default function MyLandsPage() {
       try {
         setLoading(true);
         const { data } = await landsApi.myLands();
+        console.log("=== LANDS API RESPONSE ===");
+        console.log("Total lands received:", data?.length);
+        console.log("Lands data:", data);
         setLands(data);
         setError(null);
       } catch (err) {
@@ -86,12 +99,18 @@ export default function MyLandsPage() {
       land.id.toString().includes(search);
     const matchStatus = !statusFilter || land.status === statusFilter;
     const matchSoil =
-      !soilFilter ||
-      getSoilType(land.soil_data?.ph_level)
-        .toLowerCase()
-        .includes(soilFilter.toLowerCase());
+      !soilFilter || land.soil_data?.soil_type === soilFilter;
     return matchSearch && matchStatus && matchSoil;
   });
+
+  // Debug: Log filtered results
+  console.log("=== FILTERING DEBUG ===");
+  console.log("Total lands:", lands.length);
+  console.log("Filtered lands:", filtered.length);
+  console.log("Search:", search);
+  console.log("Status filter:", statusFilter);
+  console.log("Soil filter:", soilFilter);
+  
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       <OwnerPageHeader
@@ -118,10 +137,27 @@ export default function MyLandsPage() {
           Add New Plot
         </Link>
       </OwnerPageHeader>
-      <div className="flex-1 overflow-y-auto p-4 lg:p-8 bg-slate-50">
-        <div className="mx-auto max-w-7xl">
+      <div className="flex-1 overflow-y-auto p-3 md:p-4 lg:p-6 bg-slate-50">
+        <div className="mx-auto max-w-full">
+          {/* Success message */}
+          {showSuccess && (
+            <div className="mb-4 md:mb-6 flex items-start gap-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3 animate-fade-in">
+              <span className="material-symbols-outlined text-green-600 text-xl shrink-0">
+                check_circle
+              </span>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-green-800">
+                  Land listing created successfully!
+                </p>
+                <p className="text-xs text-green-600 mt-0.5">
+                  Your land has been submitted and is awaiting admin verification. You'll be notified once it's approved.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Filters */}
-          <div className="mb-8 flex flex-col gap-4 rounded-lg bg-white p-5 border border-slate-200 lg:flex-row lg:items-center lg:justify-between">
+          <div className="mb-6 md:mb-8 flex flex-col gap-4 rounded-lg bg-white p-4 md:p-5 border border-slate-200 lg:flex-row lg:items-center lg:justify-between">
             {/* Search */}
             <div className="relative w-full lg:max-w-md">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
@@ -131,7 +167,7 @@ export default function MyLandsPage() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by Plot ID, Tenant, or Location..."
+                placeholder="Search by Plot ID, Title, or Location..."
                 className="w-full rounded-lg border border-slate-300 bg-slate-50 py-2.5 pl-10 pr-4 text-sm text-slate-700 placeholder-slate-400 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
               />
             </div>
@@ -146,8 +182,7 @@ export default function MyLandsPage() {
                 >
                   <option value="">Status: All</option>
                   <option value="Leased">Leased</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Under Review">Under Review</option>
+                  <option value="Under_Review">Under Review</option>
                   <option value="Vacant">Vacant</option>
                 </select>
                 <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
@@ -161,10 +196,15 @@ export default function MyLandsPage() {
                   className="appearance-none rounded-lg border border-slate-300 bg-white py-2.5 pl-4 pr-10 text-sm font-medium text-slate-700 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
                 >
                   <option value="">Soil Type: All</option>
-                  <option value="Loam">Loam</option>
+                  <option value="Sandy">Sandy</option>
                   <option value="Clay">Clay</option>
+                  <option value="Loamy">Loamy</option>
                   <option value="Silt">Silt</option>
-                  <option value="Alluvial">Alluvial</option>
+                  <option value="Peat">Peat</option>
+                  <option value="Chalk">Chalk</option>
+                  <option value="Sandy Loam">Sandy Loam</option>
+                  <option value="Clay Loam">Clay Loam</option>
+                  <option value="Other">Other</option>
                 </select>
                 <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
                   expand_more
@@ -185,7 +225,7 @@ export default function MyLandsPage() {
           </div>
 
           {/* Land grid */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 md:gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             {loading && (
               <div className="col-span-full flex items-center justify-center py-20">
                 <div className="text-center">
@@ -263,7 +303,7 @@ export default function MyLandsPage() {
                           <span className="material-symbols-outlined text-xs mr-1">
                             {icon}
                           </span>
-                          {land.status}
+                          {formatStatus(land.status)}
                         </span>
                       </div>
 
@@ -402,32 +442,6 @@ export default function MyLandsPage() {
                 Start Listing
               </span>
             </Link>
-          </div>
-
-          {/* Pagination */}
-          <div className="mt-8 flex items-center justify-between border-t border-slate-200 pt-6">
-            <p className="text-sm text-slate-500">
-              Showing <span className="font-medium text-slate-900">1</span> to{" "}
-              <span className="font-medium text-slate-900">
-                {filtered.length}
-              </span>{" "}
-              of{" "}
-              <span className="font-medium text-slate-900">
-                {filtered.length}
-              </span>{" "}
-              results
-            </p>
-            <div className="flex gap-2">
-              <button
-                disabled
-                className="flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50"
-              >
-                Previous
-              </button>
-              <button className="flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-50">
-                Next
-              </button>
-            </div>
           </div>
         </div>
       </div>

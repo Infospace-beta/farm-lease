@@ -51,7 +51,7 @@ class LandListing(models.Model):
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
-        default='Vacant'
+        default='Under_Review'
     )
     is_verified = models.BooleanField(default=False)
     is_flagged = models.BooleanField(default=False)
