@@ -407,7 +407,7 @@ export default function AIPredictorPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 {[
                   { id: "#NK-402", size: "5.0 Acres", soil: "Clay Loam Soil", price: "Ksh 15,000" },
-                  { id: "#NK-118", size: "2.5 Acres", soil: "Volcanic Soil",  price: "Ksh 8,500"  },
+                  { id: "#NK-118", size: "2.5 Acres", soil: "Volcanic Soil", price: "Ksh 8,500" },
                 ].map((plot) => (
                   <div key={plot.id} className="border border-gray-100 rounded-xl p-3 flex gap-3 hover:border-[#0f392b]/30 transition-all cursor-pointer group">
                     <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden shrink-0 relative">
@@ -432,8 +432,8 @@ export default function AIPredictorPage() {
               {/* Asset cards */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[
-                  { name: "50 Acres – Rift Valley", location: "Nakuru, Kenya",  ph: "pH 6.2", rain: "900mm rain", price: "Ksh 15k", match: "94%" },
-                  { name: "12 Acres – Narok Prime",  location: "Narok, Kenya",   ph: "pH 6.8", rain: "820mm rain", price: "Ksh 12k", match: "89%" },
+                  { name: "50 Acres – Rift Valley", location: "Nakuru, Kenya", ph: "pH 6.2", rain: "900mm rain", price: "Ksh 15k", match: "94%" },
+                  { name: "12 Acres – Narok Prime", location: "Narok, Kenya", ph: "pH 6.8", rain: "820mm rain", price: "Ksh 12k", match: "89%" },
                   { name: "30 Acres – Eldoret East", location: "Eldoret, Kenya", ph: "pH 6.0", rain: "950mm rain", price: "Ksh 18k", match: "85%" },
                 ].map((asset) => (
                   <div key={asset.name} className="border border-gray-100 rounded-xl overflow-hidden hover:border-[#0f392b]/30 hover:shadow-lg transition-all group cursor-pointer">

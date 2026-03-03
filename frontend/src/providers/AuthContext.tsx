@@ -85,9 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading: false,
       });
 
-      // Use replace for instant navigation without adding to history
-      router.replace(dashboardPath);
-      // Force immediate navigation
+      // Instant redirect without loading screen
       window.location.href = dashboardPath;
     },
     [router]

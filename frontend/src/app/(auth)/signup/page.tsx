@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -9,6 +10,7 @@ import { toast } from "react-toastify";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 import { useAuth } from "@/providers";
+import { dashboardPathFor } from "@/lib/auth";
 import type { SignupData, UserRole } from "@/types";
 
 // ─── Validation schema ─────────────────────────────────────────────────────────
@@ -44,7 +46,8 @@ const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
 
 // ─── Component ─────────────────────────────────────────────────────────────────
 export default function SignupPage() {
-  const { signup: signupUser, isAuthenticated, logout } = useAuth();
+  const { signup: signupUser, isAuthenticated, user } = useAuth();
+  const router = useRouter();
   const [showPw, setShowPw] = useState(false);
   const [showPw2, setShowPw2] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -55,6 +58,15 @@ export default function SignupPage() {
     formState: { errors },
   } = useForm<FormData>({ 
     resolver: yupResolver(schema) as any,
+    defaultValues: {
+      first_name: "",
+      last_name: "",
+      email: "",
+      phone_number: "",
+      role: "" as any,
+      password: "",
+      password2: "",
+    },
   });
 
   const onSubmit = async (data: FormData) => {
@@ -73,25 +85,13 @@ export default function SignupPage() {
     }
   };
 
-  // If already logged in, show logout option
-  if (isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-md p-8 text-center">
-          <h2 className="text-2xl font-bold text-green-700 mb-4">Already Logged In</h2>
-          <p className="text-gray-600 mb-6">
-            You are currently logged in. Logout to create a new account.
-          </p>
-          <button
-            onClick={() => logout()}
-            className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg py-2.5 text-sm transition-colors"
-          >
-            Logout
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // Redirect to dashboard if already logged in (instant, no loading screen)
+  useEffect(() => {
+    if (isAuthenticated && user?.role) {
+      const dashboardPath = dashboardPathFor(user.role);
+      window.location.href = dashboardPath;
+    }
+  }, [isAuthenticated, user]);
 
   // Reusable field wrapper
   const Field = ({

@@ -70,10 +70,18 @@ class SignupSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
+        # Remove password2 from validated data
         validated_data.pop('password2', None)
+        
+        # Extract password before creating user
+        password = validated_data.pop('password')
+        
+        # Generate username if not provided
         if not validated_data.get('username'):
             validated_data['username'] = validated_data['email'].split('@')[0]
-        user = User.objects.create_user(**validated_data)
+        
+        # Create user with password
+        user = User.objects.create_user(password=password, **validated_data)
         return user
 
 

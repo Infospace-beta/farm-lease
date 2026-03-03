@@ -27,6 +27,21 @@ const sideNav = [
 
 export default function ProfilePage() {
   const [activeSection, setActiveSection] = useState(0);
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    fullName: "David M.",
+    email: "david.m@farmlease.co.ke",
+    phone: "+254 712 345 678",
+    bio: "",
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
@@ -140,7 +155,8 @@ export default function ProfilePage() {
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <input
                         type="text"
-                        defaultValue="David M."
+                        value={formData.fullName}
+                        onChange={(e) => handleInputChange('fullName', e.target.value)}
                         className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-sidebar-bg/20 focus:border-sidebar-bg shadow-sm"
                       />
                     </div>
@@ -171,7 +187,8 @@ export default function ProfilePage() {
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <input
                         type="email"
-                        defaultValue="david.m@farmlease.co.ke"
+                        value={formData.email}
+                        onChange={(e) => handleInputChange('email', e.target.value)}
                         className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-sidebar-bg/20 focus:border-sidebar-bg shadow-sm"
                       />
                     </div>
@@ -186,7 +203,8 @@ export default function ProfilePage() {
                       <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <input
                         type="tel"
-                        defaultValue="+254 712 345 678"
+                        value={formData.phone}
+                        onChange={(e) => handleInputChange('phone', e.target.value)}
                         className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-sidebar-bg/20 focus:border-sidebar-bg shadow-sm"
                       />
                     </div>
@@ -200,6 +218,8 @@ export default function ProfilePage() {
                   </label>
                   <textarea
                     rows={3}
+                    value={formData.bio}
+                    onChange={(e) => handleInputChange('bio', e.target.value)}
                     placeholder="Brief description of role..."
                     className="w-full p-3 rounded-lg border border-gray-200 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-sidebar-bg/20 focus:border-sidebar-bg shadow-sm resize-none placeholder-gray-400"
                   />
@@ -225,6 +245,8 @@ export default function ProfilePage() {
                     </label>
                     <input
                       type="password"
+                      value={formData.currentPassword}
+                      onChange={(e) => handleInputChange('currentPassword', e.target.value)}
                       className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-bg/20 shadow-sm"
                     />
                   </div>
@@ -236,6 +258,8 @@ export default function ProfilePage() {
                     </label>
                     <input
                       type="password"
+                      value={formData.newPassword}
+                      onChange={(e) => handleInputChange('newPassword', e.target.value)}
                       className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-bg/20 shadow-sm"
                     />
                   </div>
@@ -245,6 +269,8 @@ export default function ProfilePage() {
                     </label>
                     <input
                       type="password"
+                      value={formData.confirmPassword}
+                      onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                       className="w-full px-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-bg/20 shadow-sm"
                     />
                   </div>

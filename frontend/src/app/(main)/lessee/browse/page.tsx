@@ -1,6 +1,7 @@
 "use client";
 import { useState, useMemo, useRef, useEffect } from "react";
 import LesseePageHeader from "@/components/lessee/LesseePageHeader";
+import { lesseeApi } from "@/lib/services/api";
 
 // ────────────────────────────────────────────────────────────
 // Data
@@ -260,60 +261,60 @@ const FEATURE_KEYWORDS = [
 
 const REGION_CROPS: Record<string, string[]> = {
   // ── Broad regions ────────────────────────────────────────────
-  "Rift Valley":    ["Maize", "Wheat", "Barley", "Pyrethrum", "Sunflower", "Beans"],
-  "Central Kenya":  ["Tea", "Coffee", "Avocado", "Macadamia", "Horticulture", "Irish Potato"],
+  "Rift Valley": ["Maize", "Wheat", "Barley", "Pyrethrum", "Sunflower", "Beans"],
+  "Central Kenya": ["Tea", "Coffee", "Avocado", "Macadamia", "Horticulture", "Irish Potato"],
   "Coastal Region": ["Coconut", "Cassava", "Mango", "Cashew", "Sugarcane", "Tomato"],
-  "Eastern Kenya":  ["Mango", "Pigeon Pea", "Sorghum", "Cotton", "Green Gram", "Groundnuts"],
-  "Western Kenya":  ["Sugarcane", "Maize", "Soya Bean", "Sunflower", "Beans", "Groundnuts"],
-  "Nyanza":         ["Rice", "Maize", "Sorghum", "Sweet Potato", "Sugarcane"],
-  "North Eastern":  ["Sorghum", "Cowpea", "Pigeon Pea", "Finger Millet"],
+  "Eastern Kenya": ["Mango", "Pigeon Pea", "Sorghum", "Cotton", "Green Gram", "Groundnuts"],
+  "Western Kenya": ["Sugarcane", "Maize", "Soya Bean", "Sunflower", "Beans", "Groundnuts"],
+  "Nyanza": ["Rice", "Maize", "Sorghum", "Sweet Potato", "Sugarcane"],
+  "North Eastern": ["Sorghum", "Cowpea", "Pigeon Pea", "Finger Millet"],
   // ── Counties ─────────────────────────────────────────────────
-  "Nakuru":         ["Maize", "Wheat", "Pyrethrum", "Avocado", "Barley", "Irish Potato"],
-  "Narok":          ["Maize", "Wheat", "Barley", "Sunflower"],
-  "Nyeri":          ["Coffee", "Tea", "Avocado", "Macadamia", "Horticulture"],
-  "Meru":           ["Tea", "Coffee", "Miraa", "Beans", "Irish Potato", "Beetroot"],
-  "Kiambu":         ["Tea", "Coffee", "Horticulture", "Avocado", "Macadamia"],
-  "Kisumu":         ["Rice", "Maize", "Sorghum", "Sugarcane", "Sweet Potato"],
-  "Uasin Gishu":    ["Maize", "Wheat", "Sunflower", "Barley", "Beans"],
-  "Trans-Nzoia":    ["Maize", "Wheat", "Beans", "Sunflower", "Soya Bean"],
-  "Nandi":          ["Tea", "Maize", "Pyrethrum", "Beans"],
-  "Kericho":        ["Tea", "Maize", "Pyrethrum", "Passion Fruit"],
-  "Bomet":          ["Tea", "Maize", "Pyrethrum", "Sorghum"],
-  "Murang'a":       ["Coffee", "Tea", "Avocado", "Banana", "Macadamia"],
-  "Kirinyaga":      ["Rice", "Tea", "Coffee", "Avocado", "Horticulture"],
-  "Embu":           ["Coffee", "Tea", "Avocado", "Macadamia", "Beans"],
-  "Tharaka-Nithi":  ["Miraa", "Coffee", "Pigeon Pea", "Sorghum"],
-  "Kitui":          ["Cotton", "Pigeon Pea", "Green Gram", "Sorghum"],
-  "Machakos":       ["Green Gram", "Pigeon Pea", "Mango", "Tomato", "Maize"],
-  "Makueni":        ["Green Gram", "Cotton", "Mango", "Pigeon Pea"],
-  "Kajiado":        ["Maize", "Wheat", "Horticulture", "Beans"],
-  "Kakamega":       ["Sugarcane", "Maize", "Soya Bean", "Beans", "Groundnuts"],
-  "Bungoma":        ["Sugarcane", "Maize", "Wheat", "Soya Bean"],
-  "Busia":          ["Sugarcane", "Maize", "Rice", "Sweet Potato"],
-  "Siaya":          ["Maize", "Sorghum", "Finger Millet", "Sweet Potato"],
-  "Homa Bay":       ["Maize", "Sorghum", "Sweet Potato", "Rice"],
-  "Migori":         ["Maize", "Sorghum", "Sugarcane", "Rice"],
-  "Kisii":          ["Tea", "Maize", "Banana", "Coffee", "Avocado"],
-  "Nyamira":        ["Tea", "Maize", "Pyrethrum", "Avocado"],
-  "Kwale":          ["Coconut", "Cashew", "Cassava", "Sugarcane"],
-  "Kilifi":         ["Coconut", "Cassava", "Mango", "Cashew", "Tomato"],
-  "Mombasa":        ["Horticulture", "Coconut"],
-  "Laikipia":       ["Maize", "Wheat", "Barley", "Horticulture"],
-  "Nyandarua":      ["Irish Potato", "Wheat", "Pyrethrum", "Cabbage", "Carrot"],
-  "Elgeyo-Marakwet":["Maize", "Wheat", "Sunflower", "Sorghum"],
-  "Baringo":        ["Maize", "Sorghum", "Beans", "Mango"],
-  "Turkana":        ["Sorghum", "Cowpea", "Pigeon Pea"],
-  "Samburu":        ["Sorghum", "Cowpea"],
-  "West Pokot":     ["Sorghum", "Maize", "Beans", "Finger Millet"],
-  "Isiolo":         ["Sorghum", "Cowpea", "Green Gram"],
-  "Marsabit":       ["Sorghum", "Cowpea"],
-  "Wajir":          ["Sorghum", "Cowpea", "Pigeon Pea"],
-  "Mandera":        ["Sorghum", "Cowpea", "Green Gram"],
-  "Garissa":        ["Sorghum", "Green Gram", "Cowpea"],
-  "Taita-Taveta":   ["Mango", "Cassava", "Maize", "Cotton"],
-  "Tana River":     ["Rice", "Maize", "Cassava", "Cotton"],
-  "Lamu":           ["Coconut", "Mango", "Cassava"],
-  "Vihiga":         ["Tea", "Maize", "Beans", "Banana"],
+  "Nakuru": ["Maize", "Wheat", "Pyrethrum", "Avocado", "Barley", "Irish Potato"],
+  "Narok": ["Maize", "Wheat", "Barley", "Sunflower"],
+  "Nyeri": ["Coffee", "Tea", "Avocado", "Macadamia", "Horticulture"],
+  "Meru": ["Tea", "Coffee", "Miraa", "Beans", "Irish Potato", "Beetroot"],
+  "Kiambu": ["Tea", "Coffee", "Horticulture", "Avocado", "Macadamia"],
+  "Kisumu": ["Rice", "Maize", "Sorghum", "Sugarcane", "Sweet Potato"],
+  "Uasin Gishu": ["Maize", "Wheat", "Sunflower", "Barley", "Beans"],
+  "Trans-Nzoia": ["Maize", "Wheat", "Beans", "Sunflower", "Soya Bean"],
+  "Nandi": ["Tea", "Maize", "Pyrethrum", "Beans"],
+  "Kericho": ["Tea", "Maize", "Pyrethrum", "Passion Fruit"],
+  "Bomet": ["Tea", "Maize", "Pyrethrum", "Sorghum"],
+  "Murang'a": ["Coffee", "Tea", "Avocado", "Banana", "Macadamia"],
+  "Kirinyaga": ["Rice", "Tea", "Coffee", "Avocado", "Horticulture"],
+  "Embu": ["Coffee", "Tea", "Avocado", "Macadamia", "Beans"],
+  "Tharaka-Nithi": ["Miraa", "Coffee", "Pigeon Pea", "Sorghum"],
+  "Kitui": ["Cotton", "Pigeon Pea", "Green Gram", "Sorghum"],
+  "Machakos": ["Green Gram", "Pigeon Pea", "Mango", "Tomato", "Maize"],
+  "Makueni": ["Green Gram", "Cotton", "Mango", "Pigeon Pea"],
+  "Kajiado": ["Maize", "Wheat", "Horticulture", "Beans"],
+  "Kakamega": ["Sugarcane", "Maize", "Soya Bean", "Beans", "Groundnuts"],
+  "Bungoma": ["Sugarcane", "Maize", "Wheat", "Soya Bean"],
+  "Busia": ["Sugarcane", "Maize", "Rice", "Sweet Potato"],
+  "Siaya": ["Maize", "Sorghum", "Finger Millet", "Sweet Potato"],
+  "Homa Bay": ["Maize", "Sorghum", "Sweet Potato", "Rice"],
+  "Migori": ["Maize", "Sorghum", "Sugarcane", "Rice"],
+  "Kisii": ["Tea", "Maize", "Banana", "Coffee", "Avocado"],
+  "Nyamira": ["Tea", "Maize", "Pyrethrum", "Avocado"],
+  "Kwale": ["Coconut", "Cashew", "Cassava", "Sugarcane"],
+  "Kilifi": ["Coconut", "Cassava", "Mango", "Cashew", "Tomato"],
+  "Mombasa": ["Horticulture", "Coconut"],
+  "Laikipia": ["Maize", "Wheat", "Barley", "Horticulture"],
+  "Nyandarua": ["Irish Potato", "Wheat", "Pyrethrum", "Cabbage", "Carrot"],
+  "Elgeyo-Marakwet": ["Maize", "Wheat", "Sunflower", "Sorghum"],
+  "Baringo": ["Maize", "Sorghum", "Beans", "Mango"],
+  "Turkana": ["Sorghum", "Cowpea", "Pigeon Pea"],
+  "Samburu": ["Sorghum", "Cowpea"],
+  "West Pokot": ["Sorghum", "Maize", "Beans", "Finger Millet"],
+  "Isiolo": ["Sorghum", "Cowpea", "Green Gram"],
+  "Marsabit": ["Sorghum", "Cowpea"],
+  "Wajir": ["Sorghum", "Cowpea", "Pigeon Pea"],
+  "Mandera": ["Sorghum", "Cowpea", "Green Gram"],
+  "Garissa": ["Sorghum", "Green Gram", "Cowpea"],
+  "Taita-Taveta": ["Mango", "Cassava", "Maize", "Cotton"],
+  "Tana River": ["Rice", "Maize", "Cassava", "Cotton"],
+  "Lamu": ["Coconut", "Mango", "Cassava"],
+  "Vihiga": ["Tea", "Maize", "Beans", "Banana"],
 };
 
 type Listing = {
@@ -713,9 +714,8 @@ export default function BrowseLandPage() {
                       <button
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={() => addRegion(r)}
-                        className={`w-full text-left px-3 py-2 text-sm hover:bg-emerald-50 hover:text-[#047857] transition flex items-center gap-2 ${
-                          selectedRegions.includes(r) ? "text-[#047857] font-semibold" : "text-gray-700"
-                        }`}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-emerald-50 hover:text-[#047857] transition flex items-center gap-2 ${selectedRegions.includes(r) ? "text-[#047857] font-semibold" : "text-gray-700"
+                          }`}
                       >
                         <span className="material-icons-round text-gray-400 text-sm">location_on</span>
                         {r}
@@ -850,277 +850,279 @@ export default function BrowseLandPage() {
 
         {/* ── Main Listings ──────────────────────────────────── */}
         <div className="flex-1 bg-[#f8fafc] p-8 overflow-y-auto">
-          <div className="flex items-center justify-between mb-6">
-            <h3
-              className="text-xl font-bold text-gray-800"
+  <div className="flex items-center justify-between mb-6">
+    <h3
+      className="text-xl font-bold text-gray-800"
+      style={{ fontFamily: "Playfair Display, serif" }}
+    >
+      {filteredListings.length} Land Listing{filteredListings.length !== 1 ? "s" : ""} Found
+    </h3>
+    <div className="flex items-center gap-3">
+      <span className="text-sm text-gray-500">Sort by:</span>
+      <button className="flex items-center gap-1 text-sm font-medium text-gray-700 bg-white px-3 py-1.5 rounded-lg border border-gray-200 hover:border-gray-300 transition-all">
+        <span>Recommended</span>
+        <span className="material-icons-round text-lg">expand_more</span>
+      </button>
+    </div>
+  </div>
+
+  {
+    filteredListings.length === 0 ? (
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <span className="material-icons-round text-6xl text-gray-200 mb-4">landscape</span>
+        <p className="text-lg font-bold text-gray-400">No listings match your filters</p>
+        <p className="text-sm text-gray-400 mt-1">Try adjusting your search, regions, or acreage range.</p>
+        <button
+          onClick={resetFilters}
+          className="mt-5 px-6 py-2.5 bg-[#047857] text-white text-sm font-semibold rounded-xl hover:bg-emerald-800 transition"
+        >
+          Reset Filters
+        </button>
+      </div>
+    ) : (
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      {filteredListings.map((listing) => (
+        <div
+          key={listing.name}
+          className="bg-white rounded-2xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] overflow-hidden group hover:shadow-xl transition-all duration-300 border border-transparent hover:border-[#047857]/20 flex flex-col"
+        >
+          <div className="relative h-48 bg-gray-200">
+            <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-transparent" />
+            <div className="absolute inset-0 bg-[#0f392b]/10 flex items-center justify-center">
+              <span className="material-icons-round text-[#0f392b]/20 text-[80px]">landscape</span>
+            </div>
+            <div className="absolute top-0 left-0 right-0 p-3 flex justify-between items-start bg-gradient-to-b from-black/40 to-transparent">
+              <span className="bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-bold text-gray-800">
+                {listing.acresNum} Acres
+              </span>
+              <button className="bg-white/20 hover:bg-white/40 backdrop-blur-md p-1.5 rounded-full text-white transition-colors">
+                <span className="material-icons-round text-lg">favorite_border</span>
+              </button>
+            </div>
+            <span
+              className={`absolute bottom-3 left-3 ${listing.badgeColor} text-white px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide shadow-sm`}
+            >
+              {listing.badge}
+            </span>
+            {/* Wishlist heart — bottom-right of image */}
+            <button
+              onClick={(e) => { e.stopPropagation(); toggleWishlist(listing); }}
+              className={`absolute bottom-3 right-3 p-1.5 rounded-full backdrop-blur-md transition-all shadow-sm ${wishlist.has(listing.name)
+                  ? "bg-red-500/90 text-white"
+                  : "bg-white/20 hover:bg-white/40 text-white"
+                }`}
+            >
+              <span className="material-icons-round text-base">
+                {wishlist.has(listing.name) ? "favorite" : "favorite_border"}
+              </span>
+            </button>
+          </div>
+
+          <div className="pt-4 px-5 pb-5 flex flex-col flex-1">
+            <h4
+              className="font-bold text-lg text-gray-900 mb-1"
               style={{ fontFamily: "Playfair Display, serif" }}
             >
-              {filteredListings.length} Land Listing{filteredListings.length !== 1 ? "s" : ""} Found
-            </h3>
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-500">Sort by:</span>
-              <button className="flex items-center gap-1 text-sm font-medium text-gray-700 bg-white px-3 py-1.5 rounded-lg border border-gray-200 hover:border-gray-300 transition-all">
-                <span>Recommended</span>
-                <span className="material-icons-round text-lg">expand_more</span>
+              {listing.name}
+            </h4>
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center text-xs text-gray-500 mt-1">
+                <span className="material-icons-round text-sm mr-1">location_on</span>
+                {listing.location}
+              </div>
+              <div className="text-right shrink-0 ml-2">
+                <div className="text-sm font-bold text-[#047857] whitespace-nowrap">
+                  Ksh {listing.price}
+                  <span className="text-[10px] font-normal text-gray-400">/acre/yr</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 py-3 border-t border-b border-gray-100 mb-4">
+              <div className="text-center">
+                <div className="text-[10px] text-[#5D4037] font-bold uppercase tracking-wide">Soil</div>
+                <div className="text-xs font-medium text-gray-600">{listing.soil}</div>
+              </div>
+              <div className="text-center border-l border-r border-gray-100">
+                <div className="text-[10px] text-[#5D4037] font-bold uppercase tracking-wide">Water</div>
+                <div className="text-xs font-medium text-gray-600 truncate">{listing.water}</div>
+              </div>
+              <div className="text-center">
+                <div className="text-[10px] text-[#5D4037] font-bold uppercase tracking-wide">Slope</div>
+                <div className="text-xs font-medium text-gray-600">{listing.slope}</div>
+              </div>
+            </div>
+
+            <div className="mt-auto flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {listing.match ? (
+                  <>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${listing.matchColor}`}>
+                      <span className="text-[10px] font-bold">{listing.match}</span>
+                    </div>
+                    <span className="text-[10px] text-gray-400">Match</span>
+                  </>
+                ) : (
+                  <span className="text-xs text-orange-500 font-medium">{listing.status}</span>
+                )}
+              </div>
+              <button
+                onClick={() => setSelectedListing(listing)}
+                className="text-xs font-bold text-[#047857] flex items-center hover:text-emerald-700 transition-colors"
+              >
+                View Details
+                <span className="material-icons-round text-sm ml-1">arrow_forward</span>
               </button>
             </div>
           </div>
+        </div>
+      ))}
+    </div>
+  )
+  }
+        </div >
+      </div >
+    {/* ── Listing Detail Modal ──────────────────────────────── */ }
+  {
+    selectedListing && (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+        onClick={() => setSelectedListing(null)}
+      >
+        <div
+          className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Image area */}
+          <div className="relative h-52 bg-gray-200 rounded-t-2xl overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-transparent" />
+            <div className="absolute inset-0 bg-[#0f392b]/10 flex items-center justify-center">
+              <span className="material-icons-round text-[#0f392b]/20 text-[100px]">landscape</span>
+            </div>
+            {/* Acres badge */}
+            <div className="absolute top-4 left-4">
+              <span className="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg text-sm font-bold text-gray-800 shadow">
+                {selectedListing.acresNum} Acres
+              </span>
+            </div>
+            {/* Favourite */}
+            <button className="absolute top-4 right-4 bg-white/20 hover:bg-white/40 backdrop-blur-md p-2 rounded-full text-white transition-colors">
+              <span className="material-icons-round text-xl">favorite_border</span>
+            </button>
+            {/* Crop badge */}
+            <span className={`absolute bottom-4 left-4 ${selectedListing.badgeColor} text-white px-3 py-1 rounded text-xs font-bold uppercase tracking-wide shadow`}>
+              {selectedListing.badge}
+            </span>
+            {/* Close button */}
+            <button
+              onClick={() => setSelectedListing(null)}
+              className="absolute top-4 right-16 bg-white/20 hover:bg-white/40 backdrop-blur-md p-2 rounded-full text-white transition-colors"
+            >
+              <span className="material-icons-round text-xl">close</span>
+            </button>
+          </div>
 
-          {filteredListings.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-24 text-center">
-              <span className="material-icons-round text-6xl text-gray-200 mb-4">landscape</span>
-              <p className="text-lg font-bold text-gray-400">No listings match your filters</p>
-              <p className="text-sm text-gray-400 mt-1">Try adjusting your search, regions, or acreage range.</p>
-              <button
-                onClick={resetFilters}
-                className="mt-5 px-6 py-2.5 bg-[#047857] text-white text-sm font-semibold rounded-xl hover:bg-emerald-800 transition"
+          {/* Content */}
+          <div className="p-6">
+            {/* Name + price row */}
+            <div className="flex items-start justify-between mb-1">
+              <h2
+                className="text-2xl font-bold text-gray-900 leading-tight"
+                style={{ fontFamily: "Playfair Display, serif" }}
               >
-                Reset Filters
+                {selectedListing.name}
+              </h2>
+              <div className="text-right ml-4 shrink-0">
+                <div className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">Lease Price</div>
+                <div className="text-lg font-bold text-[#047857] whitespace-nowrap">
+                  Ksh {selectedListing.price}
+                  <span className="text-xs font-normal text-gray-400">/acre/yr</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Location */}
+            <div className="flex items-center text-sm text-gray-500 mb-5">
+              <span className="material-icons-round text-base mr-1 text-[#047857]">location_on</span>
+              {selectedListing.location}
+            </div>
+
+            {/* Soil / Water / Slope stats */}
+            <div className="grid grid-cols-3 gap-3 py-4 px-4 bg-[#f8fafc] rounded-xl mb-5">
+              <div className="text-center">
+                <div className="text-[10px] text-[#5D4037] font-bold uppercase tracking-wide mb-1">Soil</div>
+                <div className="text-sm font-semibold text-gray-700">{selectedListing.soil}</div>
+              </div>
+              <div className="text-center border-l border-r border-gray-200">
+                <div className="text-[10px] text-[#5D4037] font-bold uppercase tracking-wide mb-1">Water</div>
+                <div className="text-sm font-semibold text-gray-700">{selectedListing.water}</div>
+              </div>
+              <div className="text-center">
+                <div className="text-[10px] text-[#5D4037] font-bold uppercase tracking-wide mb-1">Slope</div>
+                <div className="text-sm font-semibold text-gray-700">{selectedListing.slope}</div>
+              </div>
+            </div>
+
+            {/* Match score */}
+            {selectedListing.match && (
+              <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-100 rounded-xl mb-5">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${selectedListing.matchColor}`}>
+                  {selectedListing.match}
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-[#047857]">Compatibility Match</p>
+                  <p className="text-xs text-gray-500">Based on your stated farm preferences and selected regions.</p>
+                </div>
+              </div>
+            )}
+            {selectedListing.status && (
+              <div className="flex items-center gap-3 p-4 bg-orange-50 border border-orange-100 rounded-xl mb-5">
+                <span className="material-icons-round text-orange-400 text-xl">hourglass_top</span>
+                <p className="text-sm font-medium text-orange-700">{selectedListing.status}</p>
+              </div>
+            )}
+
+            {/* AI Crops for region */}
+            {(REGION_CROPS[selectedListing.region] ?? []).length > 0 && (
+              <div className="mb-5">
+                <p className="text-xs font-bold text-[#5D4037] uppercase tracking-wider mb-2 flex items-center gap-1">
+                  <span className="material-icons-round text-amber-500 text-sm">auto_awesome</span>
+                  AI Recommended Crops for {selectedListing.region}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {(REGION_CROPS[selectedListing.region] ?? []).slice(0, 6).map((crop) => (
+                    <span key={crop} className="inline-flex items-center bg-[#0f392b] text-emerald-100 px-3 py-1 rounded-full text-xs font-medium">
+                      <span className="material-icons-round text-[11px] mr-1 text-[#13ec80]">auto_awesome</span>
+                      {crop}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* CTA buttons */}
+            <div className="flex gap-3 pt-2">
+              <button className="flex-1 bg-[#047857] hover:bg-emerald-800 text-white font-bold py-3 rounded-xl shadow transition-colors text-sm">
+                Request Lease
+              </button>
+              <button
+                onClick={() => toggleWishlist(selectedListing)}
+                className={`flex-1 border-2 font-bold py-3 rounded-xl transition-all text-sm flex items-center justify-center gap-1.5 ${wishlist.has(selectedListing.name)
+                    ? "bg-[#047857] border-[#047857] text-white shadow"
+                    : "border-[#047857] text-[#047857] hover:bg-emerald-50"
+                  }`}
+              >
+                <span className="material-icons-round text-base">
+                  {wishlist.has(selectedListing.name) ? "favorite" : "favorite_border"}
+                </span>
+                {wishlist.has(selectedListing.name) ? "Wishlisted" : "Save to Wishlist"}
               </button>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredListings.map((listing) => (
-                <div
-                  key={listing.name}
-                  className="bg-white rounded-2xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] overflow-hidden group hover:shadow-xl transition-all duration-300 border border-transparent hover:border-[#047857]/20 flex flex-col"
-                >
-                  <div className="relative h-48 bg-gray-200">
-                    <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-transparent" />
-                    <div className="absolute inset-0 bg-[#0f392b]/10 flex items-center justify-center">
-                      <span className="material-icons-round text-[#0f392b]/20 text-[80px]">landscape</span>
-                    </div>
-                    <div className="absolute top-0 left-0 right-0 p-3 flex justify-between items-start bg-gradient-to-b from-black/40 to-transparent">
-                      <span className="bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-bold text-gray-800">
-                        {listing.acresNum} Acres
-                      </span>
-                      <button className="bg-white/20 hover:bg-white/40 backdrop-blur-md p-1.5 rounded-full text-white transition-colors">
-                        <span className="material-icons-round text-lg">favorite_border</span>
-                      </button>
-                    </div>
-                    <span
-                      className={`absolute bottom-3 left-3 ${listing.badgeColor} text-white px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide shadow-sm`}
-                    >
-                      {listing.badge}
-                    </span>
-                    {/* Wishlist heart — bottom-right of image */}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); toggleWishlist(listing); }}
-                      className={`absolute bottom-3 right-3 p-1.5 rounded-full backdrop-blur-md transition-all shadow-sm ${
-                        wishlist.has(listing.name)
-                          ? "bg-red-500/90 text-white"
-                          : "bg-white/20 hover:bg-white/40 text-white"
-                      }`}
-                    >
-                      <span className="material-icons-round text-base">
-                        {wishlist.has(listing.name) ? "favorite" : "favorite_border"}
-                      </span>
-                    </button>
-                  </div>
-
-                  <div className="pt-4 px-5 pb-5 flex flex-col flex-1">
-                    <h4
-                      className="font-bold text-lg text-gray-900 mb-1"
-                      style={{ fontFamily: "Playfair Display, serif" }}
-                    >
-                      {listing.name}
-                    </h4>
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center text-xs text-gray-500 mt-1">
-                        <span className="material-icons-round text-sm mr-1">location_on</span>
-                        {listing.location}
-                      </div>
-                      <div className="text-right shrink-0 ml-2">
-                        <div className="text-sm font-bold text-[#047857] whitespace-nowrap">
-                          Ksh {listing.price}
-                          <span className="text-[10px] font-normal text-gray-400">/acre/yr</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-2 py-3 border-t border-b border-gray-100 mb-4">
-                      <div className="text-center">
-                        <div className="text-[10px] text-[#5D4037] font-bold uppercase tracking-wide">Soil</div>
-                        <div className="text-xs font-medium text-gray-600">{listing.soil}</div>
-                      </div>
-                      <div className="text-center border-l border-r border-gray-100">
-                        <div className="text-[10px] text-[#5D4037] font-bold uppercase tracking-wide">Water</div>
-                        <div className="text-xs font-medium text-gray-600 truncate">{listing.water}</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-[10px] text-[#5D4037] font-bold uppercase tracking-wide">Slope</div>
-                        <div className="text-xs font-medium text-gray-600">{listing.slope}</div>
-                      </div>
-                    </div>
-
-                    <div className="mt-auto flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        {listing.match ? (
-                          <>
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${listing.matchColor}`}>
-                              <span className="text-[10px] font-bold">{listing.match}</span>
-                            </div>
-                            <span className="text-[10px] text-gray-400">Match</span>
-                          </>
-                        ) : (
-                          <span className="text-xs text-orange-500 font-medium">{listing.status}</span>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => setSelectedListing(listing)}
-                        className="text-xs font-bold text-[#047857] flex items-center hover:text-emerald-700 transition-colors"
-                      >
-                        View Details
-                        <span className="material-icons-round text-sm ml-1">arrow_forward</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          </div>
         </div>
       </div>
-      {/* ── Listing Detail Modal ──────────────────────────────── */}
-      {selectedListing && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-          onClick={() => setSelectedListing(null)}
-        >
-          <div
-            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Image area */}
-            <div className="relative h-52 bg-gray-200 rounded-t-2xl overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-transparent" />
-              <div className="absolute inset-0 bg-[#0f392b]/10 flex items-center justify-center">
-                <span className="material-icons-round text-[#0f392b]/20 text-[100px]">landscape</span>
-              </div>
-              {/* Acres badge */}
-              <div className="absolute top-4 left-4">
-                <span className="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg text-sm font-bold text-gray-800 shadow">
-                  {selectedListing.acresNum} Acres
-                </span>
-              </div>
-              {/* Favourite */}
-              <button className="absolute top-4 right-4 bg-white/20 hover:bg-white/40 backdrop-blur-md p-2 rounded-full text-white transition-colors">
-                <span className="material-icons-round text-xl">favorite_border</span>
-              </button>
-              {/* Crop badge */}
-              <span className={`absolute bottom-4 left-4 ${selectedListing.badgeColor} text-white px-3 py-1 rounded text-xs font-bold uppercase tracking-wide shadow`}>
-                {selectedListing.badge}
-              </span>
-              {/* Close button */}
-              <button
-                onClick={() => setSelectedListing(null)}
-                className="absolute top-4 right-16 bg-white/20 hover:bg-white/40 backdrop-blur-md p-2 rounded-full text-white transition-colors"
-              >
-                <span className="material-icons-round text-xl">close</span>
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="p-6">
-              {/* Name + price row */}
-              <div className="flex items-start justify-between mb-1">
-                <h2
-                  className="text-2xl font-bold text-gray-900 leading-tight"
-                  style={{ fontFamily: "Playfair Display, serif" }}
-                >
-                  {selectedListing.name}
-                </h2>
-                <div className="text-right ml-4 shrink-0">
-                  <div className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">Lease Price</div>
-                  <div className="text-lg font-bold text-[#047857] whitespace-nowrap">
-                    Ksh {selectedListing.price}
-                    <span className="text-xs font-normal text-gray-400">/acre/yr</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Location */}
-              <div className="flex items-center text-sm text-gray-500 mb-5">
-                <span className="material-icons-round text-base mr-1 text-[#047857]">location_on</span>
-                {selectedListing.location}
-              </div>
-
-              {/* Soil / Water / Slope stats */}
-              <div className="grid grid-cols-3 gap-3 py-4 px-4 bg-[#f8fafc] rounded-xl mb-5">
-                <div className="text-center">
-                  <div className="text-[10px] text-[#5D4037] font-bold uppercase tracking-wide mb-1">Soil</div>
-                  <div className="text-sm font-semibold text-gray-700">{selectedListing.soil}</div>
-                </div>
-                <div className="text-center border-l border-r border-gray-200">
-                  <div className="text-[10px] text-[#5D4037] font-bold uppercase tracking-wide mb-1">Water</div>
-                  <div className="text-sm font-semibold text-gray-700">{selectedListing.water}</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-[10px] text-[#5D4037] font-bold uppercase tracking-wide mb-1">Slope</div>
-                  <div className="text-sm font-semibold text-gray-700">{selectedListing.slope}</div>
-                </div>
-              </div>
-
-              {/* Match score */}
-              {selectedListing.match && (
-                <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-100 rounded-xl mb-5">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${selectedListing.matchColor}`}>
-                    {selectedListing.match}
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-[#047857]">Compatibility Match</p>
-                    <p className="text-xs text-gray-500">Based on your stated farm preferences and selected regions.</p>
-                  </div>
-                </div>
-              )}
-              {selectedListing.status && (
-                <div className="flex items-center gap-3 p-4 bg-orange-50 border border-orange-100 rounded-xl mb-5">
-                  <span className="material-icons-round text-orange-400 text-xl">hourglass_top</span>
-                  <p className="text-sm font-medium text-orange-700">{selectedListing.status}</p>
-                </div>
-              )}
-
-              {/* AI Crops for region */}
-              {(REGION_CROPS[selectedListing.region] ?? []).length > 0 && (
-                <div className="mb-5">
-                  <p className="text-xs font-bold text-[#5D4037] uppercase tracking-wider mb-2 flex items-center gap-1">
-                    <span className="material-icons-round text-amber-500 text-sm">auto_awesome</span>
-                    AI Recommended Crops for {selectedListing.region}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {(REGION_CROPS[selectedListing.region] ?? []).slice(0, 6).map((crop) => (
-                      <span key={crop} className="inline-flex items-center bg-[#0f392b] text-emerald-100 px-3 py-1 rounded-full text-xs font-medium">
-                        <span className="material-icons-round text-[11px] mr-1 text-[#13ec80]">auto_awesome</span>
-                        {crop}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* CTA buttons */}
-              <div className="flex gap-3 pt-2">
-                <button className="flex-1 bg-[#047857] hover:bg-emerald-800 text-white font-bold py-3 rounded-xl shadow transition-colors text-sm">
-                  Request Lease
-                </button>
-                <button
-                  onClick={() => toggleWishlist(selectedListing)}
-                  className={`flex-1 border-2 font-bold py-3 rounded-xl transition-all text-sm flex items-center justify-center gap-1.5 ${
-                    wishlist.has(selectedListing.name)
-                      ? "bg-[#047857] border-[#047857] text-white shadow"
-                      : "border-[#047857] text-[#047857] hover:bg-emerald-50"
-                  }`}
-                >
-                  <span className="material-icons-round text-base">
-                    {wishlist.has(selectedListing.name) ? "favorite" : "favorite_border"}
-                  </span>
-                  {wishlist.has(selectedListing.name) ? "Wishlisted" : "Save to Wishlist"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    )
+  }
+    </div >
   );
 }

@@ -45,7 +45,7 @@ const INITIAL_ASSETS: FarmAsset[] = [
     crops: [
       { label: "Maize", color: "bg-yellow-100 text-yellow-800 border border-yellow-200" },
       { label: "Wheat", color: "bg-amber-100 text-amber-800 border border-amber-200" },
-      { label: "Peas",  color: "bg-green-100 text-green-800 border border-green-200"  },
+      { label: "Peas", color: "bg-green-100 text-green-800 border border-green-200" },
     ],
     verifiedDate: "Oct 12, 2023",
     isBestMatch: true,
@@ -67,7 +67,7 @@ const INITIAL_ASSETS: FarmAsset[] = [
     waterNote: "Rain-fed dependence, no borehole",
     crops: [
       { label: "Barley", color: "bg-amber-100 text-amber-800 border border-amber-200" },
-      { label: "Beans",  color: "bg-red-100 text-red-800 border border-red-200"       },
+      { label: "Beans", color: "bg-red-100 text-red-800 border border-red-200" },
     ],
     verifiedDate: "Nov 05, 2023",
   },
@@ -126,11 +126,10 @@ export default function CompareFarmAssetsPage() {
             {assets.map((asset) => (
               <div
                 key={asset.id}
-                className={`bg-white rounded-2xl overflow-hidden flex flex-col relative ${
-                  asset.isBestMatch
+                className={`bg-white rounded-2xl overflow-hidden flex flex-col relative ${asset.isBestMatch
                     ? "border border-[#13ec80]/40 shadow-xl ring-4 ring-[#13ec80]/10"
                     : "border border-gray-200 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.08)]"
-                }`}
+                  }`}
               >
                 {/* Best match accent bar */}
                 {asset.isBestMatch && (
@@ -259,11 +258,10 @@ export default function CompareFarmAssetsPage() {
                   {/* CTA */}
                   <div className="p-6 mt-auto border-t border-gray-100 bg-gray-50/50">
                     <button
-                      className={`w-full py-4 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 text-sm uppercase tracking-wider group transition-all ${
-                        asset.isBestMatch
+                      className={`w-full py-4 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 text-sm uppercase tracking-wider group transition-all ${asset.isBestMatch
                           ? "bg-[#047857] text-white shadow-[#047857]/20 hover:bg-[#0f392b]"
                           : "bg-white border-2 border-[#047857] text-[#047857] hover:bg-[#047857] hover:text-white"
-                      }`}
+                        }`}
                     >
                       Request Lease
                       <span className="material-icons-round group-hover:translate-x-1 transition-transform">

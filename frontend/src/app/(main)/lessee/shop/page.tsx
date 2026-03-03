@@ -179,11 +179,10 @@ export default function ShopPage() {
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${
-                  activeCategory === cat
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${activeCategory === cat
                     ? "bg-[#0f392b] text-white border-[#0f392b] shadow-md"
                     : "bg-white text-gray-600 border-gray-200 hover:border-[#047857] hover:text-[#047857]"
-                }`}
+                  }`}
               >
                 {cat}
               </button>
@@ -224,11 +223,10 @@ export default function ShopPage() {
                     {/* Favourites heart */}
                     <button
                       onClick={() => toggleShopFav(product.id)}
-                      className={`absolute top-3 right-3 p-1.5 rounded-full backdrop-blur-sm shadow-sm transition-all ${
-                        shopFavs.has(product.id)
+                      className={`absolute top-3 right-3 p-1.5 rounded-full backdrop-blur-sm shadow-sm transition-all ${shopFavs.has(product.id)
                           ? "bg-red-500 text-white"
                           : "bg-white/80 hover:bg-white text-gray-400 hover:text-red-400"
-                      }`}
+                        }`}
                     >
                       <span className="material-icons-round text-lg">
                         {shopFavs.has(product.id) ? "favorite" : "favorite_border"}
@@ -246,9 +244,8 @@ export default function ShopPage() {
                       {[1, 2, 3, 4, 5].map((s) => (
                         <span
                           key={s}
-                          className={`material-icons-round text-sm ${
-                            s <= Math.floor(product.rating) ? "text-amber-400" : "text-gray-200"
-                          }`}
+                          className={`material-icons-round text-sm ${s <= Math.floor(product.rating) ? "text-amber-400" : "text-gray-200"
+                            }`}
                         >
                           star
                         </span>

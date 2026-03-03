@@ -37,13 +37,13 @@ export default function ProfilePage() {
   useEffect(() => {
     if (profile) {
       setForm({
-        first_name: profile.first_name,
-        last_name: profile.last_name,
-        email: profile.email,
-        phone_number: profile.phone_number,
-        address: profile.address,
-        county: profile.county,
-        id_number: profile.id_number,
+        first_name: profile.first_name || "",
+        last_name: profile.last_name || "",
+        email: profile.email || "",
+        phone_number: profile.phone_number || "",
+        address: profile.address || "",
+        county: profile.county || "",
+        id_number: profile.id_number || "",
       });
     }
   }, [profile]);

@@ -25,6 +25,16 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["lucide-react", "react-icons", "recharts"],
   },
+  // Redirect common typos
+  async redirects() {
+    return [
+      {
+        source: "/leasee/:path*",
+        destination: "/lessee/:path*",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
