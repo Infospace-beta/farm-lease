@@ -87,3 +87,15 @@ class AdminLandListingSerializer(serializers.ModelSerializer):
 
     class Meta:
         """Meta configuration for AdminLandListingSerializer."""
+        model = LandListing
+        fields = [
+            'id', 'owner', 'owner_username', 'owner_email',
+            'title', 'description', 'total_area', 'price_per_month',
+            'preferred_duration', 'title_deed_number',
+            'has_irrigation', 'has_electricity', 'has_road_access',
+            'has_fencing', 'location_name', 'latitude', 'longitude',
+            'status', 'is_verified', 'is_flagged', 'flag_reason',
+            'current_lessee', 'created_at', 'soil_data', 'images'
+        ]
+        read_only_fields = ['owner', 'created_at']
+

@@ -28,6 +28,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('accounts.urls')),
     path('api/lands/', include('landmanagement.urls')),
+    path('api/contracts/', include('contracts.urls')),
+    path('api/payments/', include('payments.urls')),
 ]
 
 if settings.DEBUG:

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { landsApi } from "@/lib/services/api";
+import { useAuth } from "@/providers/AuthContext";
 
 /* ─── Types ───────────────────────────────────────────── */
 interface LandListing {
@@ -64,6 +65,7 @@ function initials(id: number): string {
 
 /* ─── Page ────────────────────────────────────────────── */
 export default function LandVerificationsPage() {
+  const { user } = useAuth();
   const [lands, setLands] = useState<LandListing[]>([]);
   const [stats, setStats] = useState<AdminStats>({
     total_lands: 0,
@@ -87,18 +89,37 @@ export default function LandVerificationsPage() {
   } | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
 
+  // Debug: Log user authentication
+  useEffect(() => {
+    console.log("=== USER AUTH DEBUG ===");
+    console.log("User:", user);
+    console.log("Is Authenticated:", !!user);
+    console.log("User Role:", user?.role);
+  }, [user]);
+
   /* ── Fetch data ─────────────────────────────────────── */
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
+      console.log("=== ADMIN DATA FETCH ===");
       const [landsRes, statsRes] = await Promise.all([
         landsApi.adminAllLands(),
         landsApi.adminStats(),
       ]);
+      console.log("Lands response:", landsRes.data);
+      console.log("Stats response:", statsRes.data);
       setLands(landsRes.data);
       setStats(statsRes.data);
-    } catch (err) {
-      console.error("Failed to fetch admin data:", err);
+    } catch (err: any) {
+      console.error("=== ADMIN DATA FETCH ERROR ===");
+      console.error("Error:", err);
+      console.error("Response:", err?.response);
+      console.error("Status:", err?.response?.status);
+      console.error("Data:", err?.response?.data);
+      setToast({
+        msg: `Failed to load data: ${err?.response?.data?.detail || err.message}`,
+        type: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -127,6 +148,7 @@ export default function LandVerificationsPage() {
               is_verified: true,
               is_flagged: false,
               flag_reason: undefined,
+              status: 'Vacant', // Update status to Vacant
             }
             : l,
         ),
@@ -136,7 +158,7 @@ export default function LandVerificationsPage() {
         pending_verification: Math.max(0, s.pending_verification - 1),
         verified: s.verified + 1,
       }));
-      showToast("Land verified successfully ✓");
+      showToast("Land verified successfully ✓ — Status updated to Vacant");
     } catch {
       showToast("Failed to verify land.", "error");
     } finally {

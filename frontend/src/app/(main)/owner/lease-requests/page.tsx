@@ -60,10 +60,13 @@ export default function LeaseRequestsPage() {
       setLoading(true);
       setError(null);
       const response = await ownerApi.leaseRequests();
-      setRequests(response.data);
+      // Ensure we always set an array
+      const data = Array.isArray(response.data) ? response.data : (response.data?.results || []);
+      setRequests(data);
     } catch (err: any) {
       console.error("Failed to load lease requests:", err);
       setError(err.response?.data?.detail || "Failed to load lease requests");
+      setRequests([]); // Set empty array on error
     } finally {
       setLoading(false);
     }

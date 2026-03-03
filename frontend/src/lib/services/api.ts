@@ -113,7 +113,8 @@ export const landsApi = {
   publicListings: () => api.get("/lands/listings/"),
 
   // Admin — land management
-  adminAllLands: () => api.get("/lands/admin/all/"),
+  adminAllLands: (filter?: "all" | "pending" | "verified" | "flagged") =>
+    api.get("/lands/admin/all/", { params: filter ? { filter } : {} }),
   adminStats: () => api.get("/lands/admin/stats/"),
   verifyLand: (landId: number) => api.post(`/lands/admin/${landId}/verify/`),
   flagLand: (landId: number, reason: string) =>
@@ -130,7 +131,7 @@ export const lesseeApi = {
   // Dashboard
   dashboard: () => api.get("/lessee/dashboard/"),
 
-  // Land Browse
+  // Land Browse - only vacant and verified lands
   listings: (params?: {
     region?: string;
     soil?: string;
@@ -140,7 +141,7 @@ export const lesseeApi = {
     max_price?: number;
     search?: string;
     page?: number;
-  }) => api.get("/lands/listings/", { params }),
+  }) => api.get("/lands/browse/", { params }),
 
   landDetail: (landId: number) => api.get(`/lands/${landId}/`),
 

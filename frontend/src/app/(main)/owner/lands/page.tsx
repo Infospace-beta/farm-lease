@@ -76,6 +76,9 @@ export default function MyLandsPage() {
       try {
         setLoading(true);
         const { data } = await landsApi.myLands();
+        console.log("=== LANDS API RESPONSE ===");
+        console.log("Total lands received:", data?.length);
+        console.log("Lands data:", data);
         setLands(data);
         setError(null);
       } catch (err) {
@@ -99,6 +102,15 @@ export default function MyLandsPage() {
       !soilFilter || land.soil_data?.soil_type === soilFilter;
     return matchSearch && matchStatus && matchSoil;
   });
+
+  // Debug: Log filtered results
+  console.log("=== FILTERING DEBUG ===");
+  console.log("Total lands:", lands.length);
+  console.log("Filtered lands:", filtered.length);
+  console.log("Search:", search);
+  console.log("Status filter:", statusFilter);
+  console.log("Soil filter:", soilFilter);
+  
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       <OwnerPageHeader

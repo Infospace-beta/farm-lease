@@ -141,10 +141,26 @@ def public_land_listings(request):
 @api_view(['GET'])
 @permission_classes([IsAdminUser])
 def admin_land_list(request):
-    """Return all lands with full details (incl. title deed) for admin."""
+    """Return all lands with full details (incl. title deed) for admin.
+    
+    Query Parameters:
+        - filter: 'pending' | 'verified' | 'flagged' | 'all' (default: 'all')
+    """
+    filter_type = request.query_params.get('filter', 'all')
+    
     lands = LandListing.objects.select_related(
         'owner', 'soil_data'
     ).prefetch_related('images')
+    
+    # Apply filter based on query parameter
+    if filter_type == 'pending':
+        lands = lands.filter(is_verified=False, is_flagged=False)
+    elif filter_type == 'verified':
+        lands = lands.filter(is_verified=True)
+    elif filter_type == 'flagged':
+        lands = lands.filter(is_flagged=True)
+    # 'all' returns everything (no filter)
+    
     serializer = AdminLandListingSerializer(
         lands, many=True, context={'request': request}
     )
@@ -200,7 +216,7 @@ def flag_land(request, land_id):
 # ─── LESSEE VIEW: Browse land ─────────────────────────────────
 @api_view(['GET'])
 @permission_classes([permissions.AllowAny])
-def browse_land(request):  # pylint: disable=unused-argument
+def browse_land(request):
     """
     Return available lands for lessees.
     Uses PublicLandListingSerializer to hide sensitive documents.
@@ -208,7 +224,9 @@ def browse_land(request):  # pylint: disable=unused-argument
     lands = LandListing.objects.filter(
         is_verified=True, status='Vacant'
     ).select_related('soil_data').prefetch_related('images')
-    serializer = PublicLandListingSerializer(lands, many=True)
+    serializer = PublicLandListingSerializer(
+        lands, many=True, context={'request': request}
+    )
     return Response(serializer.data)
 
 

@@ -172,6 +172,71 @@ Retrieve summary statistics for the authenticated land owner's dashboard.
 | Field         | Description                                   |
 |---------------|-----------------------------------------------|
 | `owner`       | Set to the authenticated user automatically   |
-| `status`      | Defaults to `"Vacant"`; updated by admin/lease flow |
-| `is_verified` | Defaults to `false`; set to `true` by admin   |
+| `status`      | Defaults to `"Under_Review"`; updated by admin verification or lease workflow |
+| `is_verified` | Defaults to `false`; set to `true` by admin after verification   |
 | `created_at`  | Auto-set on creation                          |
+
+---
+
+## Land Status Workflow
+
+### Status Field Values
+
+| Status Value      | Meaning                                  | Visible to Lessees? |
+|-------------------|------------------------------------------|---------------------|
+| `Under_Review`    | Newly created, pending admin verification | No                  |
+| `Vacant`          | Verified by admin and available for lease | Yes                 |
+| `Pending_Payment` | Lease approved, awaiting payment          | No                  |
+| `Leased`          | Currently leased to a farmer              | No                  |
+
+### Complete Workflow
+
+1. **Owner Creates Land Listing**
+   - After completing all 3 steps, land is created with:
+     - `status = "Under_Review"`
+     - `is_verified = false`
+   - Land appears in owner's "My Lands" page with "Under Review" badge
+   - Admin receives notification to verify
+
+2. **Admin Reviews**
+   - Admin cross-checks title deed number with land registry
+   - **If approved:** Admin verifies the land
+     - `status` changes to `"Vacant"`
+     - `is_verified` changes to `true`
+     - Land becomes visible in public listings (`/api/land/browse/`)
+     - Owner receives verification notification
+   - **If rejected:** Admin flags the land with a reason
+     - `is_flagged` set to `true`
+     - `flag_reason` contains correction instructions
+     - Owner receives notification with details
+
+3. **Owner Sees Updated Status**
+   - Refresh "My Lands" page or dashboard
+   - Verified lands show "Vacant" status
+   - Flagged lands show flag reason
+   - Can fix issues and land automatically returns to review queue
+
+### Viewing Your Land Status
+
+Use `GET /api/land/my-lands/` to retrieve all your lands with current status:
+
+```json
+[
+  {
+    "id": 7,
+    "title": "Fertile Farm in Nakuru",
+    "status": "Vacant",  // ✓ Verified and ready for lease
+    "is_verified": true,
+    "is_flagged": false,
+    ...
+  },
+  {
+    "id": 8,
+    "title": "Highland Plot",
+    "status": "Under_Review",  // ⏳ Awaiting admin verification
+    "is_verified": false,
+    "is_flagged": false,
+    ...
+  }
+]
+```
