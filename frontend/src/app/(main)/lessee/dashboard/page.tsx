@@ -1,8 +1,10 @@
 "use client";
+import { useState } from "react";
 import Link from "next/link";
 import LesseePageHeader from "@/components/lessee/LesseePageHeader";
 
 export default function LesseeDashboard() {
+  const [showReport, setShowReport] = useState(false);
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       {/* Header */}
@@ -10,7 +12,10 @@ export default function LesseeDashboard() {
         title="Dashboard"
         subtitle="Monitor your lease portfolio, manage agreements and track crop yield predictions."
       >
-        <button className="flex px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded-lg items-center gap-2 hover:bg-gray-50 transition shadow-sm">
+        <button
+          onClick={() => setShowReport(true)}
+          className="flex px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded-lg items-center gap-2 hover:bg-gray-50 transition shadow-sm"
+        >
           <span className="material-icons-round text-lg">description</span>
           <span className="font-medium text-sm">Report</span>
         </button>
@@ -21,7 +26,7 @@ export default function LesseeDashboard() {
           <span className="material-icons-round text-[#13ec80] text-sm">
             search
           </span>
-          <span className="font-medium text-sm">Find Land</span>
+          <span className="font-medium text-sm">Browse Land</span>
         </Link>
       </LesseePageHeader>
 
@@ -424,6 +429,118 @@ export default function LesseeDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Report Modal */}
+      {showReport && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-8 py-5 border-b border-gray-100">
+              <div>
+                <h2
+                  className="text-2xl font-bold text-gray-900"
+                  style={{ fontFamily: "'Playfair Display', serif" }}
+                >
+                  Portfolio Report
+                </h2>
+                <p className="text-xs text-gray-400 mt-0.5">Generated on {new Date().toLocaleDateString("en-KE", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
+              </div>
+              <button
+                onClick={() => setShowReport(false)}
+                className="p-2 text-gray-400 hover:bg-gray-100 rounded-full transition"
+              >
+                <span className="material-icons-round">close</span>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="px-8 py-6 space-y-6 overflow-y-auto max-h-[65vh]">
+              {/* Summary Cards */}
+              <div className="grid grid-cols-3 gap-4">
+                {[
+                  { label: "Total Leased Acres", value: "24.5 ac", icon: "landscape", color: "text-[#047857] bg-emerald-50" },
+                  { label: "Monthly Expenditure", value: "Ksh 85,000", icon: "payments", color: "text-amber-700 bg-amber-50" },
+                  { label: "Avg Soil Health", value: "88%", icon: "eco", color: "text-teal-700 bg-teal-50" },
+                ].map((item) => (
+                  <div key={item.label} className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                    <span className={`material-icons-round text-2xl mb-2 block ${item.color.split(" ")[0]}`}>{item.icon}</span>
+                    <div className="text-sm font-bold text-gray-800">{item.value}</div>
+                    <div className="text-[10px] text-gray-400 mt-0.5">{item.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Active Leases */}
+              <div>
+                <h3 className="text-sm font-bold text-[#5D4037] uppercase tracking-wider mb-3">Active Leases</h3>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100">
+                      <th className="pb-2">Plot</th>
+                      <th className="pb-2">Owner</th>
+                      <th className="pb-2">Size</th>
+                      <th className="pb-2">Status</th>
+                      <th className="pb-2 text-right">Payment</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {[
+                      { plot: "Plot A4 – North", owner: "John Doe", size: "3.5 ac", status: "Active", payment: "Ksh 45,000", statusColor: "text-[#047857] bg-emerald-50" },
+                      { plot: "Plot B2 – East", owner: "Jane Smith", size: "2.0 ac", status: "Pending", payment: "Ksh 22,000", statusColor: "text-amber-700 bg-amber-50" },
+                    ].map((row) => (
+                      <tr key={row.plot} className="py-2">
+                        <td className="py-2.5 font-medium text-gray-800">{row.plot}</td>
+                        <td className="py-2.5 text-gray-500">{row.owner}</td>
+                        <td className="py-2.5 text-gray-500">{row.size}</td>
+                        <td className="py-2.5">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${row.statusColor}`}>{row.status}</span>
+                        </td>
+                        <td className="py-2.5 text-right font-bold text-[#0f392b]">{row.payment}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* AI Crop Recommendations */}
+              <div>
+                <h3 className="text-sm font-bold text-[#5D4037] uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <span className="material-icons-round text-amber-500 text-base">auto_awesome</span>
+                  AI Crop Recommendations
+                </h3>
+                <div className="bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-100 rounded-xl p-4">
+                  <p className="text-xs text-gray-500 mb-3">Based on your current plots' soil data and regional climate history:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {["Maize", "Wheat", "Avocado", "Pyrethrum"].map((crop) => (
+                      <span key={crop} className="inline-flex items-center bg-[#0f392b] text-emerald-100 px-3 py-1.5 rounded-full text-xs font-medium shadow-sm">
+                        <span className="material-icons-round text-[13px] mr-1.5 text-[#13ec80]">auto_awesome</span>
+                        {crop}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-8 py-4 border-t border-gray-100 flex justify-end gap-3">
+              <button
+                onClick={() => setShowReport(false)}
+                className="px-5 py-2.5 text-sm border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => { window.print(); }}
+                className="px-5 py-2.5 text-sm bg-[#0f392b] text-white rounded-xl hover:bg-opacity-90 transition shadow-lg flex items-center gap-2"
+              >
+                <span className="material-icons-round text-sm">download</span>
+                Download PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

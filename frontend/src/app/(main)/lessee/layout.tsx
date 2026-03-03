@@ -6,7 +6,7 @@ import { useAuth } from "@/providers";
 
 const navItems = [
   { href: "/lessee/dashboard", icon: "dashboard", label: "Dashboard" },
-  { href: "/lessee/browse", icon: "landscape", label: "Find Land" },
+  { href: "/lessee/browse", icon: "landscape", label: "Browse Land" },
   {
     href: "/lessee/ai-predictor",
     icon: "psychology",
@@ -14,6 +14,7 @@ const navItems = [
     badge: "NEW",
   },
   { href: "/lessee/shop", icon: "storefront", label: "Agro-Dealer Shop" },
+  { href: "/lessee/wishlist", icon: "favorite", label: "Wishlist" },
   { href: "/lessee/leases", icon: "folder_shared", label: "My Leases" },
   {
     href: "/lessee/financials",
@@ -89,11 +90,10 @@ export default function LesseeLayout({
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-4 px-4 py-3 rounded-lg transition-all group ${
-                    active
+                  className={`flex items-center gap-4 px-4 py-3 rounded-lg transition-all group ${active
                       ? "bg-white/10 text-white shadow-sm backdrop-blur-sm"
                       : "text-gray-400 hover:text-white hover:bg-white/5"
-                  }`}
+                    }`}
                 >
                   <span
                     className={`material-icons-round text-xl group-hover:scale-110 transition-transform ${active ? "text-white" : ""}`}
