@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Users, Sprout, Mountain, Ban, FileDown, Search, RefreshCw, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import {
   Users,
@@ -293,8 +294,8 @@ export default function UserManagementPage() {
                     <td className="px-5 py-4">
                       <span
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${suspendedMap[user.email]
-                            ? "bg-red-50 text-red-700"
-                            : "bg-green-50 text-green-700"
+                          ? "bg-red-50 text-red-700"
+                          : "bg-green-50 text-green-700"
                           }`}
                       >
                         <span
@@ -315,8 +316,8 @@ export default function UserManagementPage() {
                         <button
                           onClick={() => toggleSuspend(user.email)}
                           className={`p-1.5 rounded-lg transition ${suspendedMap[user.email]
-                              ? "text-red-600 bg-red-50 hover:bg-red-100"
-                              : "text-gray-400 hover:text-red-600 hover:bg-red-50"
+                            ? "text-red-600 bg-red-50 hover:bg-red-100"
+                            : "text-gray-400 hover:text-red-600 hover:bg-red-50"
                             }`}
                           title={suspendedMap[user.email] ? "Unsuspend" : "Suspend"}
                         >
@@ -357,8 +358,8 @@ export default function UserManagementPage() {
                 <button
                   key={p}
                   className={`w-8 h-8 flex items-center justify-center text-sm font-medium rounded-lg transition ${p === 1
-                      ? "bg-sidebar-bg text-white shadow-sm"
-                      : "text-gray-600 hover:bg-gray-50 border border-gray-200"
+                    ? "bg-sidebar-bg text-white shadow-sm"
+                    : "text-gray-600 hover:bg-gray-50 border border-gray-200"
                     }`}
                 >
                   {p}
