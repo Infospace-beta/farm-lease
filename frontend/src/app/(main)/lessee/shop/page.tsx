@@ -1,6 +1,23 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import LesseePageHeader from "@/components/lessee/LesseePageHeader";
+import { lesseeApi } from "@/lib/services/api";
+
+// ── Types ────────────────────────────────────────────────────
+interface Product {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  rating?: number;
+  reviews?: number;
+  category: string;
+  badge?: string | null;
+  badgeColor?: string;
+  icon?: string;
+  image?: string | null;
+  dealer?: number;
+}
 
 const categories = [
   "All Categories",
@@ -11,94 +28,59 @@ const categories = [
   "Machinery",
 ];
 
-const products = [
-  {
-    id: 1,
-    name: "YaraMila Planting Fertilizer",
-    description:
-      "Balanced NPK fertilizer ideal for planting season. Promotes strong root development and early growth.",
-    price: 3500,
-    rating: 4.8,
-    reviews: 124,
-    category: "Fertilizers & Soil",
-    badge: "Top Rated",
-    badgeColor: "bg-[#13ec80] text-[#0f392b]",
-    icon: "science",
-  },
-  {
-    id: 2,
-    name: "DK 777 Hybrid Maize",
-    description:
-      "High-yielding certified hybrid maize seed. Drought-tolerant and disease-resistant variety for Kenyan conditions.",
-    price: 850,
-    rating: 4.9,
-    reviews: 237,
-    category: "Certified Seeds",
-    badge: null,
-    badgeColor: "",
-    icon: "grass",
-  },
-  {
-    id: 3,
-    name: "Roundup Herbicide 1L",
-    description:
-      "Systemic herbicide for effective control of annual and perennial weeds. Non-selective post-emergence.",
-    price: 1200,
-    rating: 4.5,
-    reviews: 89,
-    category: "Agro-Chemicals",
-    badge: null,
-    badgeColor: "",
-    icon: "sanitizer",
-  },
-  {
-    id: 4,
-    name: "Knapsack Sprayer 20L",
-    description:
-      "Heavy-duty manual knapsack sprayer. Adjustable nozzle, ergonomic straps, and large 20L capacity tank.",
-    price: 4800,
-    rating: 4.7,
-    reviews: 56,
-    category: "Farm Tools",
-    badge: "Top Rated",
-    badgeColor: "bg-[#13ec80] text-[#0f392b]",
-    icon: "water_drop",
-  },
-  {
-    id: 5,
-    name: "CAN Fertilizer 50kg",
-    description:
-      "Calcium Ammonium Nitrate fertilizer for top-dressing. Improves yield and plant health during growth phase.",
-    price: 3200,
-    rating: 4.6,
-    reviews: 98,
-    category: "Fertilizers & Soil",
-    badge: null,
-    badgeColor: "",
-    icon: "science",
-  },
-  {
-    id: 6,
-    name: "Assorted Vegetable Seeds",
-    description:
-      "Premium assorted vegetable seed pack. Includes tomato, kale, sukuma wiki and spinach varieties.",
-    price: 450,
-    rating: 4.3,
-    reviews: 43,
-    category: "Certified Seeds",
-    badge: null,
-    badgeColor: "",
-    icon: "eco",
-  },
-];
+// Map API response fields to our Product type
+function mapApiProduct(p: Record<string, unknown>): Product {
+  return {
+    id: p.id as number,
+    name: (p.name ?? p.product_name ?? "Unnamed Product") as string,
+    description: (p.description ?? p.details ?? "") as string,
+    price: Number(p.price ?? p.unit_price ?? 0),
+    rating: p.rating ? Number(p.rating) : undefined,
+    reviews: p.reviews ? Number(p.reviews) : undefined,
+    category: (p.category ?? p.product_category ?? "Other") as string,
+    badge: (p.badge ?? null) as string | null,
+    badgeColor: (p.badge_color ?? "") as string,
+    icon: (p.icon ?? "inventory_2") as string,
+    image: (p.image ?? null) as string | null,
+    dealer: p.dealer as number | undefined,
+  };
+}
 
 export default function ShopPage() {
   const [activeCategory, setActiveCategory] = useState("All Categories");
   const [searchQuery, setSearchQuery] = useState("");
 
+  // ── API products ──────────────────────────────────────────
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = useState(true);
+  const [productsError, setProductsError] = useState<string | null>(null);
+
+  const fetchProducts = () => {
+    setProductsLoading(true);
+    setProductsError(null);
+    lesseeApi
+      .shopProducts()
+      .then((res) => {
+        const data = (res.data?.results ?? res.data) as Record<string, unknown>[];
+        setProducts(Array.isArray(data) ? data.map(mapApiProduct) : []);
+      })
+      .catch(() => setProductsError("Could not load products. Please try again."))
+      .finally(() => setProductsLoading(false));
+  };
+
+  useEffect(() => { fetchProducts(); }, []);
+
   // ── Cart: productId → quantity ─────────────────────────────
-  const [cart, setCart] = useState<Record<number, number>>({});
+  const [cart, setCart] = useState<Record<number, number>>(() => {
+    if (typeof window === "undefined") return {};
+    try { return JSON.parse(localStorage.getItem("fl_shop_cart") ?? "{}"); } catch { return {}; }
+  });
   const cartTotal = Object.values(cart).reduce((sum, qty) => sum + qty, 0);
+
+  // Persist cart to localStorage
+  useEffect(() => {
+    try { localStorage.setItem("fl_shop_cart", JSON.stringify(cart)); } catch { /* ignore */ }
+  }, [cart]);
 
   function addToCart(id: number) {
     setCart((prev) => ({ ...prev, [id]: (prev[id] ?? 0) + 1 }));
@@ -114,7 +96,19 @@ export default function ShopPage() {
   }
 
   // ── Shop favourites ────────────────────────────────────────
-  const [shopFavs, setShopFavs] = useState<Set<number>>(new Set());
+  const [shopFavs, setShopFavs] = useState<Set<number>>(() => {
+    if (typeof window === "undefined") return new Set<number>();
+    try {
+      const arr = JSON.parse(localStorage.getItem("fl_shop_favs") ?? "[]") as number[];
+      return new Set(arr);
+    } catch { return new Set<number>(); }
+  });
+
+  // Persist shop favs to localStorage
+  useEffect(() => {
+    try { localStorage.setItem("fl_shop_favs", JSON.stringify([...shopFavs])); } catch { /* ignore */ }
+  }, [shopFavs]);
+
   function toggleShopFav(id: number) {
     setShopFavs((prev) => {
       const next = new Set(prev);
@@ -126,15 +120,15 @@ export default function ShopPage() {
   // Cart drawer visibility
   const [showCart, setShowCart] = useState(false);
 
-  const filtered = products.filter(
+  const filtered = useMemo(() => products.filter(
     (p) =>
       (activeCategory === "All Categories" || p.category === activeCategory) &&
       (!searchQuery.trim() ||
         p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.description.toLowerCase().includes(searchQuery.toLowerCase())),
-  );
+  ), [products, activeCategory, searchQuery]);
 
-  const cartItems = products.filter((p) => (cart[p.id] ?? 0) > 0);
+  const cartItems = useMemo(() => products.filter((p) => (cart[p.id] ?? 0) > 0), [products, cart]);
   const cartValue = cartItems.reduce((sum, p) => sum + p.price * (cart[p.id] ?? 0), 0);
 
   return (
@@ -180,8 +174,8 @@ export default function ShopPage() {
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${activeCategory === cat
-                    ? "bg-[#0f392b] text-white border-[#0f392b] shadow-md"
-                    : "bg-white text-gray-600 border-gray-200 hover:border-[#047857] hover:text-[#047857]"
+                  ? "bg-[#0f392b] text-white border-[#0f392b] shadow-md"
+                  : "bg-white text-gray-600 border-gray-200 hover:border-[#047857] hover:text-[#047857]"
                   }`}
               >
                 {cat}
@@ -190,7 +184,32 @@ export default function ShopPage() {
           </div>
 
           {/* Product Grid */}
-          {filtered.length === 0 ? (
+          {productsLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-pulse">
+                  <div className="h-56 bg-gray-100" />
+                  <div className="p-4 space-y-3">
+                    <div className="h-4 bg-gray-200 rounded w-3/4" />
+                    <div className="h-3 bg-gray-100 rounded w-full" />
+                    <div className="h-3 bg-gray-100 rounded w-5/6" />
+                    <div className="h-8 bg-gray-200 rounded-xl mt-2" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : productsError ? (
+            <div className="flex flex-col items-center justify-center py-24 text-center">
+              <span className="material-icons-round text-6xl text-red-200 mb-4">error_outline</span>
+              <p className="text-lg font-bold text-gray-500">{productsError}</p>
+              <button
+                onClick={fetchProducts}
+                className="mt-5 px-6 py-2.5 bg-[#047857] text-white text-sm font-semibold rounded-xl hover:bg-emerald-800 transition"
+              >
+                Retry
+              </button>
+            </div>
+          ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 text-center">
               <span className="material-icons-round text-6xl text-gray-200 mb-4">search_off</span>
               <p className="text-lg font-bold text-gray-400">No products found</p>
@@ -224,8 +243,8 @@ export default function ShopPage() {
                     <button
                       onClick={() => toggleShopFav(product.id)}
                       className={`absolute top-3 right-3 p-1.5 rounded-full backdrop-blur-sm shadow-sm transition-all ${shopFavs.has(product.id)
-                          ? "bg-red-500 text-white"
-                          : "bg-white/80 hover:bg-white text-gray-400 hover:text-red-400"
+                        ? "bg-red-500 text-white"
+                        : "bg-white/80 hover:bg-white text-gray-400 hover:text-red-400"
                         }`}
                     >
                       <span className="material-icons-round text-lg">
@@ -244,7 +263,7 @@ export default function ShopPage() {
                       {[1, 2, 3, 4, 5].map((s) => (
                         <span
                           key={s}
-                          className={`material-icons-round text-sm ${s <= Math.floor(product.rating) ? "text-amber-400" : "text-gray-200"
+                          className={`material-icons-round text-sm ${s <= Math.floor(product.rating ?? 0) ? "text-amber-400" : "text-gray-200"
                             }`}
                         >
                           star
@@ -329,12 +348,25 @@ export default function ShopPage() {
                 >
                   Cart ({cartTotal} item{cartTotal !== 1 ? "s" : ""})
                 </h3>
-                <button
-                  onClick={() => setShowCart(false)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <span className="material-icons-round text-xl">close</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  {cartTotal > 0 && (
+                    <button
+                      onClick={() => {
+                        setCart({});
+                        localStorage.removeItem("fl_shop_cart");
+                      }}
+                      className="text-xs text-red-400 hover:text-red-600 font-medium transition-colors"
+                    >
+                      Clear
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setShowCart(false)}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <span className="material-icons-round text-xl">close</span>
+                  </button>
+                </div>
               </div>
 
               <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">

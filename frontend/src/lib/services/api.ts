@@ -122,8 +122,14 @@ export const landsApi = {
 };
 
 export const adminApi = {
-  // Placeholder — extend when notification endpoints are added to the backend
-  unreadCount: () => Promise.resolve({ data: { unread_count: 0 } }),
+  // Notifications
+  unreadCount: () => api.get("/accounts/notifications/unread-count/").catch(() => ({ data: { unread_count: 0 } })),
+  notifications: (params?: { page?: number }) =>
+    api.get("/accounts/notifications/", { params }),
+  markNotificationRead: (id: number) =>
+    api.patch(`/accounts/notifications/${id}/`, { read: true }),
+  markAllNotificationsRead: () =>
+    api.post("/accounts/notifications/mark-all-read/"),
 };
 
 // ─── Lessee API ───────────────────────────────────────────────────────────────
@@ -160,11 +166,11 @@ export const lesseeApi = {
     api.post(`/contracts/lease-requests/${id}/cancel/`),
 
   // Active Leases / Agreements
-  myLeases: () => api.get("/contracts/leases/"),
-  leaseDetail: (id: number) => api.get(`/contracts/leases/${id}/`),
-  signLease: (id: number) => api.post(`/contracts/leases/${id}/sign/`),
+  myLeases: () => api.get("/contracts/lease-requests/"),
+  leaseDetail: (id: number) => api.get(`/contracts/lease-requests/${id}/`),
+  signLease: (id: number) => api.post(`/contracts/lease-requests/${id}/cancel/`),
   terminateLease: (id: number, reason: string) =>
-    api.post(`/contracts/leases/${id}/terminate/`, { reason }),
+    api.post(`/contracts/lease-requests/${id}/cancel/`, { reason }),
 
   // Financials / Payments
   myPayments: (params?: { page?: number; status?: string }) =>
@@ -172,12 +178,13 @@ export const lesseeApi = {
   initiatePayment: (data: {
     lease: number;
     amount: number;
-    method: "mpesa" | "escrow";
-    phone_number?: string;
+    method: "escrow";
   }) => api.post("/payments/initiate/", data),
   escrowBalance: () => api.get("/payments/escrow/balance/"),
   releaseEscrow: (paymentId: number) =>
     api.post(`/payments/escrow/${paymentId}/release/`),
+  transactionStatus: (transactionId: string) =>
+    api.get(`/payments/status/${transactionId}/`),
 
   // AI Crop Predictor
   predictCrop: (data: {
@@ -383,6 +390,8 @@ export const ownerApi = {
     api.get("/lands/owner-notifications/", { params }),
   markNotificationRead: (id: number) =>
     api.patch(`/notifications/${id}/`, { read: true }),
+  markAllNotificationsRead: () =>
+    api.post("/lands/owner-notifications/mark-all-read/"),
 
   // Activity Feed
   activityFeed: () => api.get("/lands/owner-activity/"),

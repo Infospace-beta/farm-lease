@@ -1,5 +1,6 @@
 "use client";
 import { useState, useMemo, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import LesseePageHeader from "@/components/lessee/LesseePageHeader";
 import { lesseeApi } from "@/lib/services/api";
 
@@ -318,6 +319,7 @@ const REGION_CROPS: Record<string, string[]> = {
 };
 
 type Listing = {
+  id?: number;
   name: string;
   acresNum: number;
   location: string;
@@ -331,100 +333,67 @@ type Listing = {
   match: string | null;
   matchColor: string;
   status: string | null;
+  photoUrl?: string;
 };
 
-const ALL_LISTINGS: Listing[] = [
-  {
-    name: "Green Valley Plot A",
-    acresNum: 20,
-    location: "Nakuru, Rift Valley",
-    region: "Rift Valley",
-    price: "45,000",
-    soil: "Loam",
-    water: "River",
-    slope: "Flat",
-    badge: "Ideal for Maize",
-    badgeColor: "bg-[#047857]",
-    match: "98%",
-    matchColor: "text-[#047857] bg-emerald-50",
-    status: null,
-  },
-  {
-    name: "Highland Wheat Farm",
-    acresNum: 15,
-    location: "Narok, Rift Valley",
-    region: "Rift Valley",
-    price: "30,000",
-    soil: "Volcanic",
-    water: "Borehole",
-    slope: "Gentle",
-    badge: "Wheat Ready",
-    badgeColor: "bg-amber-600",
-    match: "85%",
-    matchColor: "text-amber-600 bg-amber-50",
-    status: null,
-  },
-  {
-    name: "Nyeri Mixed Farm",
-    acresNum: 50,
-    location: "Nyeri, Central Kenya",
-    region: "Central Kenya",
-    price: "60,000",
-    soil: "Red Clay",
-    water: "Rain/Dam",
-    slope: "Hilly",
-    badge: "Mixed Crop",
-    badgeColor: "bg-teal-600",
-    match: "92%",
-    matchColor: "text-teal-700 bg-teal-50",
-    status: null,
-  },
-  {
-    name: "Thika Road Plot",
-    acresNum: 12,
-    location: "Kiambu, Central Kenya",
-    region: "Central Kenya",
-    price: "80,000",
-    soil: "Loam",
-    water: "Piped",
-    slope: "Flat",
-    badge: "Horticulture",
-    badgeColor: "bg-purple-600",
-    match: null,
-    matchColor: "",
-    status: "Pending Verification",
-  },
-  {
-    name: "Eldoret Grain Estate",
-    acresNum: 35,
-    location: "Uasin Gishu, Rift Valley",
-    region: "Rift Valley",
-    price: "38,000",
-    soil: "Volcanic",
-    water: "Borehole",
-    slope: "Flat",
-    badge: "Wheat & Maize",
-    badgeColor: "bg-amber-700",
-    match: "90%",
-    matchColor: "text-amber-700 bg-amber-50",
-    status: null,
-  },
-  {
-    name: "Coastal Cassava Acres",
-    acresNum: 8,
-    location: "Kilifi, Coastal Region",
-    region: "Coastal Region",
-    price: "20,000",
-    soil: "Sandy",
-    water: "Rain-fed",
-    slope: "Flat",
-    badge: "Cassava / Coconut",
-    badgeColor: "bg-orange-600",
-    match: "75%",
-    matchColor: "text-orange-600 bg-orange-50",
-    status: null,
-  },
+// ── Map a verified API land to the Listing display shape ──────
+const BADGE_COLORS = [
+  "bg-[#047857]", "bg-amber-600", "bg-teal-600",
+  "bg-purple-600", "bg-orange-600", "bg-amber-700", "bg-blue-600",
 ];
+const KNOWN_REGIONS = [
+  "Rift Valley", "Central Kenya", "Coastal Region", "Eastern Kenya",
+  "Western Kenya", "Nyanza", "North Eastern", "Nairobi", "Mombasa",
+  "Nakuru", "Kiambu", "Uasin Gishu", "Narok", "Nyeri", "Meru", "Kisumu",
+  "Kakamega", "Kilifi", "Machakos", "Laikipia", "Trans-Nzoia", "Kericho",
+  "Bomet", "Kisii", "Nyamira", "Bungoma", "Busia", "Siaya", "Homa Bay",
+  "Migori", "Murang'a", "Kirinyaga", "Embu", "Kitui", "Makueni", "Nyandarua",
+  "Kajiado", "Turkana", "Vihiga", "Tharaka-Nithi", "Baringo", "Nandi",
+  "Elgeyo-Marakwet", "Samburu", "West Pokot", "Isiolo", "Marsabit",
+  "Mandera", "Wajir", "Garissa", "Tana River", "Lamu", "Taita-Taveta", "Kwale",
+];
+type ApiLand = {
+  id: number;
+  title: string;
+  total_area: string | number;
+  price_per_month: string | number;
+  location_name: string;
+  has_irrigation: boolean;
+  description?: string;
+  soil_data?: { soil_type?: string } | null;
+  images?: { id: number; image: string }[];
+};
+function mapApiToListing(l: ApiLand): Listing {
+  const loc = l.location_name || "Kenya";
+  let region = "Kenya";
+  for (const r of KNOWN_REGIONS) {
+    if (loc.toLowerCase().includes(r.toLowerCase())) { region = r; break; }
+  }
+  const soil = l.soil_data?.soil_type || "Not specified";
+  const water = l.has_irrigation ? "Irrigation" : "Rain-fed";
+  const priceNum = Math.floor(Number(l.price_per_month));
+  const price = isNaN(priceNum) ? "—" : priceNum.toLocaleString();
+  let badge = "Available";
+  const desc = (l.description || "").toLowerCase();
+  const cropHints: [string, string][] = [
+    ["maize", "Maize"], ["wheat", "Wheat"], ["tea", "Tea"], ["coffee", "Coffee"],
+    ["avocado", "Avocado"], ["sugarcane", "Sugarcane"], ["rice", "Rice"],
+    ["horticulture", "Horticulture"], ["cassava", "Cassava"], ["coconut", "Coconut"],
+  ];
+  for (const [kw, label] of cropHints) { if (desc.includes(kw)) { badge = label; break; } }
+  const photoUrl = l.images?.[0]?.image
+    ? `${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}${l.images[0].image}`
+    : undefined;
+  return {
+    id: l.id, name: l.title, acresNum: Number(l.total_area),
+    location: loc, region, price, soil, water, slope: "Flat",
+    badge, badgeColor: BADGE_COLORS[l.id % BADGE_COLORS.length],
+    match: null, matchColor: "", status: null,
+    photoUrl,
+  };
+}
+
+const ALL_LISTINGS: Listing[] = []; // populated from API at runtime
 
 // Build suggestion pool from listings + static keyword lists
 function buildSuggestions(listings: Listing[]): string[] {
@@ -441,9 +410,11 @@ function buildSuggestions(listings: Listing[]): string[] {
   return Array.from(pool).sort();
 }
 
-const ALL_SUGGESTIONS = buildSuggestions(ALL_LISTINGS);
+const STATIC_SUGGESTIONS = buildSuggestions([]);
 
 export default function BrowseLandPage() {
+  const router = useRouter();
+
   // ── Listing detail modal ───────────────────────────────────
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
 
@@ -455,6 +426,27 @@ export default function BrowseLandPage() {
       return new Set(Object.keys(stored));
     } catch { return new Set<string>(); }
   });
+
+  // ── API listings ──────────────────────────────────────────
+  const [apiListings, setApiListings] = useState<Listing[]>([]);
+  const [listingsLoading, setListingsLoading] = useState(true);
+  const [listingsError, setListingsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    lesseeApi
+      .listings()
+      .then((res) => {
+        const mapped = (res.data as ApiLand[]).map(mapApiToListing);
+        setApiListings(mapped);
+      })
+      .catch(() => setListingsError("Could not load listings. Please try again."))
+      .finally(() => setListingsLoading(false));
+  }, []);
+
+  const allSuggestions = useMemo(
+    () => buildSuggestions(apiListings),
+    [apiListings]
+  );
 
   function toggleWishlist(listing: Listing) {
     setWishlist((prev) => {
@@ -478,8 +470,9 @@ export default function BrowseLandPage() {
   const headerSuggestions = useMemo(() => {
     if (!headerSearch.trim()) return [];
     const q = headerSearch.toLowerCase();
-    return ALL_SUGGESTIONS.filter((s) => s.toLowerCase().includes(q)).slice(0, 8);
-  }, [headerSearch]);
+    return allSuggestions.filter((s) => s.toLowerCase().includes(q)).slice(0, 8);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [headerSearch, allSuggestions]);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -490,15 +483,43 @@ export default function BrowseLandPage() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
+  // ── Mobile filter sidebar toggle ─────────────────────────
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+
+  // ── Sort state ─────────────────────────────────────────────
+  const [sortBy, setSortBy] = useState<"recommended" | "price_asc" | "price_desc" | "acres_asc" | "acres_desc" | "newest">("recommended");
+  const [showSortMenu, setShowSortMenu] = useState(false);
+  const sortRef = useRef<HTMLDivElement>(null);
+  const SORT_OPTIONS: { value: typeof sortBy; label: string; icon: string }[] = [
+    { value: "recommended", label: "Recommended", icon: "auto_awesome" },
+    { value: "price_asc", label: "Price: Low to High", icon: "arrow_upward" },
+    { value: "price_desc", label: "Price: High to Low", icon: "arrow_downward" },
+    { value: "acres_asc", label: "Acreage: Smallest First", icon: "straighten" },
+    { value: "acres_desc", label: "Acreage: Largest First", icon: "straighten" },
+    { value: "newest", label: "Newest First", icon: "schedule" },
+  ];
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (sortRef.current && !sortRef.current.contains(e.target as Node))
+        setShowSortMenu(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
   // ── Filter panel state ─────────────────────────────────────
   const [minAcres, setMinAcres] = useState(5);
   const [maxAcres, setMaxAcres] = useState(100);
   const [soilType, setSoilType] = useState("Any Soil Type");
+  const [waterSource, setWaterSource] = useState("Any Water Source");
+  const [minPrice, setMinPrice] = useState(0);
+  const [maxPrice, setMaxPrice] = useState(200000);
 
   // Region searchable multi-select
   const [regionQuery, setRegionQuery] = useState("");
   const [showRegionSugg, setShowRegionSugg] = useState(false);
-  const [selectedRegions, setSelectedRegions] = useState<string[]>(["Rift Valley", "Central Kenya"]);
+  const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
   const regionRef = useRef<HTMLDivElement>(null);
 
   const regionSuggestions = useMemo(() => {
@@ -537,30 +558,22 @@ export default function BrowseLandPage() {
     return Array.from(set).slice(0, 5);
   }, [selectedRegions]);
 
-  // ── Applied filters (committed on "Update Results") ────────
-  const [appliedFilters, setAppliedFilters] = useState({
-    regions: ["Rift Valley", "Central Kenya"],
-    minAcres: 5,
-    maxAcres: 100,
-    soilType: "Any Soil Type",
-  });
-
-  function applyFilters() {
-    setAppliedFilters({ regions: selectedRegions, minAcres, maxAcres, soilType });
-  }
-
   function resetFilters() {
     setMinAcres(5);
     setMaxAcres(100);
     setSoilType("Any Soil Type");
+    setWaterSource("Any Water Source");
+    setMinPrice(0);
+    setMaxPrice(200000);
     setSelectedRegions([]);
+    setRegionQuery("");
     setHeaderSearch("");
-    setAppliedFilters({ regions: [], minAcres: 5, maxAcres: 100, soilType: "Any Soil Type" });
+    setSortBy("recommended");
   }
 
-  // ── Filtered listings (header search is real-time; panel filters apply on Update) ──
+  // ── Filtered + sorted listings ──────────────────────────────
   const filteredListings = useMemo(() => {
-    return ALL_LISTINGS.filter((l) => {
+    const filtered = apiListings.filter((l) => {
       // Real-time keyword search
       if (headerSearch.trim()) {
         const q = headerSearch.toLowerCase();
@@ -570,8 +583,8 @@ export default function BrowseLandPage() {
         if (!haystack.includes(q)) return false;
       }
       // Region filter
-      if (appliedFilters.regions.length > 0) {
-        const ok = appliedFilters.regions.some(
+      if (selectedRegions.length > 0) {
+        const ok = selectedRegions.some(
           (r) =>
             l.region.toLowerCase().includes(r.toLowerCase()) ||
             l.location.toLowerCase().includes(r.toLowerCase()),
@@ -579,17 +592,51 @@ export default function BrowseLandPage() {
         if (!ok) return false;
       }
       // Acreage range
-      if (l.acresNum < appliedFilters.minAcres || l.acresNum > appliedFilters.maxAcres) return false;
+      if (l.acresNum < minAcres || l.acresNum > maxAcres) return false;
       // Soil type
       if (
-        appliedFilters.soilType !== "Any Soil Type" &&
-        !l.soil.toLowerCase().includes(appliedFilters.soilType.toLowerCase())
+        soilType !== "Any Soil Type" &&
+        !l.soil.toLowerCase().includes(soilType.toLowerCase())
       )
         return false;
-
+      // Water source
+      if (
+        waterSource !== "Any Water Source" &&
+        !l.water.toLowerCase().includes(waterSource.toLowerCase())
+      )
+        return false;
+      // Price range (price stored as string like "30,000" — parse numeric)
+      const numericPrice = Number(l.price.replace(/,/g, ""));
+      if (!isNaN(numericPrice)) {
+        if (numericPrice < minPrice || numericPrice > maxPrice) return false;
+      }
       return true;
     });
-  }, [headerSearch, appliedFilters]);
+
+    // Sort
+    const sorted = [...filtered];
+    switch (sortBy) {
+      case "price_asc":
+        sorted.sort((a, b) => Number(a.price.replace(/,/g, "")) - Number(b.price.replace(/,/g, "")));
+        break;
+      case "price_desc":
+        sorted.sort((a, b) => Number(b.price.replace(/,/g, "")) - Number(a.price.replace(/,/g, "")));
+        break;
+      case "acres_asc":
+        sorted.sort((a, b) => a.acresNum - b.acresNum);
+        break;
+      case "acres_desc":
+        sorted.sort((a, b) => b.acresNum - a.acresNum);
+        break;
+      case "newest":
+        sorted.sort((a, b) => (b.id ?? 0) - (a.id ?? 0));
+        break;
+      default:
+        // recommended — keep original order
+        break;
+    }
+    return sorted;
+  }, [headerSearch, selectedRegions, minAcres, maxAcres, soilType, waterSource, minPrice, maxPrice, apiListings, sortBy]);
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
@@ -598,8 +645,16 @@ export default function BrowseLandPage() {
         title="Browse Land"
         subtitle="Browse available leasing opportunities matched to your preferences"
       >
+        {/* Mobile filter toggle */}
+        <button
+          onClick={() => setShowMobileFilters((v) => !v)}
+          className="flex lg:hidden items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition text-sm font-medium shadow-sm"
+        >
+          <span className="material-icons-round text-base">tune</span>
+          Filters
+        </button>
         {/* Header search with live suggestions */}
-        <div ref={headerRef} className="relative w-80">
+        <div ref={headerRef} className="relative w-40 sm:w-64 lg:w-80">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 material-icons-round text-xl">
             search
           </span>
@@ -639,17 +694,24 @@ export default function BrowseLandPage() {
             </ul>
           )}
         </div>
-        <button
-          onClick={() => { setHeaderSearch(""); setShowHeaderSugg(false); }}
-          className="relative p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors"
-        >
-          <span className="material-icons-round">close</span>
-        </button>
+        {headerSearch && (
+          <button
+            onClick={() => { setHeaderSearch(""); setShowHeaderSugg(false); }}
+            className="relative p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <span className="material-icons-round">close</span>
+          </button>
+        )}
       </LesseePageHeader>
 
-      <div className="flex-1 overflow-hidden flex">
+      <div className="flex-1 overflow-hidden flex flex-col lg:flex-row relative">
         {/* ── Left Filters Panel ──────────────────────────── */}
-        <aside className="w-80 bg-white border-r border-gray-200 overflow-y-auto p-6 flex flex-col gap-6 flex-shrink-0">
+        <aside className={`
+          ${showMobileFilters ? "flex" : "hidden lg:flex"}
+          w-full lg:w-80 bg-white border-b lg:border-b-0 lg:border-r border-gray-200
+          overflow-y-auto p-4 sm:p-6 flex-col gap-6 flex-shrink-0
+          max-h-[70vh] lg:max-h-full
+        `}>
           <div>
             <div className="flex items-center justify-between mb-1">
               <h3
@@ -659,12 +721,20 @@ export default function BrowseLandPage() {
                 <span className="material-icons-round text-[#047857] text-2xl">tune</span>
                 Farm Preferences
               </h3>
-              <button
-                onClick={resetFilters}
-                className="text-xs font-semibold text-[#047857] hover:text-emerald-700"
-              >
-                Reset
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={resetFilters}
+                  className="text-xs font-semibold text-[#047857] hover:text-emerald-700"
+                >
+                  Reset
+                </button>
+                <button
+                  onClick={() => setShowMobileFilters(false)}
+                  className="lg:hidden p-1 text-gray-400 hover:text-gray-600"
+                >
+                  <span className="material-icons-round text-xl">close</span>
+                </button>
+              </div>
             </div>
             <p className="text-xs text-gray-500 leading-relaxed">
               Adjust these settings to filter the land listings automatically.
@@ -841,288 +911,372 @@ export default function BrowseLandPage() {
           </div>
 
           <button
-            onClick={applyFilters}
+            onClick={() => setShowMobileFilters(false)}
             className="mt-auto w-full bg-[#047857] hover:bg-emerald-800 text-white font-medium py-3 rounded-xl shadow-lg transition-colors"
           >
-            Update Results
+            View Results
           </button>
         </aside>
 
         {/* ── Main Listings ──────────────────────────────────── */}
-        <div className="flex-1 bg-[#f8fafc] p-8 overflow-y-auto">
-  <div className="flex items-center justify-between mb-6">
-    <h3
-      className="text-xl font-bold text-gray-800"
-      style={{ fontFamily: "Playfair Display, serif" }}
-    >
-      {filteredListings.length} Land Listing{filteredListings.length !== 1 ? "s" : ""} Found
-    </h3>
-    <div className="flex items-center gap-3">
-      <span className="text-sm text-gray-500">Sort by:</span>
-      <button className="flex items-center gap-1 text-sm font-medium text-gray-700 bg-white px-3 py-1.5 rounded-lg border border-gray-200 hover:border-gray-300 transition-all">
-        <span>Recommended</span>
-        <span className="material-icons-round text-lg">expand_more</span>
-      </button>
-    </div>
-  </div>
-
-  {
-    filteredListings.length === 0 ? (
-      <div className="flex flex-col items-center justify-center py-24 text-center">
-        <span className="material-icons-round text-6xl text-gray-200 mb-4">landscape</span>
-        <p className="text-lg font-bold text-gray-400">No listings match your filters</p>
-        <p className="text-sm text-gray-400 mt-1">Try adjusting your search, regions, or acreage range.</p>
-        <button
-          onClick={resetFilters}
-          className="mt-5 px-6 py-2.5 bg-[#047857] text-white text-sm font-semibold rounded-xl hover:bg-emerald-800 transition"
-        >
-          Reset Filters
-        </button>
-      </div>
-    ) : (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-      {filteredListings.map((listing) => (
-        <div
-          key={listing.name}
-          className="bg-white rounded-2xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] overflow-hidden group hover:shadow-xl transition-all duration-300 border border-transparent hover:border-[#047857]/20 flex flex-col"
-        >
-          <div className="relative h-48 bg-gray-200">
-            <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-transparent" />
-            <div className="absolute inset-0 bg-[#0f392b]/10 flex items-center justify-center">
-              <span className="material-icons-round text-[#0f392b]/20 text-[80px]">landscape</span>
-            </div>
-            <div className="absolute top-0 left-0 right-0 p-3 flex justify-between items-start bg-gradient-to-b from-black/40 to-transparent">
-              <span className="bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-bold text-gray-800">
-                {listing.acresNum} Acres
-              </span>
-              <button className="bg-white/20 hover:bg-white/40 backdrop-blur-md p-1.5 rounded-full text-white transition-colors">
-                <span className="material-icons-round text-lg">favorite_border</span>
-              </button>
-            </div>
-            <span
-              className={`absolute bottom-3 left-3 ${listing.badgeColor} text-white px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide shadow-sm`}
-            >
-              {listing.badge}
-            </span>
-            {/* Wishlist heart — bottom-right of image */}
-            <button
-              onClick={(e) => { e.stopPropagation(); toggleWishlist(listing); }}
-              className={`absolute bottom-3 right-3 p-1.5 rounded-full backdrop-blur-md transition-all shadow-sm ${wishlist.has(listing.name)
-                  ? "bg-red-500/90 text-white"
-                  : "bg-white/20 hover:bg-white/40 text-white"
-                }`}
-            >
-              <span className="material-icons-round text-base">
-                {wishlist.has(listing.name) ? "favorite" : "favorite_border"}
-              </span>
-            </button>
-          </div>
-
-          <div className="pt-4 px-5 pb-5 flex flex-col flex-1">
-            <h4
-              className="font-bold text-lg text-gray-900 mb-1"
+        <div className="flex-1 bg-[#f8fafc] p-4 sm:p-6 lg:p-8 overflow-y-auto">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+            <h3
+              className="text-lg sm:text-xl font-bold text-gray-800"
               style={{ fontFamily: "Playfair Display, serif" }}
             >
-              {listing.name}
-            </h4>
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center text-xs text-gray-500 mt-1">
-                <span className="material-icons-round text-sm mr-1">location_on</span>
-                {listing.location}
-              </div>
-              <div className="text-right shrink-0 ml-2">
-                <div className="text-sm font-bold text-[#047857] whitespace-nowrap">
-                  Ksh {listing.price}
-                  <span className="text-[10px] font-normal text-gray-400">/acre/yr</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 py-3 border-t border-b border-gray-100 mb-4">
-              <div className="text-center">
-                <div className="text-[10px] text-[#5D4037] font-bold uppercase tracking-wide">Soil</div>
-                <div className="text-xs font-medium text-gray-600">{listing.soil}</div>
-              </div>
-              <div className="text-center border-l border-r border-gray-100">
-                <div className="text-[10px] text-[#5D4037] font-bold uppercase tracking-wide">Water</div>
-                <div className="text-xs font-medium text-gray-600 truncate">{listing.water}</div>
-              </div>
-              <div className="text-center">
-                <div className="text-[10px] text-[#5D4037] font-bold uppercase tracking-wide">Slope</div>
-                <div className="text-xs font-medium text-gray-600">{listing.slope}</div>
-              </div>
-            </div>
-
-            <div className="mt-auto flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {listing.match ? (
-                  <>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${listing.matchColor}`}>
-                      <span className="text-[10px] font-bold">{listing.match}</span>
-                    </div>
-                    <span className="text-[10px] text-gray-400">Match</span>
-                  </>
-                ) : (
-                  <span className="text-xs text-orange-500 font-medium">{listing.status}</span>
+              {listingsLoading ? "Loading listings…" : `${filteredListings.length} Land Listing${filteredListings.length !== 1 ? "s" : ""} Found`}
+            </h3>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-500 hidden sm:inline">Sort by:</span>
+              <div ref={sortRef} className="relative">
+                <button
+                  onClick={() => setShowSortMenu((v) => !v)}
+                  className="flex items-center gap-1.5 text-sm font-medium text-gray-700 bg-white px-3 py-1.5 rounded-lg border border-gray-200 hover:border-[#047857] hover:text-[#047857] transition-all"
+                >
+                  <span className="material-icons-round text-base">
+                    {SORT_OPTIONS.find((o) => o.value === sortBy)?.icon ?? "sort"}
+                  </span>
+                  <span className="hidden sm:inline">{SORT_OPTIONS.find((o) => o.value === sortBy)?.label ?? "Sort"}</span>
+                  <span className="material-icons-round text-lg">expand_more</span>
+                </button>
+                {showSortMenu && (
+                  <ul className="absolute right-0 top-full mt-1.5 w-52 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                    {SORT_OPTIONS.map((opt) => (
+                      <li key={opt.value}>
+                        <button
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => { setSortBy(opt.value); setShowSortMenu(false); }}
+                          className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-2.5 hover:bg-emerald-50 hover:text-[#047857] transition ${sortBy === opt.value ? "text-[#047857] font-semibold bg-emerald-50" : "text-gray-700"
+                            }`}
+                        >
+                          <span className="material-icons-round text-base">{opt.icon}</span>
+                          {opt.label}
+                          {sortBy === opt.value && (
+                            <span className="material-icons-round text-sm ml-auto">check</span>
+                          )}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
                 )}
               </div>
-              <button
-                onClick={() => setSelectedListing(listing)}
-                className="text-xs font-bold text-[#047857] flex items-center hover:text-emerald-700 transition-colors"
-              >
-                View Details
-                <span className="material-icons-round text-sm ml-1">arrow_forward</span>
-              </button>
             </div>
           </div>
-        </div>
-      ))}
-    </div>
-  )
-  }
+
+          {
+            listingsLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="bg-white rounded-2xl shadow overflow-hidden animate-pulse">
+                    <div className="h-48 bg-gray-200" />
+                    <div className="p-5 space-y-3">
+                      <div className="h-5 bg-gray-200 rounded w-3/4" />
+                      <div className="h-4 bg-gray-100 rounded w-1/2" />
+                      <div className="h-4 bg-gray-100 rounded w-2/3" />
+                      <div className="h-9 bg-gray-200 rounded-xl mt-2" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : listingsError ? (
+              <div className="flex flex-col items-center justify-center py-24 text-center">
+                <span className="material-icons-round text-6xl text-red-200 mb-4">error_outline</span>
+                <p className="text-lg font-bold text-gray-500">{listingsError}</p>
+                <button
+                  onClick={() => {
+                    setListingsLoading(true);
+                    setListingsError(null);
+                    lesseeApi
+                      .listings()
+                      .then((res) => setApiListings((res.data as ApiLand[]).map(mapApiToListing)))
+                      .catch(() => setListingsError("Could not load listings. Please try again."))
+                      .finally(() => setListingsLoading(false));
+                  }}
+                  className="mt-5 px-6 py-2.5 bg-[#047857] text-white text-sm font-semibold rounded-xl hover:bg-emerald-800 transition"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : filteredListings.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-24 text-center">
+                <span className="material-icons-round text-6xl text-gray-200 mb-4">landscape</span>
+                <p className="text-lg font-bold text-gray-400">No verified listings match your filters</p>
+                <p className="text-sm text-gray-400 mt-1">Try adjusting your search, regions, or acreage range.</p>
+                <button
+                  onClick={resetFilters}
+                  className="mt-5 px-6 py-2.5 bg-[#047857] text-white text-sm font-semibold rounded-xl hover:bg-emerald-800 transition"
+                >
+                  Reset Filters
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+                {filteredListings.map((listing) => (
+                  <div
+                    key={listing.name}
+                    className="bg-white rounded-2xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] overflow-hidden group hover:shadow-xl transition-all duration-300 border border-transparent hover:border-[#047857]/20 flex flex-col"
+                  >
+                    <div className="relative h-48 bg-gray-200">
+                      {listing.photoUrl ? (
+                        <img
+                          src={listing.photoUrl}
+                          alt={listing.name}
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 bg-[#0f392b]/10 flex items-center justify-center">
+                          <span className="material-icons-round text-[#0f392b]/20 text-[80px]">landscape</span>
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-transparent" />
+                      <div className="absolute top-0 left-0 right-0 p-3 flex justify-between items-start bg-gradient-to-b from-black/40 to-transparent">
+                        <span className="bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-bold text-gray-800">
+                          {listing.acresNum} Acres
+                        </span>
+                      </div>
+                      <span
+                        className={`absolute bottom-3 left-3 ${listing.badgeColor} text-white px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide shadow-sm`}
+                      >
+                        {listing.badge}
+                      </span>
+                      {/* Wishlist heart — top-right of image, no background */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleWishlist(listing); }}
+                        className="absolute top-3 right-3 p-1.5 rounded-full transition-all"
+                        title={wishlist.has(listing.name) ? "Remove from wishlist" : "Add to wishlist"}
+                      >
+                        <span className={`material-icons-round text-base ${wishlist.has(listing.name) ? "text-red-400" : "text-white"
+                          }`}>
+                          {wishlist.has(listing.name) ? "favorite" : "favorite_border"}
+                        </span>
+                      </button>
+                    </div>
+
+                    <div className="pt-4 px-5 pb-5 flex flex-col flex-1">
+                      <h4
+                        className="font-bold text-lg text-gray-900 mb-1"
+                        style={{ fontFamily: "Playfair Display, serif" }}
+                      >
+                        {listing.name}
+                      </h4>
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center text-xs text-gray-500 mt-1">
+                          <span className="material-icons-round text-sm mr-1">location_on</span>
+                          {listing.location}
+                        </div>
+                        <div className="text-right shrink-0 ml-2">
+                          <div className="text-sm font-bold text-[#047857] whitespace-nowrap">
+                            Ksh {listing.price}
+                            <span className="text-[10px] font-normal text-gray-400">/acre/yr</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2 py-3 border-t border-b border-gray-100 mb-4">
+                        <div className="text-center">
+                          <div className="text-[10px] text-[#5D4037] font-bold uppercase tracking-wide">Soil</div>
+                          <div className="text-xs font-medium text-gray-600">{listing.soil}</div>
+                        </div>
+                        <div className="text-center border-l border-r border-gray-100">
+                          <div className="text-[10px] text-[#5D4037] font-bold uppercase tracking-wide">Water</div>
+                          <div className="text-xs font-medium text-gray-600 truncate">{listing.water}</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-[10px] text-[#5D4037] font-bold uppercase tracking-wide">Slope</div>
+                          <div className="text-xs font-medium text-gray-600">{listing.slope}</div>
+                        </div>
+                      </div>
+
+                      <div className="mt-auto">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            {listing.match ? (
+                              <>
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${listing.matchColor}`}>
+                                  <span className="text-[10px] font-bold">{listing.match}</span>
+                                </div>
+                                <span className="text-[10px] text-gray-400">Match</span>
+                              </>
+                            ) : (
+                              <span className="text-xs text-orange-500 font-medium">{listing.status}</span>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => setSelectedListing(listing)}
+                            className="text-xs font-bold text-[#047857] flex items-center hover:text-emerald-700 transition-colors"
+                          >
+                            View Details
+                            <span className="material-icons-round text-sm ml-1">arrow_forward</span>
+                          </button>
+                        </div>
+                        <button
+                          onClick={() => router.push(`/lessee/leases/new?landId=${listing.id}`)}
+                          className="w-full bg-[#047857] hover:bg-emerald-800 text-white text-xs font-bold py-2 rounded-xl transition-colors shadow-sm"
+                        >
+                          Request Lease
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          }
         </div >
       </div >
-    {/* ── Listing Detail Modal ──────────────────────────────── */ }
-  {
-    selectedListing && (
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-        onClick={() => setSelectedListing(null)}
-      >
-        <div
-          className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Image area */}
-          <div className="relative h-52 bg-gray-200 rounded-t-2xl overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-transparent" />
-            <div className="absolute inset-0 bg-[#0f392b]/10 flex items-center justify-center">
-              <span className="material-icons-round text-[#0f392b]/20 text-[100px]">landscape</span>
-            </div>
-            {/* Acres badge */}
-            <div className="absolute top-4 left-4">
-              <span className="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg text-sm font-bold text-gray-800 shadow">
-                {selectedListing.acresNum} Acres
-              </span>
-            </div>
-            {/* Favourite */}
-            <button className="absolute top-4 right-4 bg-white/20 hover:bg-white/40 backdrop-blur-md p-2 rounded-full text-white transition-colors">
-              <span className="material-icons-round text-xl">favorite_border</span>
-            </button>
-            {/* Crop badge */}
-            <span className={`absolute bottom-4 left-4 ${selectedListing.badgeColor} text-white px-3 py-1 rounded text-xs font-bold uppercase tracking-wide shadow`}>
-              {selectedListing.badge}
-            </span>
-            {/* Close button */}
-            <button
-              onClick={() => setSelectedListing(null)}
-              className="absolute top-4 right-16 bg-white/20 hover:bg-white/40 backdrop-blur-md p-2 rounded-full text-white transition-colors"
+      {/* ── Listing Detail Modal ──────────────────────────────── */}
+      {
+        selectedListing && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={() => setSelectedListing(null)}
+          >
+            <div
+              className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
             >
-              <span className="material-icons-round text-xl">close</span>
-            </button>
-          </div>
-
-          {/* Content */}
-          <div className="p-6">
-            {/* Name + price row */}
-            <div className="flex items-start justify-between mb-1">
-              <h2
-                className="text-2xl font-bold text-gray-900 leading-tight"
-                style={{ fontFamily: "Playfair Display, serif" }}
-              >
-                {selectedListing.name}
-              </h2>
-              <div className="text-right ml-4 shrink-0">
-                <div className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">Lease Price</div>
-                <div className="text-lg font-bold text-[#047857] whitespace-nowrap">
-                  Ksh {selectedListing.price}
-                  <span className="text-xs font-normal text-gray-400">/acre/yr</span>
+              {/* Image area */}
+              <div className="relative h-52 bg-gray-200 rounded-t-2xl overflow-hidden">
+                {selectedListing.photoUrl ? (
+                  <img
+                    src={selectedListing.photoUrl}
+                    alt={selectedListing.name}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="absolute inset-0 bg-[#0f392b]/10 flex items-center justify-center">
+                    <span className="material-icons-round text-[#0f392b]/20 text-[100px]">landscape</span>
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-transparent" />
+                {/* Acres badge */}
+                <div className="absolute top-4 left-4">
+                  <span className="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg text-sm font-bold text-gray-800 shadow">
+                    {selectedListing.acresNum} Acres
+                  </span>
                 </div>
-              </div>
-            </div>
-
-            {/* Location */}
-            <div className="flex items-center text-sm text-gray-500 mb-5">
-              <span className="material-icons-round text-base mr-1 text-[#047857]">location_on</span>
-              {selectedListing.location}
-            </div>
-
-            {/* Soil / Water / Slope stats */}
-            <div className="grid grid-cols-3 gap-3 py-4 px-4 bg-[#f8fafc] rounded-xl mb-5">
-              <div className="text-center">
-                <div className="text-[10px] text-[#5D4037] font-bold uppercase tracking-wide mb-1">Soil</div>
-                <div className="text-sm font-semibold text-gray-700">{selectedListing.soil}</div>
-              </div>
-              <div className="text-center border-l border-r border-gray-200">
-                <div className="text-[10px] text-[#5D4037] font-bold uppercase tracking-wide mb-1">Water</div>
-                <div className="text-sm font-semibold text-gray-700">{selectedListing.water}</div>
-              </div>
-              <div className="text-center">
-                <div className="text-[10px] text-[#5D4037] font-bold uppercase tracking-wide mb-1">Slope</div>
-                <div className="text-sm font-semibold text-gray-700">{selectedListing.slope}</div>
-              </div>
-            </div>
-
-            {/* Match score */}
-            {selectedListing.match && (
-              <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-100 rounded-xl mb-5">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${selectedListing.matchColor}`}>
-                  {selectedListing.match}
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-[#047857]">Compatibility Match</p>
-                  <p className="text-xs text-gray-500">Based on your stated farm preferences and selected regions.</p>
-                </div>
-              </div>
-            )}
-            {selectedListing.status && (
-              <div className="flex items-center gap-3 p-4 bg-orange-50 border border-orange-100 rounded-xl mb-5">
-                <span className="material-icons-round text-orange-400 text-xl">hourglass_top</span>
-                <p className="text-sm font-medium text-orange-700">{selectedListing.status}</p>
-              </div>
-            )}
-
-            {/* AI Crops for region */}
-            {(REGION_CROPS[selectedListing.region] ?? []).length > 0 && (
-              <div className="mb-5">
-                <p className="text-xs font-bold text-[#5D4037] uppercase tracking-wider mb-2 flex items-center gap-1">
-                  <span className="material-icons-round text-amber-500 text-sm">auto_awesome</span>
-                  AI Recommended Crops for {selectedListing.region}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {(REGION_CROPS[selectedListing.region] ?? []).slice(0, 6).map((crop) => (
-                    <span key={crop} className="inline-flex items-center bg-[#0f392b] text-emerald-100 px-3 py-1 rounded-full text-xs font-medium">
-                      <span className="material-icons-round text-[11px] mr-1 text-[#13ec80]">auto_awesome</span>
-                      {crop}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* CTA buttons */}
-            <div className="flex gap-3 pt-2">
-              <button className="flex-1 bg-[#047857] hover:bg-emerald-800 text-white font-bold py-3 rounded-xl shadow transition-colors text-sm">
-                Request Lease
-              </button>
-              <button
-                onClick={() => toggleWishlist(selectedListing)}
-                className={`flex-1 border-2 font-bold py-3 rounded-xl transition-all text-sm flex items-center justify-center gap-1.5 ${wishlist.has(selectedListing.name)
-                    ? "bg-[#047857] border-[#047857] text-white shadow"
-                    : "border-[#047857] text-[#047857] hover:bg-emerald-50"
-                  }`}
-              >
-                <span className="material-icons-round text-base">
-                  {wishlist.has(selectedListing.name) ? "favorite" : "favorite_border"}
+                {/* Favourite */}
+                <button className="absolute top-4 right-4 p-2 rounded-full text-white transition-colors hover:text-red-400">
+                  <span className="material-icons-round text-xl">favorite_border</span>
+                </button>
+                {/* Crop badge */}
+                <span className={`absolute bottom-4 left-4 ${selectedListing.badgeColor} text-white px-3 py-1 rounded text-xs font-bold uppercase tracking-wide shadow`}>
+                  {selectedListing.badge}
                 </span>
-                {wishlist.has(selectedListing.name) ? "Wishlisted" : "Save to Wishlist"}
-              </button>
+                {/* Close button */}
+                <button
+                  onClick={() => setSelectedListing(null)}
+                  className="absolute top-4 right-16 p-2 rounded-full text-white transition-colors hover:text-gray-300"
+                >
+                  <span className="material-icons-round text-xl">close</span>
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="p-6">
+                {/* Name + price row */}
+                <div className="flex items-start justify-between mb-1">
+                  <h2
+                    className="text-2xl font-bold text-gray-900 leading-tight"
+                    style={{ fontFamily: "Playfair Display, serif" }}
+                  >
+                    {selectedListing.name}
+                  </h2>
+                  <div className="text-right ml-4 shrink-0">
+                    <div className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">Lease Price</div>
+                    <div className="text-lg font-bold text-[#047857] whitespace-nowrap">
+                      Ksh {selectedListing.price}
+                      <span className="text-xs font-normal text-gray-400">/acre/yr</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Location */}
+                <div className="flex items-center text-sm text-gray-500 mb-5">
+                  <span className="material-icons-round text-base mr-1 text-[#047857]">location_on</span>
+                  {selectedListing.location}
+                </div>
+
+                {/* Soil / Water / Slope stats */}
+                <div className="grid grid-cols-3 gap-3 py-4 px-4 bg-[#f8fafc] rounded-xl mb-5">
+                  <div className="text-center">
+                    <div className="text-[10px] text-[#5D4037] font-bold uppercase tracking-wide mb-1">Soil</div>
+                    <div className="text-sm font-semibold text-gray-700">{selectedListing.soil}</div>
+                  </div>
+                  <div className="text-center border-l border-r border-gray-200">
+                    <div className="text-[10px] text-[#5D4037] font-bold uppercase tracking-wide mb-1">Water</div>
+                    <div className="text-sm font-semibold text-gray-700">{selectedListing.water}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-[10px] text-[#5D4037] font-bold uppercase tracking-wide mb-1">Slope</div>
+                    <div className="text-sm font-semibold text-gray-700">{selectedListing.slope}</div>
+                  </div>
+                </div>
+
+                {/* Match score */}
+                {selectedListing.match && (
+                  <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-100 rounded-xl mb-5">
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${selectedListing.matchColor}`}>
+                      {selectedListing.match}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-[#047857]">Compatibility Match</p>
+                      <p className="text-xs text-gray-500">Based on your stated farm preferences and selected regions.</p>
+                    </div>
+                  </div>
+                )}
+                {selectedListing.status && (
+                  <div className="flex items-center gap-3 p-4 bg-orange-50 border border-orange-100 rounded-xl mb-5">
+                    <span className="material-icons-round text-orange-400 text-xl">hourglass_top</span>
+                    <p className="text-sm font-medium text-orange-700">{selectedListing.status}</p>
+                  </div>
+                )}
+
+                {/* AI Crops for region */}
+                {(REGION_CROPS[selectedListing.region] ?? []).length > 0 && (
+                  <div className="mb-5">
+                    <p className="text-xs font-bold text-[#5D4037] uppercase tracking-wider mb-2 flex items-center gap-1">
+                      <span className="material-icons-round text-amber-500 text-sm">auto_awesome</span>
+                      AI Recommended Crops for {selectedListing.region}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {(REGION_CROPS[selectedListing.region] ?? []).slice(0, 6).map((crop) => (
+                        <span key={crop} className="inline-flex items-center bg-[#0f392b] text-emerald-100 px-3 py-1 rounded-full text-xs font-medium">
+                          <span className="material-icons-round text-[11px] mr-1 text-[#13ec80]">auto_awesome</span>
+                          {crop}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* CTA buttons */}
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => router.push(`/lessee/leases/new?landId=${selectedListing.id}`)}
+                    className="flex-1 bg-[#047857] hover:bg-emerald-800 text-white font-bold py-3 rounded-xl shadow transition-colors text-sm"
+                  >
+                    Request Lease
+                  </button>
+                  <button
+                    onClick={() => toggleWishlist(selectedListing)}
+                    className={`flex-1 border-2 font-bold py-3 rounded-xl transition-all text-sm flex items-center justify-center gap-1.5 ${wishlist.has(selectedListing.name)
+                      ? "bg-[#047857] border-[#047857] text-white shadow"
+                      : "border-[#047857] text-[#047857] hover:bg-emerald-50"
+                      }`}
+                  >
+                    <span className="material-icons-round text-base">
+                      {wishlist.has(selectedListing.name) ? "favorite" : "favorite_border"}
+                    </span>
+                    {wishlist.has(selectedListing.name) ? "Wishlisted" : "Save to Wishlist"}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-    )
-  }
+        )
+      }
     </div >
   );
 }

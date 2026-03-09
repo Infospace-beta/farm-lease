@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { landsApi } from "@/lib/services/api";
 import OwnerPageHeader from "@/components/owner/OwnerPageHeader";
 
@@ -62,7 +62,24 @@ const formatStatus = (status: string): string => {
 /* ─── Page ────────────────────────────────────────────── */
 export default function MyLandsPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const showSuccess = searchParams.get("success") === "true";
+  const newLandId = searchParams.get("newId") ? Number(searchParams.get("newId")) : null;
+  const [cardBannerDismissed, setCardBannerDismissed] = useState(false);
+  
+  // Auto-clear the success params from URL after a few seconds (keep it clean)
+  useEffect(() => {
+    if (showSuccess) {
+      const t = setTimeout(() => {
+        router.replace("/owner/lands", { scroll: false });
+      }, 8000);
+      return () => clearTimeout(t);
+    }
+  }, [showSuccess, router]);
+  
+  useEffect(() => {
+    setCardBannerDismissed(false);
+  }, [newLandId]);
   
   const [lands, setLands] = useState<LandData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -139,8 +156,8 @@ export default function MyLandsPage() {
       </OwnerPageHeader>
       <div className="flex-1 overflow-y-auto p-3 md:p-4 lg:p-6 bg-slate-50">
         <div className="mx-auto max-w-full">
-          {/* Success message */}
-          {showSuccess && (
+          {/* Success message – only shown when no specific card target */}
+          {showSuccess && !newLandId && (
             <div className="mb-4 md:mb-6 flex items-start gap-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3 animate-fade-in">
               <span className="material-symbols-outlined text-green-600 text-xl shrink-0">
                 check_circle
@@ -150,7 +167,7 @@ export default function MyLandsPage() {
                   Land listing created successfully!
                 </p>
                 <p className="text-xs text-green-600 mt-0.5">
-                  Your land has been submitted and is awaiting admin verification. You'll be notified once it's approved.
+                  Your land has been submitted and is awaiting admin verification. You\'ll be notified once it\'s approved.
                 </p>
               </div>
             </div>
@@ -240,10 +257,23 @@ export default function MyLandsPage() {
             {error && (
               <div className="col-span-full flex items-center justify-center py-20">
                 <div className="text-center">
-                  <span className="material-symbols-outlined text-5xl text-red-500">
+                  <span className="material-symbols-outlined text-5xl text-red-400">
                     error
                   </span>
                   <p className="mt-4 text-sm text-red-600">{error}</p>
+                  <button
+                    onClick={() => {
+                      setError(null);
+                      setLoading(true);
+                      landsApi.myLands()
+                        .then((res) => { setLands(res.data); setError(null); })
+                        .catch(() => setError("Failed to load your lands. Please try again."))
+                        .finally(() => setLoading(false));
+                    }}
+                    className="mt-4 px-5 py-2 bg-[#047857] text-white text-sm font-semibold rounded-xl hover:bg-emerald-800 transition"
+                  >
+                    Retry
+                  </button>
                 </div>
               </div>
             )}
@@ -275,8 +305,33 @@ export default function MyLandsPage() {
                 return (
                   <div
                     key={land.id}
-                    className={`group relative flex flex-col overflow-hidden rounded-lg border border-slate-200 bg-white hover:shadow-md hover:border-primary/40 transition-all`}
+                    className={`group relative flex flex-col overflow-hidden rounded-lg border ${
+                      showSuccess && !cardBannerDismissed && land.id === newLandId
+                        ? "border-green-400 ring-2 ring-green-300"
+                        : "border-slate-200"
+                    } bg-white hover:shadow-md hover:border-primary/40 transition-all`}
                   >
+                    {/* Success card notification */}
+                    {showSuccess && !cardBannerDismissed && land.id === newLandId && (
+                      <div className="flex items-start gap-2.5 bg-green-50 border-b border-green-200 px-4 py-3 animate-fade-in">
+                        <span className="material-symbols-outlined text-green-600 text-base shrink-0 mt-0.5">
+                          check_circle
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-green-800">Land listing created successfully!</p>
+                          <p className="text-[11px] text-green-600 mt-0.5 leading-snug">
+                            Awaiting admin verification. You&apos;ll be notified once approved.
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setCardBannerDismissed(true)}
+                          className="shrink-0 text-green-500 hover:text-green-700 transition-colors"
+                          aria-label="Dismiss"
+                        >
+                          <span className="material-symbols-outlined text-sm">close</span>
+                        </button>
+                      </div>
+                    )}
                     {/* Map thumbnail */}
                     <div className="relative h-48 w-full overflow-hidden bg-slate-100 mini-map-pattern">
                       {thumbnailImage && (

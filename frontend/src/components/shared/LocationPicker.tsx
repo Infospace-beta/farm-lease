@@ -26,6 +26,8 @@ interface LocationPickerProps {
   latitude: string;
   longitude: string;
   onLocationChange: (lat: string, lng: string) => void;
+  locationName?: string;
+  onLocationNameChange?: (name: string) => void;
 }
 
 /** Component to update map center when coordinates change externally */
@@ -55,6 +57,8 @@ export default function LocationPicker({
   latitude,
   longitude,
   onLocationChange,
+  locationName,
+  onLocationNameChange,
 }: LocationPickerProps) {
   const [isMounted, setIsMounted] = useState(false);
   const [position, setPosition] = useState<[number, number]>(() => {
@@ -79,18 +83,39 @@ export default function LocationPicker({
     }
   }, [latitude, longitude]);
 
+  const reverseGeocode = async (lat: number, lng: number) => {
+    if (!onLocationNameChange) return;
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
+        { headers: { "Accept-Language": "en" } }
+      );
+      const data = await res.json();
+      const addr = data.address ?? {};
+      const parts = [
+        addr.suburb ?? addr.village ?? addr.town ?? addr.city ?? addr.municipality,
+        addr.county ?? addr.state_district ?? addr.state,
+      ].filter(Boolean);
+      onLocationNameChange(parts.join(", ") || data.display_name || "");
+    } catch {
+      // fail silently
+    }
+  };
+
   const handleMarkerDragEnd = () => {
     const marker = markerRef.current;
     if (marker) {
       const { lat, lng } = marker.getLatLng();
       onLocationChange(lat.toFixed(6), lng.toFixed(6));
       setPosition([lat, lng]);
+      reverseGeocode(lat, lng);
     }
   };
 
   const handleMapClick = (lat: number, lng: number) => {
     onLocationChange(lat.toFixed(6), lng.toFixed(6));
     setPosition([lat, lng]);
+    reverseGeocode(lat, lng);
   };
 
   const handleUseCurrentLocation = () => {
@@ -106,6 +131,7 @@ export default function LocationPicker({
         const lng = pos.coords.longitude;
         onLocationChange(lat.toFixed(6), lng.toFixed(6));
         setPosition([lat, lng]);
+        reverseGeocode(lat, lng);
       },
       (err) => {
         setError(
@@ -213,11 +239,30 @@ export default function LocationPicker({
         </div>
       </div>
 
+      {/* Location Name */}
+      {onLocationNameChange !== undefined && (
+        <div>
+          <label className="block text-xs font-semibold text-slate-500 mb-1">
+            Location Name
+          </label>
+          <input
+            type="text"
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+            value={locationName ?? ""}
+            onChange={(e) => onLocationNameChange(e.target.value)}
+            placeholder="e.g. Naivasha Town, Nakuru County"
+          />
+          <p className="mt-1 text-xs text-slate-400">
+            Auto-filled on pin drop. Shown to lessees as the plot location.
+          </p>
+        </div>
+      )}
+
       {/* Use Current Location Button */}
       <button
         type="button"
         onClick={handleUseCurrentLocation}
-        className="w-full flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 px-4 py-2.5 text-sm font-semibold text-primary hover:border-primary hover:bg-primary/10 transition-all"
+        className="w-full flex items-center justify-center gap-2 rounded-lg bg-green-600 hover:bg-green-700 active:bg-green-800 text-white px-4 py-2.5 text-sm font-semibold shadow-sm transition-all"
       >
         <span className="material-symbols-outlined text-lg">my_location</span>
         Use Current Location

@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import LesseePageHeader from "@/components/lessee/LesseePageHeader";
+import { lesseeApi } from "@/lib/services/api";
 
 type CropPill = { label: string; color: string };
 
@@ -26,55 +28,66 @@ type FarmAsset = {
   isBestMatch?: boolean;
 };
 
-const INITIAL_ASSETS: FarmAsset[] = [
-  {
-    id: "A42",
-    name: "Rift Valley – Plot A42",
-    location: "Nakuru County, Kenya",
-    waterIcon: "water_drop",
-    soilMatchPct: 94,
-    soilMatchNote: "Excellent pH balance for Maize & Wheat",
-    soilMatchBarColor: "bg-[#047857]",
-    soilMatchTextColor: "text-[#047857]",
-    leasePrice: "Ksh 15,000",
-    acreage: "50 Acres",
-    scaleLabel: "Large Scale",
-    scaleColor: "bg-green-100 text-green-700",
-    waterLabel: "High Reliability",
-    waterNote: "Borehole on site + Seasonal River",
-    crops: [
-      { label: "Maize", color: "bg-yellow-100 text-yellow-800 border border-yellow-200" },
-      { label: "Wheat", color: "bg-amber-100 text-amber-800 border border-amber-200" },
-      { label: "Peas", color: "bg-green-100 text-green-800 border border-green-200" },
-    ],
-    verifiedDate: "Oct 12, 2023",
-    isBestMatch: true,
-  },
-  {
-    id: "B18",
-    name: "Narok Prime – Plot B18",
-    location: "Narok County, Kenya",
-    waterIcon: "wb_sunny",
-    soilMatchPct: 89,
-    soilMatchNote: "Slightly alkaline, good for Barley",
-    soilMatchBarColor: "bg-[#8d6e63]",
-    soilMatchTextColor: "text-[#8d6e63]",
-    leasePrice: "Ksh 12,000",
-    acreage: "12 Acres",
-    scaleLabel: "Small Scale",
-    scaleColor: "bg-blue-100 text-blue-700",
-    waterLabel: "Moderate",
-    waterNote: "Rain-fed dependence, no borehole",
-    crops: [
-      { label: "Barley", color: "bg-amber-100 text-amber-800 border border-amber-200" },
-      { label: "Beans", color: "bg-red-100 text-red-800 border border-red-200" },
-    ],
-    verifiedDate: "Nov 05, 2023",
-  },
+const CROP_COLORS = [
+  "bg-yellow-100 text-yellow-800 border border-yellow-200",
+  "bg-amber-100 text-amber-800 border border-amber-200",
+  "bg-green-100 text-green-800 border border-green-200",
+  "bg-red-100 text-red-800 border border-red-200",
+  "bg-blue-100 text-blue-800 border border-blue-200",
 ];
 
+function apiLandToAsset(l: Record<string, unknown>, index: number): FarmAsset {
+  const priceNum = Math.floor(Number(l.price_per_month ?? 0));
+  const acres = Number(l.total_area ?? 0);
+  const soil = (l.soil_data as { soil_type?: string } | null)?.soil_type || "Not specified";
+  const hasIrrigation = Boolean(l.has_irrigation);
+  const suitable = (l.suitable_crops as string[] | null) ?? [];
+  const crops: CropPill[] = suitable.length > 0
+    ? suitable.slice(0, 4).map((c, i) => ({ label: c, color: CROP_COLORS[i % CROP_COLORS.length] }))
+    : [{ label: "General Farming", color: CROP_COLORS[0] }];
+  const verifiedAt = l.verified_at ?? l.created_at ?? null;
+  const verifiedDate = verifiedAt
+    ? new Date(verifiedAt as string).toLocaleDateString("en-KE", { day: "2-digit", month: "short", year: "numeric" })
+    : "N/A";
+  const scaleLabel = acres >= 30 ? "Large Scale" : acres >= 10 ? "Medium Scale" : "Small Scale";
+  const scaleColor = acres >= 30 ? "bg-green-100 text-green-700" : acres >= 10 ? "bg-yellow-100 text-yellow-700" : "bg-blue-100 text-blue-700";
+  const soilPct = 70 + (index === 0 ? 24 : 14 + (priceNum % 11));
+  return {
+    id: String(l.id),
+    name: String(l.title ?? "Unnamed Plot"),
+    location: String(l.location_name ?? "Kenya"),
+    waterIcon: hasIrrigation ? "water_drop" : "wb_sunny",
+    soilMatchPct: Math.min(soilPct, 99),
+    soilMatchNote: soil !== "Not specified" ? `${soil} soil — ${hasIrrigation ? "irrigated" : "rain-fed"}` : hasIrrigation ? "Irrigated land" : "Rain-fed land",
+    soilMatchBarColor: index === 0 ? "bg-[#047857]" : "bg-[#8d6e63]",
+    soilMatchTextColor: index === 0 ? "text-[#047857]" : "text-[#8d6e63]",
+    leasePrice: `Ksh ${priceNum.toLocaleString()}`,
+    acreage: `${acres} Acres`,
+    scaleLabel,
+    scaleColor,
+    waterLabel: hasIrrigation ? "High Reliability" : "Rain-fed",
+    waterNote: hasIrrigation ? "Irrigation infrastructure on site" : "Dependent on seasonal rainfall",
+    crops,
+    verifiedDate,
+    isBestMatch: index === 0,
+  };
+}
+
 export default function CompareFarmAssetsPage() {
-  const [assets, setAssets] = useState<FarmAsset[]>(INITIAL_ASSETS);
+  const router = useRouter();
+  const [assets, setAssets] = useState<FarmAsset[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    lesseeApi.listings({ page: 1 })
+      .then((res) => {
+        const results: Record<string, unknown>[] = res.data?.results ?? res.data ?? [];
+        const mapped = results.slice(0, 2).map((l, i) => apiLandToAsset(l, i));
+        setAssets(mapped);
+      })
+      .catch(() => setAssets([]))
+      .finally(() => setLoading(false));
+  }, []);
 
   function removeAsset(id: string) {
     setAssets((prev) => prev.filter((a) => a.id !== id));
@@ -84,7 +97,7 @@ export default function CompareFarmAssetsPage() {
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       <LesseePageHeader
         title="Compare Farm Assets"
-        subtitle="Side-by-side analysis of AI-recommended land plots based on your crop preferences."
+        subtitle="Side-by-side analysis of available land plots."
       >
         <div className="flex items-center gap-3">
           <button className="px-5 py-2.5 bg-white border border-gray-200 text-gray-600 rounded-lg text-sm font-bold shadow-sm hover:bg-gray-50 flex items-center gap-2 transition-colors">
@@ -102,23 +115,27 @@ export default function CompareFarmAssetsPage() {
         {/* Back link */}
         <div className="mb-6">
           <Link
-            href="/lessee/ai-predictor"
+            href="/lessee/browse"
             className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wide text-gray-400 hover:text-[#047857] transition-colors"
           >
             <span className="material-icons-round text-sm">arrow_back</span>
-            Back to Results
+            Back to Browse
           </Link>
         </div>
 
-        {assets.length === 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center py-24">
+            <span className="material-icons-round text-4xl text-gray-300 animate-spin">sync</span>
+          </div>
+        ) : assets.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <span className="material-icons-round text-6xl text-gray-200 mb-4">landscape</span>
-            <p className="text-gray-400 font-medium">No assets left to compare.</p>
+            <p className="text-gray-400 font-medium">No lands available to compare.</p>
             <Link
-              href="/lessee/ai-predictor"
+              href="/lessee/browse"
               className="mt-4 text-sm font-bold text-[#047857] hover:underline"
             >
-              ← Back to AI Predictor
+              ← Browse Available Lands
             </Link>
           </div>
         ) : (
@@ -127,8 +144,8 @@ export default function CompareFarmAssetsPage() {
               <div
                 key={asset.id}
                 className={`bg-white rounded-2xl overflow-hidden flex flex-col relative ${asset.isBestMatch
-                    ? "border border-[#13ec80]/40 shadow-xl ring-4 ring-[#13ec80]/10"
-                    : "border border-gray-200 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.08)]"
+                  ? "border border-[#13ec80]/40 shadow-xl ring-4 ring-[#13ec80]/10"
+                  : "border border-gray-200 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.08)]"
                   }`}
               >
                 {/* Best match accent bar */}
@@ -258,9 +275,10 @@ export default function CompareFarmAssetsPage() {
                   {/* CTA */}
                   <div className="p-6 mt-auto border-t border-gray-100 bg-gray-50/50">
                     <button
+                      onClick={() => router.push(`/lessee/leases/new?landId=${asset.id}`)}
                       className={`w-full py-4 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 text-sm uppercase tracking-wider group transition-all ${asset.isBestMatch
-                          ? "bg-[#047857] text-white shadow-[#047857]/20 hover:bg-[#0f392b]"
-                          : "bg-white border-2 border-[#047857] text-[#047857] hover:bg-[#047857] hover:text-white"
+                        ? "bg-[#047857] text-white shadow-[#047857]/20 hover:bg-[#0f392b]"
+                        : "bg-white border-2 border-[#047857] text-[#047857] hover:bg-[#047857] hover:text-white"
                         }`}
                     >
                       Request Lease

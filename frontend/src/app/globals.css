@@ -1,4 +1,16 @@
 @import "tailwindcss";
+@import "material-icons/iconfont/round.css";
+
+/* ── Custom design-system tokens ─────────────────────────── */
+@theme {
+  /* Admin / brand dark green */
+  --color-sidebar-bg: #0f392b;
+  /* Brown label color used in data tables */
+  --color-earth: #5d4037;
+  /* Brand primary green — used across all owner/lessee pages */
+  --color-primary: #16a34a;
+  --color-primary-dark: #15803d;
+}
 
 :root {
   --background: #ffffff;

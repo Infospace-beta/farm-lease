@@ -19,6 +19,7 @@ type Listing = {
   match: string | null;
   matchColor: string;
   status: string | null;
+  photoUrl?: string;
 };
 
 export default function WishlistPage() {
@@ -112,9 +113,17 @@ export default function WishlistPage() {
               >
                 {/* Image */}
                 <div className="relative h-48 bg-gray-200">
-                  <div className="absolute inset-0 bg-[#0f392b]/10 flex items-center justify-center">
-                    <span className="material-icons-round text-[#0f392b]/20 text-[80px]">landscape</span>
-                  </div>
+                  {listing.photoUrl ? (
+                    <img
+                      src={listing.photoUrl}
+                      alt={listing.name}
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-[#0f392b]/10 flex items-center justify-center">
+                      <span className="material-icons-round text-[#0f392b]/20 text-[80px]">landscape</span>
+                    </div>
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-transparent" />
                   {/* Acres */}
                   <div className="absolute top-3 left-3">

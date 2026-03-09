@@ -1,7 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import DealerPageHeader from "@/components/dealer/DealerPageHeader";
+import { dealerApi } from "@/lib/services/api";
 
 type InventoryItem = {
   id: string;
@@ -31,6 +32,34 @@ function getStatus(
   return { status: "In Stock", statusClass: "bg-green-100 text-green-800" };
 }
 
+const CATEGORY_ICONS: Record<string, string> = {
+  Fertilizers: "science",
+  Seeds: "grass",
+  Equipment: "build",
+  Pesticides: "bug_report",
+  "Animal Feeds": "egg",
+};
+
+function mapItem(p: any): InventoryItem {
+  const stock = Number(p.stock_quantity ?? p.stock ?? 0);
+  const reorderLevel = Number(p.reorder_level ?? p.reorderLevel ?? 10);
+  const category: string = p.category ?? "Other";
+  const { status, statusClass } = getStatus(stock, reorderLevel);
+  return {
+    id: p.id ? `INV-${String(p.id).padStart(3, "0")}` : "—",
+    name: p.name ?? p.product_name ?? "—",
+    sku: p.sku ?? p.product_code ?? `SKU-${p.id ?? "???"}`,
+    category,
+    price: parseFloat(p.price ?? 0),
+    stock,
+    reorderLevel,
+    unit: p.unit ?? "Units",
+    status,
+    statusClass,
+    icon: CATEGORY_ICONS[category] ?? "inventory_2",
+  };
+}
+
 const categories = [
   "All",
   "Fertilizers",
@@ -40,121 +69,26 @@ const categories = [
   "Animal Feeds",
 ];
 
-const inventoryItems = [
-  {
-    id: "INV-001",
-    name: "DAP Fertilizer 50kg",
-    sku: "DAP-50KG",
-    category: "Fertilizers",
-    price: 3500,
-    stock: 124,
-    reorderLevel: 20,
-    unit: "Bags",
-    status: "In Stock",
-    statusClass: "bg-green-100 text-green-800",
-    icon: "science",
-  },
-  {
-    id: "INV-002",
-    name: "Hybrid Maize Seeds H614",
-    sku: "HMS-H614",
-    category: "Seeds",
-    price: 2000,
-    stock: 12,
-    reorderLevel: 30,
-    unit: "Packs",
-    status: "Low Stock",
-    statusClass: "bg-orange-100 text-orange-800",
-    icon: "grass",
-  },
-  {
-    id: "INV-003",
-    name: "Drip Irrigation Kit 1 Acre",
-    sku: "DIK-1A",
-    category: "Equipment",
-    price: 15000,
-    stock: 45,
-    reorderLevel: 5,
-    unit: "Sets",
-    status: "In Stock",
-    statusClass: "bg-green-100 text-green-800",
-    icon: "water_drop",
-  },
-  {
-    id: "INV-004",
-    name: "Broad Spectrum Insecticide",
-    sku: "BSI-500ML",
-    category: "Pesticides",
-    price: 850,
-    stock: 200,
-    reorderLevel: 50,
-    unit: "Bottles",
-    status: "In Stock",
-    statusClass: "bg-green-100 text-green-800",
-    icon: "bug_report",
-  },
-  {
-    id: "INV-005",
-    name: "Knapsack Sprayer 16L",
-    sku: "KSP-16L",
-    category: "Equipment",
-    price: 3200,
-    stock: 30,
-    reorderLevel: 10,
-    unit: "Units",
-    status: "In Stock",
-    statusClass: "bg-green-100 text-green-800",
-    icon: "cleaning_services",
-  },
-  {
-    id: "INV-006",
-    name: "Layers Mash 70kg",
-    sku: "LMF-70KG",
-    category: "Animal Feeds",
-    price: 3800,
-    stock: 0,
-    reorderLevel: 15,
-    unit: "Bags",
-    status: "Out of Stock",
-    statusClass: "bg-red-100 text-red-800",
-    icon: "egg",
-  },
-  {
-    id: "INV-007",
-    name: "CAN Fertilizer 50kg",
-    sku: "CAN-50KG",
-    category: "Fertilizers",
-    price: 2800,
-    stock: 67,
-    reorderLevel: 25,
-    unit: "Bags",
-    status: "In Stock",
-    statusClass: "bg-green-100 text-green-800",
-    icon: "science",
-  },
-  {
-    id: "INV-008",
-    name: "Sunflower Seeds 10kg",
-    sku: "SFS-10KG",
-    category: "Seeds",
-    price: 1500,
-    stock: 8,
-    reorderLevel: 20,
-    unit: "Packs",
-    status: "Low Stock",
-    statusClass: "bg-orange-100 text-orange-800",
-    icon: "grass",
-  },
-];
-
 export default function InventoryPage() {
-  const [items, setItems] = useState<InventoryItem[]>(inventoryItems);
+  const [items, setItems] = useState<InventoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
   const [toast, setToast] = useState<string | null>(null);
   const [addStockItem, setAddStockItem] = useState<InventoryItem | null>(null);
   const [addQty, setAddQty] = useState("");
+
+  useEffect(() => {
+    dealerApi
+      .inventory()
+      .then((res) => {
+        const raw = Array.isArray(res.data) ? res.data : (res.data?.results ?? []);
+        setItems(raw.map(mapItem));
+      })
+      .catch(() => { })
+      .finally(() => setLoading(false));
+  }, []);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -184,21 +118,32 @@ export default function InventoryPage() {
     showToast(`Added ${qty} units to stock`);
   };
 
-  const filtered = items.filter((item) => {
-    const matchCat =
-      activeCategory === "All" || item.category === activeCategory;
-    const matchStatus = statusFilter === "All" || item.status === statusFilter;
-    const matchSearch =
-      item.name.toLowerCase().includes(search.toLowerCase()) ||
-      item.sku.toLowerCase().includes(search.toLowerCase());
-    return matchCat && matchStatus && matchSearch;
-  });
+  const filtered = useMemo(
+    () =>
+      items.filter((item) => {
+        const matchCat =
+          activeCategory === "All" || item.category === activeCategory;
+        const matchStatus = statusFilter === "All" || item.status === statusFilter;
+        const matchSearch =
+          item.name.toLowerCase().includes(search.toLowerCase()) ||
+          item.sku.toLowerCase().includes(search.toLowerCase());
+        return matchCat && matchStatus && matchSearch;
+      }),
+    [items, activeCategory, statusFilter, search],
+  );
 
-  const totalValue = items.reduce((sum, i) => sum + i.price * i.stock, 0);
-  const lowStockCount = items.filter((i) => i.status === "Low Stock").length;
-  const outOfStockCount = items.filter(
-    (i) => i.status === "Out of Stock",
-  ).length;
+  const totalValue = useMemo(
+    () => items.reduce((sum, i) => sum + i.price * i.stock, 0),
+    [items],
+  );
+  const lowStockCount = useMemo(
+    () => items.filter((i) => i.status === "Low Stock").length,
+    [items],
+  );
+  const outOfStockCount = useMemo(
+    () => items.filter((i) => i.status === "Out of Stock").length,
+    [items],
+  );
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
@@ -398,82 +343,100 @@ export default function InventoryPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {filtered.map((item) => (
-                  <tr
-                    key={item.id}
-                    className="hover:bg-gray-50/50 transition group"
-                  >
-                    <td className="py-4 px-5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                          <span className="material-icons-round text-gray-400 text-lg">
-                            {item.icon}
-                          </span>
-                        </div>
-                        <span className="font-semibold text-gray-800 text-sm">
-                          {item.name}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-4 px-5 text-xs text-gray-400 font-mono">
-                      {item.sku}
-                    </td>
-                    <td className="py-4 px-5 text-xs text-gray-600 font-semibold">
-                      {item.category}
-                    </td>
-                    <td className="py-4 px-5 text-right text-sm font-bold text-gray-700">
-                      Ksh {item.price.toLocaleString()}
-                    </td>
-                    <td className="py-4 px-5 text-right">
-                      <span
-                        className={`text-sm font-bold ${item.stock === 0 ? "text-red-600" : item.stock <= item.reorderLevel ? "text-orange-600" : "text-gray-800"}`}
-                      >
-                        {item.stock} {item.unit}
-                      </span>
-                    </td>
-                    <td className="py-4 px-5 text-right text-sm text-gray-400">
-                      {item.reorderLevel}
-                    </td>
-                    <td className="py-4 px-5 text-center">
-                      <span
-                        className={`text-[10px] font-bold px-2 py-1 rounded-full ${item.statusClass}`}
-                      >
-                        {item.status}
-                      </span>
-                    </td>
-                    <td className="py-4 px-5 text-center">
-                      <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition">
-                        <Link
-                          href={`/dealer/products/add?id=${item.id}`}
-                          className="p-1.5 hover:bg-emerald-50 rounded-lg text-[#047857] transition"
-                          title="Edit"
-                        >
-                          <span className="material-icons-round text-base">
-                            edit
-                          </span>
-                        </Link>
-                        <button
-                          onClick={() => setAddStockItem(item)}
-                          className="p-1.5 hover:bg-blue-50 rounded-lg text-blue-600 transition"
-                          title="Add Stock"
-                        >
-                          <span className="material-icons-round text-base">
-                            add_circle
-                          </span>
-                        </button>
-                        <button
-                          onClick={() => deleteItem(item.id)}
-                          className="p-1.5 hover:bg-red-50 rounded-lg text-red-500 transition"
-                          title="Delete"
-                        >
-                          <span className="material-icons-round text-base">
-                            delete
-                          </span>
-                        </button>
-                      </div>
+                {loading ? (
+                  [0, 1, 2, 3, 4, 5].map((i) => (
+                    <tr key={i}>
+                      {[0, 1, 2, 3, 4, 5, 6].map((j) => (
+                        <td key={j} className="py-4 px-5">
+                          <div className="h-4 bg-gray-100 rounded animate-pulse" />
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                ) : filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-16 text-center text-sm text-gray-400">
+                      No inventory items found.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filtered.map((item) => (
+                    <tr
+                      key={item.id}
+                      className="hover:bg-gray-50/50 transition group"
+                    >
+                      <td className="py-4 px-5">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <span className="material-icons-round text-gray-400 text-lg">
+                              {item.icon}
+                            </span>
+                          </div>
+                          <span className="font-semibold text-gray-800 text-sm">
+                            {item.name}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-4 px-5 text-xs text-gray-400 font-mono">
+                        {item.sku}
+                      </td>
+                      <td className="py-4 px-5 text-xs text-gray-600 font-semibold">
+                        {item.category}
+                      </td>
+                      <td className="py-4 px-5 text-right text-sm font-bold text-gray-700">
+                        Ksh {item.price.toLocaleString()}
+                      </td>
+                      <td className="py-4 px-5 text-right">
+                        <span
+                          className={`text-sm font-bold ${item.stock === 0 ? "text-red-600" : item.stock <= item.reorderLevel ? "text-orange-600" : "text-gray-800"}`}
+                        >
+                          {item.stock} {item.unit}
+                        </span>
+                      </td>
+                      <td className="py-4 px-5 text-right text-sm text-gray-400">
+                        {item.reorderLevel}
+                      </td>
+                      <td className="py-4 px-5 text-center">
+                        <span
+                          className={`text-[10px] font-bold px-2 py-1 rounded-full ${item.statusClass}`}
+                        >
+                          {item.status}
+                        </span>
+                      </td>
+                      <td className="py-4 px-5 text-center">
+                        <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition">
+                          <Link
+                            href={`/dealer/products/add?id=${item.id}`}
+                            className="p-1.5 hover:bg-emerald-50 rounded-lg text-[#047857] transition"
+                            title="Edit"
+                          >
+                            <span className="material-icons-round text-base">
+                              edit
+                            </span>
+                          </Link>
+                          <button
+                            onClick={() => setAddStockItem(item)}
+                            className="p-1.5 hover:bg-blue-50 rounded-lg text-blue-600 transition"
+                            title="Add Stock"
+                          >
+                            <span className="material-icons-round text-base">
+                              add_circle
+                            </span>
+                          </button>
+                          <button
+                            onClick={() => deleteItem(item.id)}
+                            className="p-1.5 hover:bg-red-50 rounded-lg text-red-500 transition"
+                            title="Delete"
+                          >
+                            <span className="material-icons-round text-base">
+                              delete
+                            </span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )))
+                }
               </tbody>
             </table>
           </div>

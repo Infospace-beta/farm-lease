@@ -48,7 +48,8 @@ export default function AgreementsPage() {
       setLoading(true);
       setError(null);
       const response = await ownerApi.myAgreements();
-      setAgreements(response.data);
+      const data = Array.isArray(response.data) ? response.data : (response.data?.results ?? []);
+      setAgreements(data);
     } catch (err: any) {
       console.error("Failed to load agreements:", err);
       setError(err.response?.data?.detail || "Failed to load agreements");

@@ -17,6 +17,109 @@ from .serializers import (
 User = get_user_model()
 
 
+# ─── Lessee Dashboard View ────────────────────────────────────────────────────
+class LesseeDashboardView(APIView):
+    """Return aggregated stats for the authenticated lessee's dashboard."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from contracts.models import LeaseRequest
+        from payments.models import Transaction
+
+        user = request.user
+        lease_requests = LeaseRequest.objects.filter(lessee=user)
+        active_leases = lease_requests.filter(status='accepted')
+        pending_leases = lease_requests.filter(status='pending')
+
+        monthly_expenditure = 0
+        try:
+            from django.utils import timezone
+            now = timezone.now()
+            start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            month_payments = Transaction.objects.filter(
+                user=user,
+                created_at__gte=start_of_month,
+                status='completed',
+            )
+            monthly_expenditure = float(
+                sum(float(p.amount) for p in month_payments)
+            )
+        except Exception:
+            pass
+
+        total_leased_acres = 0
+        try:
+            for lr in active_leases:
+                if hasattr(lr, 'land') and lr.land and hasattr(lr.land, 'total_area'):
+                    total_leased_acres += float(lr.land.total_area or 0)
+        except Exception:
+            pass
+
+        return Response({
+            'active_leases': active_leases.count(),
+            'pending_leases': pending_leases.count(),
+            'total_leased_acres': round(total_leased_acres, 2),
+            'monthly_expenditure': monthly_expenditure,
+            'avg_soil_health': 0,
+        })
+
+
+# ─── Lessee Notifications View ────────────────────────────────────────────────
+class LesseeNotificationListView(APIView):
+    """Return notifications for the authenticated lessee."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from contracts.models import LeaseRequest
+        user = request.user
+        notifications = []
+
+        try:
+            requests = LeaseRequest.objects.filter(lessee=user).order_by('-created_at')[:20]
+            for lr in requests:
+                land_title = lr.land.title if hasattr(lr, 'land') and lr.land else 'Land Plot'
+                if lr.status == 'accepted':
+                    msg = f'Your lease request for "{land_title}" was approved.'
+                    icon = 'check_circle'
+                    notif_type = 'success'
+                elif lr.status == 'rejected':
+                    msg = f'Your lease request for "{land_title}" was declined.'
+                    icon = 'cancel'
+                    notif_type = 'error'
+                else:
+                    msg = f'Your lease request for "{land_title}" is pending review.'
+                    icon = 'hourglass_top'
+                    notif_type = 'info'
+
+                notifications.append({
+                    'id': lr.id,
+                    'message': msg,
+                    'icon': icon,
+                    'type': notif_type,
+                    'read': lr.status != 'pending',
+                    'created_at': lr.created_at.isoformat() if hasattr(lr, 'created_at') else '',
+                    'land_title': land_title,
+                })
+        except Exception:
+            pass
+
+        return Response({'results': notifications, 'count': len(notifications)})
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def mark_notification_read(request, pk):
+    """Mark a specific notification as read (no-op, returns success)."""
+    return Response({'detail': 'Marked as read.'})
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def mark_all_notifications_read(request):
+    """Mark all notifications as read (no-op, returns success)."""
+    return Response({'detail': 'All notifications marked as read.'})
+
+
 class SignupView(generics.CreateAPIView):
     """API endpoint for user signup"""
 
