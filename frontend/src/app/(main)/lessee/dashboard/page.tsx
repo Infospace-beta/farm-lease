@@ -1,10 +1,95 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import LesseePageHeader from "@/components/lessee/LesseePageHeader";
+import { lesseeApi } from "@/lib/services/api";
+
+interface DashboardStats {
+  total_leased_acres: number;
+  monthly_expenditure: number;
+  avg_soil_health: number;
+  active_leases: number;
+}
+
+interface LeaseCard {
+  id: number;
+  land_title: string;
+  land_location?: string;
+  land_area?: number;
+  land_soil?: string;
+  owner_name: string;
+  next_payment?: number;
+  status: string;
+  end_date?: string;
+  image?: string;
+}
 
 export default function LesseeDashboard() {
   const [showReport, setShowReport] = useState(false);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [leases, setLeases] = useState<LeaseCard[]>([]);
+  const [activities, setActivities] = useState<{ id: number; title: string; body: string; time: string; type: string }[]>([]);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        setStatsLoading(true);
+        const [dashRes, leasesRes, notifRes] = await Promise.all([
+          lesseeApi.dashboard().catch(() => ({ data: null })),
+          lesseeApi.myLeases().catch(() => ({ data: [] })),
+          lesseeApi.notifications({ page: 1 }).catch(() => ({ data: { results: [] } })),
+        ]);
+
+        if (dashRes.data) {
+          setStats({
+            total_leased_acres: dashRes.data.total_leased_acres ?? 0,
+            monthly_expenditure: dashRes.data.monthly_expenditure ?? 0,
+            avg_soil_health: dashRes.data.avg_soil_health ?? 0,
+            active_leases: dashRes.data.active_leases ?? 0,
+          });
+        }
+
+        const leasesData = Array.isArray(leasesRes.data)
+          ? leasesRes.data
+          : (leasesRes.data?.results ?? []);
+        setLeases(
+          leasesData.slice(0, 4).map((l: Record<string, unknown>) => {
+            const land = (l.land ?? {}) as Record<string, unknown>;
+            return {
+              id: l.id as number,
+              land_title: (l.land_title ?? land.title ?? "Land Plot") as string,
+              land_location: (l.land_location ?? land.location ?? "") as string,
+              land_area: l.land_area ? Number(l.land_area) : undefined,
+              land_soil: (l.land_soil ?? land.soil_type ?? "") as string,
+              owner_name: (l.owner_name ?? land.owner_name ?? "Land Owner") as string,
+              next_payment: l.next_payment_amount ? Number(l.next_payment_amount) : undefined,
+              status: (l.status ?? "Active") as string,
+              end_date: (l.end_date ?? "") as string,
+            };
+          })
+        );
+
+        const notifData = Array.isArray(notifRes.data)
+          ? notifRes.data
+          : (notifRes.data?.results ?? []);
+        setActivities(
+          notifData.slice(0, 4).map((n: Record<string, unknown>) => ({
+            id: n.id as number,
+            title: (n.title ?? "Notification") as string,
+            body: (n.message ?? n.body ?? "") as string,
+            time: (n.created_at ?? n.time ?? "") as string,
+            type: (n.category ?? n.type ?? "info") as string,
+          }))
+        );
+      } catch {
+        // fail silently — UI shows fallback
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+    fetchDashboard();
+  }, []);
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       {/* Header */}
@@ -36,83 +121,75 @@ export default function LesseeDashboard() {
           <div className="col-span-12 lg:col-span-8 xl:col-span-9 space-y-8 flex flex-col min-w-0">
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Total Leased Acres */}
               <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] hover:shadow-md transition group">
                 <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">
                   Total Leased Acres
                 </h3>
-                <div className="flex items-baseline gap-1 mb-4">
-                  <span className="text-3xl font-bold text-gray-800">24.5</span>
-                  <span className="text-sm text-gray-400">Acres</span>
-                </div>
+                {statsLoading ? (
+                  <div className="h-9 w-28 bg-gray-100 animate-pulse rounded mb-4" />
+                ) : (
+                  <div className="flex items-baseline gap-1 mb-4">
+                    <span className="text-3xl font-bold text-gray-800">{stats?.total_leased_acres ?? 0}</span>
+                    <span className="text-sm text-gray-400">Acres</span>
+                  </div>
+                )}
                 <div className="flex items-end justify-between">
                   <span className="px-2 py-1 bg-green-50 text-green-700 text-xs font-bold rounded flex items-center gap-1">
-                    <span className="material-icons-round text-[10px]">
-                      trending_up
-                    </span>{" "}
-                    +12%
+                    <span className="material-icons-round text-[10px]">trending_up</span> +12%
                   </span>
-                  <svg
-                    className="w-24 h-8 text-[#047857] stroke-current fill-none"
-                    preserveAspectRatio="none"
-                    viewBox="0 0 100 30"
-                  >
-                    <path
-                      d="M0,25 C10,25 20,10 30,15 C40,20 50,5 60,10 C70,15 80,5 100,0"
-                      strokeWidth="2"
-                      vectorEffect="non-scaling-stroke"
-                    />
+                  <svg className="w-24 h-8 text-[#047857] stroke-current fill-none" preserveAspectRatio="none" viewBox="0 0 100 30">
+                    <path d="M0,25 C10,25 20,10 30,15 C40,20 50,5 60,10 C70,15 80,5 100,0" strokeWidth="2" vectorEffect="non-scaling-stroke" />
                   </svg>
                 </div>
                 <p className="text-[10px] text-gray-400 mt-2">vs last season</p>
               </div>
 
+              {/* Monthly Expenditure */}
               <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] hover:shadow-md transition group">
                 <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">
                   Monthly Expenditure
                 </h3>
-                <div className="flex items-baseline gap-1 mb-4">
-                  <span className="text-3xl font-bold text-gray-800">
-                    Ksh 85k
-                  </span>
-                </div>
+                {statsLoading ? (
+                  <div className="h-9 w-32 bg-gray-100 animate-pulse rounded mb-4" />
+                ) : (
+                  <div className="flex items-baseline gap-1 mb-4">
+                    <span className="text-3xl font-bold text-gray-800">
+                      {stats?.monthly_expenditure
+                        ? `Ksh ${stats.monthly_expenditure >= 1000 ? `${Math.round(stats.monthly_expenditure / 1000)}k` : stats.monthly_expenditure.toLocaleString()}`
+                        : "Ksh 0"}
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-end justify-between">
                   <span className="px-2 py-1 bg-green-50 text-green-700 text-xs font-bold rounded flex items-center gap-1">
-                    <span className="material-icons-round text-[10px]">
-                      trending_down
-                    </span>{" "}
-                    -5%
+                    <span className="material-icons-round text-[10px]">trending_down</span> -5%
                   </span>
-                  <svg
-                    className="w-24 h-8 text-[#047857] stroke-current fill-none"
-                    preserveAspectRatio="none"
-                    viewBox="0 0 100 30"
-                  >
-                    <path
-                      d="M0,15 C20,25 40,5 60,15 C80,25 100,10"
-                      strokeWidth="2"
-                      vectorEffect="non-scaling-stroke"
-                    />
+                  <svg className="w-24 h-8 text-[#047857] stroke-current fill-none" preserveAspectRatio="none" viewBox="0 0 100 30">
+                    <path d="M0,15 C20,25 40,5 60,15 C80,25 100,10" strokeWidth="2" vectorEffect="non-scaling-stroke" />
                   </svg>
                 </div>
                 <p className="text-[10px] text-gray-400 mt-2">vs last month</p>
               </div>
 
+              {/* Avg Soil Health */}
               <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] hover:shadow-md transition group">
                 <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">
                   Avg Soil Health
                 </h3>
-                <div className="flex items-baseline gap-1 mb-4">
-                  <span className="text-3xl font-bold text-gray-800">88%</span>
-                </div>
+                {statsLoading ? (
+                  <div className="h-9 w-20 bg-gray-100 animate-pulse rounded mb-4" />
+                ) : (
+                  <div className="flex items-baseline gap-1 mb-4">
+                    <span className="text-3xl font-bold text-gray-800">{stats?.avg_soil_health ?? 0}%</span>
+                  </div>
+                )}
                 <div className="flex items-end justify-between">
                   <span className="px-2 py-1 bg-gray-100 text-gray-500 text-xs font-bold rounded flex items-center gap-1">
-                    <span className="material-icons-round text-[10px]">
-                      remove
-                    </span>{" "}
-                    0.0%
+                    <span className="material-icons-round text-[10px]">remove</span> 0.0%
                   </span>
                   <div className="w-24 h-1 bg-gray-100 rounded-full overflow-hidden mb-2">
-                    <div className="bg-[#047857] h-full w-[88%] rounded-full"></div>
+                    <div className="bg-[#047857] h-full rounded-full" style={{ width: `${stats?.avg_soil_health ?? 0}%` }}></div>
                   </div>
                 </div>
                 <p className="text-[10px] text-gray-400 mt-2">vs last test</p>
@@ -150,117 +227,79 @@ export default function LesseeDashboard() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Plot A4 Card */}
-                <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] flex flex-col hover:shadow-lg transition cursor-pointer">
-                  <div className="relative h-48 w-full bg-gradient-to-br from-gray-200 to-gray-300 rounded-xl overflow-hidden mb-4 group">
-                    <div className="absolute inset-0 bg-black/10"></div>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div
-                        className="w-32 h-24 bg-[#13ec80]/40 border-2 border-[#13ec80]/60 backdrop-blur-sm shadow-lg transform group-hover:scale-105 transition-transform duration-500"
-                        style={{
-                          clipPath:
-                            "polygon(20% 0%, 100% 10%, 80% 100%, 0% 90%)",
-                        }}
-                      ></div>
+                {statsLoading ? (
+                  [0, 1].map((i) => (
+                    <div key={i} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] animate-pulse">
+                      <div className="h-48 w-full bg-gray-100 rounded-xl mb-4" />
+                      <div className="h-4 w-2/3 bg-gray-100 rounded mb-2" />
+                      <div className="h-4 w-1/2 bg-gray-100 rounded" />
                     </div>
-                    <div className="absolute top-3 right-3">
-                      <span className="bg-[#13ec80] text-[#0f392b] text-[10px] font-bold px-2 py-1 rounded-full shadow-md uppercase tracking-wide">
-                        Active
-                      </span>
-                    </div>
-                    <div className="absolute bottom-3 left-3 text-white drop-shadow-md">
-                      <p className="font-bold text-lg">Plot A4 - North</p>
-                      <p className="text-xs opacity-90">
-                        3.5 Acres • Loam Soil
-                      </p>
-                    </div>
+                  ))
+                ) : leases.length === 0 ? (
+                  <div className="col-span-2 flex flex-col items-center justify-center py-16 text-center">
+                    <span className="material-icons-round text-5xl text-gray-200 mb-3">landscape</span>
+                    <p className="text-gray-400 font-medium">No active leases yet</p>
+                    <Link href="/lessee/browse" className="mt-4 px-5 py-2 bg-[#0f392b] text-white text-sm font-semibold rounded-xl hover:bg-opacity-90 transition">
+                      Browse Land
+                    </Link>
                   </div>
-                  <div className="flex justify-between items-end mt-auto px-1">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center border border-gray-200">
-                        <span className="material-icons-round text-sm text-gray-500">
-                          person
-                        </span>
+                ) : (
+                  leases.map((lease) => {
+                    const isActive = lease.status?.toLowerCase() === "active";
+                    const isPending = lease.status?.toLowerCase() === "pending";
+                    return (
+                      <div key={lease.id} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] flex flex-col hover:shadow-lg transition cursor-pointer">
+                        <div className="relative h-48 w-full bg-gradient-to-br from-gray-200 to-gray-300 rounded-xl overflow-hidden mb-4 group">
+                          <div className="absolute inset-0 bg-black/10"></div>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div
+                              className={`w-32 h-24 ${isActive ? "bg-[#13ec80]/40 border-[#13ec80]/60" : "bg-[#5D4037]/40 border-[#5D4037]/60"} border-2 backdrop-blur-sm shadow-lg transform group-hover:scale-105 transition-transform duration-500`}
+                              style={{ clipPath: "polygon(20% 0%, 100% 10%, 80% 100%, 0% 90%)" }}
+                            ></div>
+                          </div>
+                          <div className="absolute top-3 right-3">
+                            <span className={`${isActive ? "bg-[#13ec80] text-[#0f392b]" : isPending ? "bg-[#5D4037] text-white" : "bg-gray-500 text-white"} text-[10px] font-bold px-2 py-1 rounded-full shadow-md uppercase tracking-wide`}>
+                              {lease.status}
+                            </span>
+                          </div>
+                          <div className="absolute bottom-3 left-3 text-white drop-shadow-md">
+                            <p className="font-bold text-lg">{lease.land_title}</p>
+                            <p className="text-xs opacity-90">
+                              {lease.land_area ? `${lease.land_area} Acres` : ""}{lease.land_soil ? ` · ${lease.land_soil}` : ""}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-end mt-auto px-1">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center border border-gray-200">
+                              <span className="material-icons-round text-sm text-gray-500">person</span>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-400">Land Owner</p>
+                              <p className="text-sm font-semibold text-gray-700">{lease.owner_name}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-gray-400">{isActive ? "Next Payment" : "Offer"}</p>
+                            <p className={`text-sm font-bold ${isActive ? "text-[#0f392b]" : "text-[#5D4037]"}`}>
+                              {lease.next_payment ? `Ksh ${lease.next_payment.toLocaleString()}` : "—"}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center px-1">
+                          <span className={`text-xs ${isPending ? "text-orange-500 font-medium" : "text-gray-400"}`}>
+                            {isPending ? "Action Required" : lease.end_date ? `Ends: ${new Date(lease.end_date).toLocaleDateString("en-KE", { month: "short", year: "numeric" })}` : "—"}
+                          </span>
+                          {isPending ? (
+                            <button className="px-3 py-1 bg-[#0f392b] text-white text-xs font-bold rounded-lg hover:bg-opacity-90">Review</button>
+                          ) : (
+                            <button className="text-xs font-bold text-[#0f392b] hover:underline">Manage Lease</button>
+                          )}
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-xs text-gray-400">Land Owner</p>
-                        <p className="text-sm font-semibold text-gray-700">
-                          John Doe
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-gray-400">Next Payment</p>
-                      <p className="text-sm font-bold text-[#0f392b]">
-                        Ksh 45,000
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center px-1">
-                    <span className="text-xs text-gray-400">
-                      Ends: Dec 2024
-                    </span>
-                    <button className="text-xs font-bold text-[#0f392b] hover:underline">
-                      Manage Lease
-                    </button>
-                  </div>
-                </div>
-
-                {/* Plot B2 Card */}
-                <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] flex flex-col hover:shadow-lg transition cursor-pointer">
-                  <div className="relative h-48 w-full bg-gradient-to-br from-gray-200 to-gray-300 rounded-xl overflow-hidden mb-4 group">
-                    <div className="absolute inset-0 bg-black/10"></div>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div
-                        className="w-28 h-28 bg-[#5D4037]/40 border-2 border-[#5D4037]/60 backdrop-blur-sm shadow-lg transform group-hover:scale-105 transition-transform duration-500"
-                        style={{
-                          clipPath:
-                            "polygon(0% 20%, 90% 0%, 100% 80%, 10% 100%)",
-                        }}
-                      ></div>
-                    </div>
-                    <div className="absolute top-3 right-3">
-                      <span className="bg-[#5D4037] text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-md uppercase tracking-wide">
-                        Pending
-                      </span>
-                    </div>
-                    <div className="absolute bottom-3 left-3 text-white drop-shadow-md">
-                      <p className="font-bold text-lg">Plot B2 - East</p>
-                      <p className="text-xs opacity-90">
-                        2.0 Acres • Clay Soil
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-end mt-auto px-1">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center border border-gray-200">
-                        <span className="material-icons-round text-sm text-gray-500">
-                          person
-                        </span>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-400">Land Owner</p>
-                        <p className="text-sm font-semibold text-gray-700">
-                          Jane Smith
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-gray-400">Offer</p>
-                      <p className="text-sm font-bold text-[#5D4037]">
-                        Ksh 22,000
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center px-1">
-                    <span className="text-xs text-orange-500 font-medium">
-                      Action Required
-                    </span>
-                    <button className="px-3 py-1 bg-[#0f392b] text-white text-xs font-bold rounded-lg hover:bg-opacity-90">
-                      Review
-                    </button>
-                  </div>
-                </div>
+                    );
+                  })
+                )}
               </div>
             </div>
 
@@ -364,66 +403,31 @@ export default function LesseeDashboard() {
                 </h3>
               </div>
               <div className="relative border-l border-gray-200 ml-1.5 space-y-8 pb-2">
-                <div className="ml-6 relative">
-                  <span className="absolute -left-[31px] top-1 h-2.5 w-2.5 rounded-full bg-[#0f392b] ring-4 ring-white"></span>
-                  <span className="text-xs text-gray-400 block mb-1">
-                    10 mins ago
-                  </span>
-                  <h4 className="text-sm font-bold text-gray-800">
-                    Soil analysis ready
-                  </h4>
-                  <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-                    Detailed nutrient report for Plot A4 is available.{" "}
-                    <span className="text-[#047857] font-bold">
-                      Nitrogen levels low.
-                    </span>
-                  </p>
-                </div>
-                <div className="ml-6 relative">
-                  <span className="absolute -left-[31px] top-1 h-2.5 w-2.5 rounded-full bg-[#5D4037] ring-4 ring-white"></span>
-                  <span className="text-xs text-gray-400 block mb-1">
-                    2 hours ago
-                  </span>
-                  <h4 className="text-sm font-bold text-gray-800">
-                    Payment Released
-                  </h4>
-                  <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-                    Escrow payment of{" "}
-                    <span className="font-bold text-[#0f392b]">Ksh 45,000</span>{" "}
-                    released to John Doe for Plot A4.
-                  </p>
-                </div>
-                <div className="ml-6 relative">
-                  <span className="absolute -left-[31px] top-1 h-2.5 w-2.5 rounded-full bg-blue-400 ring-4 ring-white"></span>
-                  <span className="text-xs text-gray-400 block mb-1">
-                    Yesterday
-                  </span>
-                  <h4 className="text-sm font-bold text-gray-800">
-                    Agreement Draft Ready
-                  </h4>
-                  <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-                    AI-generated lease agreement for Plot B2 is ready for
-                    review.
-                  </p>
-                  <a
-                    href="#"
-                    className="text-xs font-bold text-[#0f392b] mt-2 inline-block hover:underline"
-                  >
-                    Review PDF
-                  </a>
-                </div>
-                <div className="ml-6 relative">
-                  <span className="absolute -left-[31px] top-1 h-2.5 w-2.5 rounded-full bg-gray-400 ring-4 ring-white"></span>
-                  <span className="text-xs text-gray-400 block mb-1">
-                    2 days ago
-                  </span>
-                  <h4 className="text-sm font-bold text-gray-800">
-                    Soil Report Updated
-                  </h4>
-                  <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-                    New nitrogen levels detected for Plot C1.
-                  </p>
-                </div>
+                {statsLoading ? (
+                  [0, 1, 2].map((i) => (
+                    <div key={i} className="ml-6 animate-pulse">
+                      <div className="h-3 w-16 bg-gray-100 rounded mb-2" />
+                      <div className="h-4 w-3/4 bg-gray-100 rounded mb-1" />
+                      <div className="h-3 w-full bg-gray-100 rounded" />
+                    </div>
+                  ))
+                ) : activities.length === 0 ? (
+                  <p className="ml-6 text-sm text-gray-400 py-4">No recent activity</p>
+                ) : (
+                  activities.map((act, i) => {
+                    const dotColors = ["bg-[#0f392b]", "bg-[#5D4037]", "bg-blue-400", "bg-gray-400"];
+                    return (
+                      <div key={act.id} className="ml-6 relative">
+                        <span className={`absolute -left-[31px] top-1 h-2.5 w-2.5 rounded-full ${dotColors[i % dotColors.length]} ring-4 ring-white`}></span>
+                        <span className="text-xs text-gray-400 block mb-1">
+                          {act.time ? new Date(act.time).toLocaleString("en-KE", { dateStyle: "short", timeStyle: "short" }) : ""}
+                        </span>
+                        <h4 className="text-sm font-bold text-gray-800">{act.title}</h4>
+                        <p className="text-xs text-gray-500 mt-1 leading-relaxed">{act.body}</p>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
           </div>
@@ -458,9 +462,9 @@ export default function LesseeDashboard() {
               {/* Summary Cards */}
               <div className="grid grid-cols-3 gap-4">
                 {[
-                  { label: "Total Leased Acres", value: "24.5 ac", icon: "landscape", color: "text-[#047857] bg-emerald-50" },
-                  { label: "Monthly Expenditure", value: "Ksh 85,000", icon: "payments", color: "text-amber-700 bg-amber-50" },
-                  { label: "Avg Soil Health", value: "88%", icon: "eco", color: "text-teal-700 bg-teal-50" },
+                  { label: "Total Leased Acres", value: `${stats?.total_leased_acres ?? 0} ac`, icon: "landscape", color: "text-[#047857] bg-emerald-50" },
+                  { label: "Monthly Expenditure", value: stats?.monthly_expenditure ? `Ksh ${stats.monthly_expenditure.toLocaleString()}` : "Ksh 0", icon: "payments", color: "text-amber-700 bg-amber-50" },
+                  { label: "Avg Soil Health", value: `${stats?.avg_soil_health ?? 0}%`, icon: "eco", color: "text-teal-700 bg-teal-50" },
                 ].map((item) => (
                   <div key={item.label} className="bg-gray-50 rounded-xl p-4 border border-gray-100">
                     <span className={`material-icons-round text-2xl mb-2 block ${item.color.split(" ")[0]}`}>{item.icon}</span>
@@ -484,18 +488,17 @@ export default function LesseeDashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {[
-                      { plot: "Plot A4 – North", owner: "John Doe", size: "3.5 ac", status: "Active", payment: "Ksh 45,000", statusColor: "text-[#047857] bg-emerald-50" },
-                      { plot: "Plot B2 – East", owner: "Jane Smith", size: "2.0 ac", status: "Pending", payment: "Ksh 22,000", statusColor: "text-amber-700 bg-amber-50" },
-                    ].map((row) => (
-                      <tr key={row.plot} className="py-2">
-                        <td className="py-2.5 font-medium text-gray-800">{row.plot}</td>
-                        <td className="py-2.5 text-gray-500">{row.owner}</td>
-                        <td className="py-2.5 text-gray-500">{row.size}</td>
+                    {leases.length === 0 ? (
+                      <tr><td colSpan={5} className="py-4 text-center text-sm text-gray-400">No active leases</td></tr>
+                    ) : leases.map((l) => (
+                      <tr key={l.id} className="py-2">
+                        <td className="py-2.5 font-medium text-gray-800">{l.land_title}</td>
+                        <td className="py-2.5 text-gray-500">{l.owner_name}</td>
+                        <td className="py-2.5 text-gray-500">{l.land_area ? `${l.land_area} ac` : "—"}</td>
                         <td className="py-2.5">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${row.statusColor}`}>{row.status}</span>
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${l.status?.toLowerCase() === "active" ? "text-[#047857] bg-emerald-50" : "text-amber-700 bg-amber-50"}`}>{l.status}</span>
                         </td>
-                        <td className="py-2.5 text-right font-bold text-[#0f392b]">{row.payment}</td>
+                        <td className="py-2.5 text-right font-bold text-[#0f392b]">{l.next_payment ? `Ksh ${l.next_payment.toLocaleString()}` : "—"}</td>
                       </tr>
                     ))}
                   </tbody>

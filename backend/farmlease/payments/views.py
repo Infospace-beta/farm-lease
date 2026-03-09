@@ -1,8 +1,11 @@
 """Views for the payments app."""
+import logging
+import uuid
+
 from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from django.db.models import Sum, Q
 from django.utils import timezone
 from datetime import datetime, timedelta
@@ -11,6 +14,8 @@ from decimal import Decimal
 from .models import Transaction, EscrowAccount
 from .serializers import TransactionSerializer, EscrowAccountSerializer
 from contracts.models import LeaseAgreement
+
+logger = logging.getLogger(__name__)
 
 
 # ========== OWNER ENDPOINTS ==========
@@ -182,4 +187,116 @@ class OwnerEscrowDetailView(generics.RetrieveAPIView):
     def get_queryset(self):
         owner_agreements = LeaseAgreement.objects.filter(owner=self.request.user)
         return EscrowAccount.objects.filter(agreement__in=owner_agreements)
+
+
+# ========== LESSEE ENDPOINTS ==========
+
+class LesseePaymentListView(generics.ListAPIView):
+    """List all transactions for the authenticated lessee."""
+    serializer_class = TransactionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = Transaction.objects.filter(user=self.request.user)
+        transaction_status = self.request.query_params.get('status')
+        if transaction_status:
+            queryset = queryset.filter(status=transaction_status)
+        return queryset
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def initiate_payment(request):
+    """
+    Initiate an escrow payment for a lease agreement.
+
+    Body:
+        lease   (int)    – LeaseAgreement pk
+        amount  (number) – Amount in KES
+        method  (str)    – 'escrow' (only supported method)
+    """
+    lease_id = request.data.get('lease')
+    amount = request.data.get('amount')
+    method = request.data.get('method', 'escrow')
+
+    if not lease_id or not amount:
+        return Response(
+            {'detail': 'lease and amount are required.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        amount = int(Decimal(str(amount)))
+    except Exception:
+        return Response({'detail': 'Invalid amount.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        agreement = LeaseAgreement.objects.get(pk=lease_id, lessee=request.user)
+    except LeaseAgreement.DoesNotExist:
+        return Response({'detail': 'Lease agreement not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    if method == 'escrow':
+        txn_id = f"ESC-{uuid.uuid4().hex[:12].upper()}"
+        Transaction.objects.create(
+            transaction_id=txn_id,
+            user=request.user,
+            agreement=agreement,
+            amount=amount,
+            transaction_type='rent_payment',
+            status='in_escrow',
+            payment_method='escrow',
+            description=f"Escrow payment for lease #{lease_id}",
+        )
+        EscrowAccount.objects.get_or_create(
+            agreement=agreement,
+            defaults={'amount': Decimal(amount), 'status': 'active'},
+        )
+        return Response(
+            {'detail': 'Payment held in escrow.', 'transaction_id': txn_id},
+            status=status.HTTP_201_CREATED,
+        )
+
+    return Response({'detail': 'Unsupported payment method.'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def transaction_status(request, transaction_id: str):
+    """Return the current status of a single transaction owned by the requesting user."""
+    try:
+        txn = Transaction.objects.get(transaction_id=transaction_id, user=request.user)
+    except Transaction.DoesNotExist:
+        return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+    return Response({
+        'transaction_id': txn.transaction_id,
+        'status': txn.status,
+        'mpesa_receipt': txn.mpesa_receipt,
+        'amount': float(txn.amount),
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def lessee_escrow_balance(request):
+    """Return the authenticated lessee's total escrow balance."""
+    agreements = LeaseAgreement.objects.filter(lessee=request.user)
+    balance = EscrowAccount.objects.filter(
+        agreement__in=agreements, status='active'
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+    return Response({'balance': float(balance)})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def release_escrow(request, payment_id: int):
+    """Release an escrow payment to the owner (lessee-initiated)."""
+    try:
+        transaction = Transaction.objects.get(pk=payment_id, user=request.user, status='in_escrow')
+    except Transaction.DoesNotExist:
+        return Response({'detail': 'Escrow transaction not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    transaction.status = 'completed'
+    transaction.save(update_fields=['status', 'updated_at'])
+    return Response({'detail': 'Escrow released.'})
+
 

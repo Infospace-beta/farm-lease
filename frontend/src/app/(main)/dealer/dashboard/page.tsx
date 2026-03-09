@@ -1,7 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import DealerPageHeader from "@/components/dealer/DealerPageHeader";
+import { dealerApi } from "@/lib/services/api";
 
 const CHART_DATA: Record<string, { label: string; value: number }[]> = {
   "This Week": [
@@ -68,147 +69,15 @@ function buildSparkPath(values: number[]) {
     .join(" ");
 }
 
-const INITIAL_INQUIRIES = [
-  {
-    id: 1,
-    name: "Grace N.",
-    time: "10m ago",
-    msg: "Is the 50kg DAP fertilizer available for bulk order? I need about 20 bags.",
-    read: false,
-  },
-  {
-    id: 2,
-    name: "Samuel K.",
-    time: "1h ago",
-    msg: "Do you have pesticides for fall armyworm in stock?",
-    read: false,
-  },
-  {
-    id: 3,
-    name: "FarmCorp Ltd.",
-    time: "3h ago",
-    msg: "Requesting quotation for solar water pump installation kit.",
-    read: false,
-  },
-  {
-    id: 4,
-    name: "John D.",
-    time: "Yesterday",
-    msg: "Thanks for the delivery. The seeds arrived in good condition.",
-    read: true,
-  },
-];
+const INITIAL_INQUIRIES: { id: number; name: string; time: string; msg: string; read: boolean }[] = [];
 
-const INVENTORY_PRODUCTS = [
-  {
-    name: "DAP Fertilizer - 50kg",
-    category: "Planting Inputs",
-    price: "Ksh 3,500",
-    qty: "124 Units",
-    qtyColor: "text-gray-800",
-    badge: "In Stock",
-    badgeClass: "bg-green-100 text-green-800",
-    icon: "science",
-  },
-  {
-    name: "Hybrid Maize Seeds",
-    category: "Seeds",
-    price: "Ksh 2,000",
-    qty: "12 Units",
-    qtyColor: "text-orange-600",
-    badge: "Low Stock",
-    badgeClass: "bg-orange-100 text-orange-800",
-    icon: "grass",
-  },
-  {
-    name: "Drip Irrigation Kit",
-    category: "Equipment",
-    price: "Ksh 15,000",
-    qty: "45 Units",
-    qtyColor: "text-gray-800",
-    badge: "In Stock",
-    badgeClass: "bg-green-100 text-green-800",
-    icon: "water_drop",
-  },
-];
+const INVENTORY_PRODUCTS: { name: string; category: string; price: string; qty: string; qtyColor: string; badge: string; badgeClass: string; icon: string }[] = [];
 
-const stats = [
-  {
-    label: "Total Sales",
-    value: "Ksh 1.2M",
-    trend: "+18%",
-    trendUp: true,
-    icon: "payments",
-    iconBg: "bg-emerald-50",
-    iconColor: "text-[#047857]",
-    sparkPath: "M0,25 C20,25 20,5 40,15 C60,25 80,5 100,0",
-  },
-  {
-    label: "Active Orders",
-    value: "42",
-    trend: "+5%",
-    trendUp: true,
-    icon: "shopping_bag",
-    iconBg: "bg-emerald-50",
-    iconColor: "text-[#047857]",
-    sparkPath: "M0,20 C30,20 40,5 60,15 C80,25 90,10 100,5",
-  },
-  {
-    label: "Low Stock",
-    value: "8",
-    unit: "Items",
-    trend: "Needs Action",
-    trendUp: false,
-    icon: "warning",
-    iconBg: "bg-orange-50",
-    iconColor: "text-orange-600",
-    sparkPath: "M0,10 C20,10 40,25 60,15 C80,5 90,20 100,20",
-  },
-  {
-    label: "Store Rating",
-    value: "4.8",
-    unit: "/ 5.0",
-    trend: "+0.2",
-    trendUp: true,
-    trendIcon: "thumb_up",
-    icon: "star",
-    iconBg: "bg-emerald-50",
-    iconColor: "text-[#047857]",
-    sparkPath: "M0,25 C20,15 40,20 60,10 C80,5 90,10 100,0",
-  },
-];
-
-const inventoryProducts = [
-  {
-    name: "DAP Fertilizer - 50kg",
-    category: "Planting Inputs",
-    price: "Ksh 3,500",
-    qty: "124 Units",
-    qtyColor: "text-gray-800",
-    badge: "In Stock",
-    badgeClass: "bg-green-100 text-green-800",
-    icon: "science",
-  },
-  {
-    name: "Hybrid Maize Seeds",
-    category: "Seeds",
-    price: "Ksh 2,000",
-    qty: "12 Units",
-    qtyColor: "text-orange-600",
-    badge: "Low Stock",
-    badgeClass: "bg-orange-100 text-orange-800",
-    icon: "grass",
-  },
-  {
-    name: "Drip Irrigation Kit",
-    category: "Equipment",
-    price: "Ksh 15,000",
-    qty: "45 Units",
-    qtyColor: "text-gray-800",
-    badge: "In Stock",
-    badgeClass: "bg-green-100 text-green-800",
-    icon: "water_drop",
-  },
+const DEFAULT_STATS = [
+  { label: "Total Sales", value: "—", trend: "", trendUp: true, icon: "payments", iconBg: "bg-emerald-50", iconColor: "text-[#047857]", sparkPath: "M0,25 C20,25 20,5 40,15 C60,25 80,5 100,0" },
+  { label: "Active Orders", value: "—", trend: "", trendUp: true, icon: "shopping_bag", iconBg: "bg-emerald-50", iconColor: "text-[#047857]", sparkPath: "M0,20 C30,20 40,5 60,15 C80,25 90,10 100,5" },
+  { label: "Low Stock", value: "—", unit: "Items", trend: "", trendUp: false, icon: "warning", iconBg: "bg-orange-50", iconColor: "text-orange-600", sparkPath: "M0,10 C20,10 40,25 60,15 C80,5 90,20 100,20" },
+  { label: "Store Rating", value: "—", unit: "/ 5.0", trend: "", trendUp: true, icon: "star", iconBg: "bg-emerald-50", iconColor: "text-[#047857]", sparkPath: "M0,25 C20,15 40,20 60,10 C80,5 90,10 100,0" },
 ];
 
 export default function DealerDashboardPage() {
@@ -217,6 +86,51 @@ export default function DealerDashboardPage() {
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
   const [replyText, setReplyText] = useState("");
   const [period, setPeriod] = useState("This Month");
+  const [stats, setStats] = useState(DEFAULT_STATS);
+  const [inventoryProducts, setInventoryProducts] = useState(INVENTORY_PRODUCTS);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      dealerApi.dashboard().catch(() => ({ data: null })),
+      dealerApi.inventoryAlerts().catch(() => ({ data: [] })),
+      dealerApi.queries({ page: 1 }).catch(() => ({ data: { results: [] } })),
+    ]).then(([dashRes, alertsRes, queriesRes]) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const d: any = dashRes.data ?? {};
+      setStats([
+        { label: "Total Sales", value: d.total_sales ? `Ksh ${Number(d.total_sales).toLocaleString()}` : "—", trend: d.sales_trend ? `${d.sales_trend > 0 ? "+" : ""}${d.sales_trend}%` : "", trendUp: (d.sales_trend ?? 1) >= 0, icon: "payments", iconBg: "bg-emerald-50", iconColor: "text-[#047857]", sparkPath: "M0,25 C20,25 20,5 40,15 C60,25 80,5 100,0" },
+        { label: "Active Orders", value: d.active_orders != null ? String(d.active_orders) : "—", trend: d.orders_trend ? `${d.orders_trend > 0 ? "+" : ""}${d.orders_trend}%` : "", trendUp: (d.orders_trend ?? 1) >= 0, icon: "shopping_bag", iconBg: "bg-emerald-50", iconColor: "text-[#047857]", sparkPath: "M0,20 C30,20 40,5 60,15 C80,25 90,10 100,5" },
+        { label: "Low Stock", value: d.low_stock_count != null ? String(d.low_stock_count) : "—", unit: "Items", trend: d.low_stock_count > 0 ? "Needs Action" : "OK", trendUp: (d.low_stock_count ?? 1) === 0, icon: "warning", iconBg: "bg-orange-50", iconColor: "text-orange-600", sparkPath: "M0,10 C20,10 40,25 60,15 C80,5 90,20 100,20" },
+        { label: "Store Rating", value: d.store_rating != null ? String(d.store_rating) : "—", unit: "/ 5.0", trend: d.rating_change ? `+${d.rating_change}` : "", trendUp: true, icon: "star", iconBg: "bg-emerald-50", iconColor: "text-[#047857]", sparkPath: "M0,25 C20,15 40,20 60,10 C80,5 90,10 100,0" },
+      ]);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const alerts: any[] = Array.isArray(alertsRes.data) ? alertsRes.data : (alertsRes.data?.results ?? []);
+      setInventoryProducts(alerts.slice(0, 5).map((a) => ({
+        name: a.name ?? a.product_name ?? "Item",
+        category: a.category ?? "",
+        price: a.price ? `Ksh ${Number(a.price).toLocaleString()}` : "—",
+        qty: `${a.stock ?? a.quantity ?? 0} ${a.unit ?? "Units"}`,
+        qtyColor: (a.stock ?? a.quantity ?? 0) <= (a.reorder_level ?? 20) ? "text-orange-600" : "text-gray-800",
+        badge: (a.stock ?? a.quantity ?? 0) === 0 ? "Out of Stock" : (a.stock ?? a.quantity ?? 0) <= (a.reorder_level ?? 20) ? "Low Stock" : "In Stock",
+        badgeClass: (a.stock ?? a.quantity ?? 0) === 0 ? "bg-red-100 text-red-800" : (a.stock ?? a.quantity ?? 0) <= (a.reorder_level ?? 20) ? "bg-orange-100 text-orange-800" : "bg-green-100 text-green-800",
+        icon: a.icon ?? "inventory_2",
+      })));
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const qs: any[] = Array.isArray(queriesRes.data) ? queriesRes.data : (queriesRes.data?.results ?? []);
+      if (qs.length > 0) {
+        setInquiries(qs.slice(0, 5).map((q, i) => ({
+          id: q.id ?? i,
+          name: q.customer_name ?? q.buyer_name ?? `Customer ${i + 1}`,
+          time: q.created_at ? new Date(q.created_at).toLocaleDateString() : "—",
+          msg: q.message ?? q.question ?? "",
+          read: q.is_read ?? q.read ?? false,
+        })));
+      }
+    }).finally(() => setStatsLoading(false));
+  }, []);
 
   const chartData = CHART_DATA[chartPeriod];
   const chartPath = buildChartPath(chartData);
@@ -275,7 +189,15 @@ export default function DealerDashboardPage() {
           <div className="col-span-12 lg:col-span-8 xl:col-span-9 space-y-8 flex flex-col min-w-0">
             {/* Stat Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {stats.map((s) => (
+              {statsLoading ? (
+                [0, 1, 2, 3].map((i) => (
+                  <div key={i} className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm animate-pulse">
+                    <div className="h-3 bg-gray-100 rounded w-24 mb-3" />
+                    <div className="h-7 bg-gray-100 rounded w-16 mb-2" />
+                    <div className="h-3 bg-gray-100 rounded w-12" />
+                  </div>
+                ))
+              ) : stats.map((s) => (
                 <div
                   key={s.label}
                   className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition group relative overflow-hidden cursor-pointer"
@@ -285,48 +207,20 @@ export default function DealerDashboardPage() {
                       {s.label}
                     </h3>
                     <div className={`p-1.5 ${s.iconBg} rounded-lg`}>
-                      <span
-                        className={`material-icons-round ${s.iconColor} text-base`}
-                      >
-                        {s.icon}
-                      </span>
+                      <span className={`material-icons-round ${s.iconColor} text-base`}>{s.icon}</span>
                     </div>
                   </div>
                   <div className="flex items-baseline gap-1 mb-2">
-                    <span className="text-2xl font-bold text-gray-800">
-                      {s.value}
-                    </span>
-                    {s.unit && (
-                      <span className="text-xs text-gray-400">{s.unit}</span>
-                    )}
+                    <span className="text-2xl font-bold text-gray-800">{s.value}</span>
+                    {s.unit && <span className="text-xs text-gray-400">{s.unit}</span>}
                   </div>
                   <div className="flex items-end justify-between mt-auto">
-                    <span
-                      className={`text-[10px] font-bold flex items-center gap-0.5 ${s.trendUp ? "text-green-600" : "text-orange-600"}`}
-                    >
-                      {s.trendIcon ? (
-                        <span className="material-icons-round text-[10px]">
-                          {s.trendIcon}
-                        </span>
-                      ) : (
-                        s.trendUp && (
-                          <span className="material-icons-round text-[10px]">
-                            trending_up
-                          </span>
-                        )
-                      )}
+                    <span className={`text-[10px] font-bold flex items-center gap-0.5 ${s.trendUp ? "text-green-600" : "text-orange-600"}`}>
+                      {s.trendUp && <span className="material-icons-round text-[10px]">trending_up</span>}
                       {s.trend}
                     </span>
-                    <svg
-                      className="w-16 h-8 text-[#047857] stroke-current fill-none opacity-80"
-                      preserveAspectRatio="none"
-                      viewBox="0 0 100 30"
-                    >
-                      <path
-                        d={buildSparkPath(sparkValues)}
-                        strokeWidth="2"
-                        vectorEffect="non-scaling-stroke"
-                      />
+                    <svg className="w-16 h-8 text-[#047857] stroke-current fill-none opacity-80" preserveAspectRatio="none" viewBox="0 0 100 30">
+                      <path d={buildSparkPath(sparkValues)} strokeWidth="2" vectorEffect="non-scaling-stroke" />
                     </svg>
                   </div>
                 </div>

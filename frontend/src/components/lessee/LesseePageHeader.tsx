@@ -14,10 +14,10 @@ export default function LesseePageHeader({
   children,
 }: LesseePageHeaderProps) {
   return (
-    <header className="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-8 flex-shrink-0">
-      <div>
+    <header className="h-auto min-h-[5rem] bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-8 py-3 gap-3 flex-shrink-0 flex-wrap">
+      <div className="min-w-0">
         <h2
-          className="text-3xl font-bold text-gray-900"
+          className="text-xl md:text-3xl font-bold text-gray-900 leading-tight"
           style={{ fontFamily: "Playfair Display, serif" }}
         >
           {title}
@@ -26,7 +26,7 @@ export default function LesseePageHeader({
           <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>
         )}
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
         {children}
         <NotificationBell href="/lessee/notifications" />
       </div>

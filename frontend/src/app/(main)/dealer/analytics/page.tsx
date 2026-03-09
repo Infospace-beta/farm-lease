@@ -1,6 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DealerPageHeader from "@/components/dealer/DealerPageHeader";
+import { dealerApi } from "@/lib/services/api";
 
 const PERIOD_LABELS: Record<string, string> = {
   "This Month": "August 2024",
@@ -8,56 +9,55 @@ const PERIOD_LABELS: Record<string, string> = {
   "This Year": "Year 2024",
 };
 
-const stats = [
-  {
-    label: "Total Revenue",
-    value: "Ksh 2.4M",
-    trend: "+12.5%",
-    trendUp: true,
-    icon: "trending_up",
-    iconBg: "bg-emerald-50",
-    iconColor: "text-[#047857]",
-  },
-  {
-    label: "Total Orders",
-    value: "856",
-    trend: "+5.2%",
-    trendUp: true,
-    icon: "shopping_basket",
-    iconBg: "bg-emerald-50",
-    iconColor: "text-[#047857]",
-  },
-  {
-    label: "Avg Order Value",
-    value: "Ksh 2,800",
-    trend: "-2.1%",
-    trendUp: false,
-    icon: "receipt",
-    iconBg: "bg-orange-50",
-    iconColor: "text-orange-600",
-  },
-  {
-    label: "Customer Retention",
-    value: "68%",
-    trend: "+8%",
-    trendUp: true,
-    icon: "group",
-    iconBg: "bg-emerald-50",
-    iconColor: "text-[#047857]",
-  },
+const DEFAULT_STATS = [
+  { label: "Total Revenue", value: "—", trend: "", trendUp: true, icon: "trending_up", iconBg: "bg-emerald-50", iconColor: "text-[#047857]" },
+  { label: "Total Orders", value: "—", trend: "", trendUp: true, icon: "shopping_basket", iconBg: "bg-emerald-50", iconColor: "text-[#047857]" },
+  { label: "Avg Order Value", value: "—", trend: "", trendUp: false, icon: "receipt", iconBg: "bg-orange-50", iconColor: "text-orange-600" },
+  { label: "Customer Retention", value: "—", trend: "", trendUp: true, icon: "group", iconBg: "bg-emerald-50", iconColor: "text-[#047857]" },
 ];
 
-const categories = [
-  { name: "Fertilizers", value: 850000, color: "#047857", pct: 88 },
-  { name: "Seeds", value: 620000, color: "#5D4037", pct: 64 },
-  { name: "Pesticides", value: 480000, color: "#0f392b", pct: 50 },
-  { name: "Equipment", value: 320000, color: "#6B7280", pct: 33 },
+const DEFAULT_CATEGORIES = [
+  { name: "Fertilizers", value: 0, color: "#047857", pct: 0 },
+  { name: "Seeds", value: 0, color: "#5D4037", pct: 0 },
+  { name: "Pesticides", value: 0, color: "#0f392b", pct: 0 },
+  { name: "Equipment", value: 0, color: "#6B7280", pct: 0 },
 ];
 
 export default function AnalyticsPage() {
   const [period, setPeriod] = useState("This Month");
   const [showPeriodMenu, setShowPeriodMenu] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [stats, setStats] = useState(DEFAULT_STATS);
+  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    dealerApi.salesAnalytics(period)
+      .then((res) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const d: any = res.data ?? {};
+        setStats([
+          { label: "Total Revenue", value: d.total_revenue ? `Ksh ${Number(d.total_revenue).toLocaleString()}` : "—", trend: d.revenue_trend ? `${d.revenue_trend > 0 ? "+" : ""}${d.revenue_trend}%` : "", trendUp: (d.revenue_trend ?? 1) >= 0, icon: "trending_up", iconBg: "bg-emerald-50", iconColor: "text-[#047857]" },
+          { label: "Total Orders", value: d.total_orders != null ? String(d.total_orders) : "—", trend: d.orders_trend ? `${d.orders_trend > 0 ? "+" : ""}${d.orders_trend}%` : "", trendUp: (d.orders_trend ?? 1) >= 0, icon: "shopping_basket", iconBg: "bg-emerald-50", iconColor: "text-[#047857]" },
+          { label: "Avg Order Value", value: d.avg_order_value ? `Ksh ${Number(d.avg_order_value).toLocaleString()}` : "—", trend: d.avg_order_trend ? `${d.avg_order_trend > 0 ? "+" : ""}${d.avg_order_trend}%` : "", trendUp: (d.avg_order_trend ?? -1) >= 0, icon: "receipt", iconBg: "bg-orange-50", iconColor: "text-orange-600" },
+          { label: "Customer Retention", value: d.retention_rate != null ? `${d.retention_rate}%` : "—", trend: d.retention_trend ? `${d.retention_trend > 0 ? "+" : ""}${d.retention_trend}%` : "", trendUp: (d.retention_trend ?? 1) >= 0, icon: "group", iconBg: "bg-emerald-50", iconColor: "text-[#047857]" },
+        ]);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const cats = Array.isArray(d.categories) ? d.categories : [];
+        if (cats.length > 0) {
+          const maxVal = Math.max(...cats.map((c: any) => Number(c.value ?? 0)), 1);
+          setCategories(cats.map((c: any, i: number) => ({
+            name: c.name ?? c.category ?? `Category ${i + 1}`,
+            value: Number(c.value ?? 0),
+            color: ["#047857", "#5D4037", "#0f392b", "#6B7280"][i % 4],
+            pct: Math.round((Number(c.value ?? 0) / maxVal) * 100),
+          })));
+        }
+      })
+      .catch(() => { })
+      .finally(() => setLoading(false));
+  }, [period]);
+
 
   const showToast = (msg: string) => {
     setToast(msg);

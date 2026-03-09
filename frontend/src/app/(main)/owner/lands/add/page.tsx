@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { landsApi } from "@/lib/services/api";
@@ -9,7 +9,7 @@ import OwnerPageHeader from "@/components/owner/OwnerPageHeader";
 // Dynamically import LocationPicker to avoid SSR issues with Leaflet
 const LocationPicker = dynamic(
   () => import("@/components/shared/LocationPicker"),
-  { 
+  {
     ssr: false,
     loading: () => (
       <div className="space-y-3">
@@ -46,6 +46,7 @@ interface BasicForm {
   price_per_month: string;
   preferred_duration: string;
   title_deed_number: string;
+  location_name: string;
   latitude: string;
   longitude: string;
   has_irrigation: boolean;
@@ -88,6 +89,7 @@ export default function UploadLandPage() {
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [landId, setLandId] = useState<number | null>(null);
   const [photos, setPhotos] = useState<FileList | null>(null);
 
@@ -96,8 +98,9 @@ export default function UploadLandPage() {
     description: "",
     total_area: "",
     price_per_month: "",
-    preferred_duration: "1 Year",
+    preferred_duration: "",
     title_deed_number: "",
+    location_name: "",
     latitude: "-1.2921",
     longitude: "36.8219",
     has_irrigation: false,
@@ -117,6 +120,26 @@ export default function UploadLandPage() {
     rainfall: "",
   });
 
+  // ── Persist form across page refreshes ──────────────────
+  useEffect(() => {
+    const savedBasic = sessionStorage.getItem("fl_add_basic");
+    const savedSoil = sessionStorage.getItem("fl_add_soil");
+    if (savedBasic) {
+      try { setBasic(JSON.parse(savedBasic)); } catch { /* ignore */ }
+    }
+    if (savedSoil) {
+      try { setSoil(JSON.parse(savedSoil)); } catch { /* ignore */ }
+    }
+  }, []);
+
+  useEffect(() => {
+    sessionStorage.setItem("fl_add_basic", JSON.stringify(basic));
+  }, [basic]);
+
+  useEffect(() => {
+    sessionStorage.setItem("fl_add_soil", JSON.stringify(soil));
+  }, [soil]);
+
   /* ── Helpers ────────────────────────────────────────── */
   /** Returns null for empty string so the backend gets null not "" */
   const numOrNull = (v: string): number | null =>
@@ -127,32 +150,25 @@ export default function UploadLandPage() {
 
   /* ── Handlers ───────────────────────────────────────── */
   const handleBasicSubmit = async () => {
-    // Validate required fields
-    if (!basic.title.trim()) {
-      setError("Plot title is required.");
+    // Collect all field validation errors at once
+    const errs: Record<string, string> = {};
+    if (!basic.title.trim()) errs.title = "Plot title is required.";
+    if (!basic.description.trim()) errs.description = "Description is required.";
+    if (!basic.total_area) errs.total_area = "Total area is required.";
+    const rawPrice = basic.price_per_month.replace(/,/g, "");
+    if (!rawPrice) errs.price_per_month = "Monthly price is required.";
+    if (!basic.title_deed_number.trim()) errs.title_deed_number = "Title Deed Number is required for verification.";
+    if (!basic.latitude || !basic.longitude) errs.location = "Please pick a location on the map or use current location.";
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
       return;
     }
-    if (!basic.description.trim()) {
-      setError("Description is required.");
-      return;
-    }
-    if (!basic.total_area) {
-      setError("Total area is required.");
-      return;
-    }
-    if (!basic.price_per_month) {
-      setError("Monthly price is required.");
-      return;
-    }
-    if (!basic.title_deed_number.trim()) {
-      setError("Title Deed Number is required for verification.");
-      return;
-    }
+    setFieldErrors({});
 
     setLoading(true);
     setError(null);
     try {
-      const { data } = await landsApi.createBasic(basic);
+      const { data } = await landsApi.createBasic({ ...basic, price_per_month: rawPrice });
       setLandId(data.land_id);
       setStep(1);
     } catch (e: unknown) {
@@ -200,6 +216,10 @@ export default function UploadLandPage() {
 
   const handlePhotosSubmit = async () => {
     if (!landId) return;
+    if (!photos || photos.length < 3) {
+      setError("Please upload at least 3 photos before submitting.");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -208,8 +228,11 @@ export default function UploadLandPage() {
         Array.from(photos).forEach((f) => fd.append("images", f));
         await landsApi.uploadPhotos(landId, fd);
       }
-      // Success! Redirect to My Lands page with a success flag
-      router.push("/owner/lands?success=true");
+      // Clear saved form data on successful submission
+      sessionStorage.removeItem("fl_add_basic");
+      sessionStorage.removeItem("fl_add_soil");
+      // Success! Redirect to My Lands page with a success flag and new land ID
+      router.push(`/owner/lands?success=true&newId=${landId}`);
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { detail?: string } } })?.response
         ?.data?.detail;
@@ -234,27 +257,24 @@ export default function UploadLandPage() {
               <div key={s} className="flex flex-1 items-center">
                 <div className="flex flex-col items-center">
                   <div
-                    className={`flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-full text-xs md:text-sm font-bold transition-colors ${
-                      i === step
+                    className={`flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-full text-xs md:text-sm font-bold transition-colors ${i === step
                         ? "bg-green-600 text-white ring-4 ring-green-600/20"
                         : "bg-white text-slate-600 border-2 border-slate-300"
-                    }`}
+                      }`}
                   >
                     {i + 1}
                   </div>
                   <span
-                    className={`mt-1 md:mt-1.5 text-[10px] md:text-xs font-medium hidden sm:block ${
-                      i === step ? "text-green-600 font-bold" : "text-slate-500"
-                    }`}
+                    className={`mt-1 md:mt-1.5 text-[10px] md:text-xs font-medium hidden sm:block ${i === step ? "text-green-600 font-bold" : "text-slate-500"
+                      }`}
                   >
                     {s}
                   </span>
                 </div>
                 {i < STEPS.length - 1 && (
                   <div
-                    className={`mx-1 md:mx-2 h-0.5 flex-1 mb-0 sm:mb-5 ${
-                      i < step ? "bg-green-600" : "bg-slate-200"
-                    }`}
+                    className={`mx-1 md:mx-2 h-0.5 flex-1 mb-0 sm:mb-5 ${i < step ? "bg-green-600" : "bg-slate-200"
+                      }`}
                   />
                 )}
               </div>
@@ -289,13 +309,14 @@ export default function UploadLandPage() {
                       Plot Title / Name <span className="text-red-500">*</span>
                     </label>
                     <input
-                      className={INPUT}
+                      className={INPUT + (fieldErrors.title ? " border-red-400 focus:border-red-500 focus:ring-red-400" : "")}
                       placeholder="e.g. North Valley Acreage"
                       value={basic.title}
                       onChange={(e) =>
                         setBasic({ ...basic, title: e.target.value })
                       }
                     />
+                    {fieldErrors.title && <p className="mt-1 text-xs text-red-500">{fieldErrors.title}</p>}
                   </div>
                   <div>
                     <label className={LABEL}>
@@ -306,7 +327,7 @@ export default function UploadLandPage() {
                         type="number"
                         min="0"
                         step="0.1"
-                        className={INPUT + " pr-16"}
+                        className={INPUT + " pr-16" + (fieldErrors.total_area ? " border-red-400 focus:border-red-500 focus:ring-red-400" : "")}
                         placeholder="0.0"
                         value={basic.total_area}
                         onChange={(e) =>
@@ -317,19 +338,23 @@ export default function UploadLandPage() {
                         Acres
                       </span>
                     </div>
+                    {fieldErrors.total_area && <p className="mt-1 text-xs text-red-500">{fieldErrors.total_area}</p>}
                   </div>
                   <div className="sm:col-span-2">
                     <label className={LABEL}>Description</label>
                     <textarea
                       rows={4}
-                      className={INPUT + " resize-none"}
+                      className={INPUT + " resize-none" + (fieldErrors.description ? " border-red-400 focus:border-red-500 focus:ring-red-400" : "")}
                       placeholder="Describe the terrain, access to water, previous crops grown, etc."
                       value={basic.description}
                       onChange={(e) =>
                         setBasic({ ...basic, description: e.target.value })
                       }
                     />
-                    <div className="mt-1 flex justify-end">
+                    <div className="mt-1 flex items-center justify-between">
+                      {fieldErrors.description
+                        ? <p className="text-xs text-red-500">{fieldErrors.description}</p>
+                        : <span />}
                       <span className="text-xs text-slate-400">
                         {basic.description.length}/500 characters
                       </span>
@@ -345,16 +370,27 @@ export default function UploadLandPage() {
                         Ksh
                       </span>
                       <input
-                        type="number"
-                        min="0"
-                        className={INPUT + " pl-12"}
-                        placeholder="0.00"
+                        type="text"
+                        inputMode="decimal"
+                        className={INPUT + " pl-12" + (fieldErrors.price_per_month ? " border-red-400 focus:border-red-500 focus:ring-red-400" : "")}
+                        placeholder="0"
                         value={basic.price_per_month}
-                        onChange={(e) =>
-                          setBasic({ ...basic, price_per_month: e.target.value })
-                        }
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/[^0-9.]/g, "");
+                          setBasic({ ...basic, price_per_month: raw });
+                        }}
+                        onBlur={() => {
+                          const num = parseFloat(basic.price_per_month.replace(/,/g, ""));
+                          if (!isNaN(num)) {
+                            setBasic({ ...basic, price_per_month: num.toLocaleString() });
+                          }
+                        }}
+                        onFocus={() => {
+                          setBasic({ ...basic, price_per_month: basic.price_per_month.replace(/,/g, "") });
+                        }}
                       />
                     </div>
+                    {fieldErrors.price_per_month && <p className="mt-1 text-xs text-red-500">{fieldErrors.price_per_month}</p>}
                   </div>
                   <div>
                     <label className={LABEL}>
@@ -403,10 +439,10 @@ export default function UploadLandPage() {
                           label: "Road Access",
                           icon: "add_road",
                         },
-                        { 
-                          key: "has_fencing", 
-                          label: "Fencing", 
-                          icon: "fence" 
+                        {
+                          key: "has_fencing",
+                          label: "Fencing",
+                          icon: "fence"
                         },
                       ] as { key: keyof BasicForm; label: string; icon: string }[]
                     ).map(({ key, label, icon }) => {
@@ -414,11 +450,10 @@ export default function UploadLandPage() {
                       return (
                         <label
                           key={key}
-                          className={`flex items-center gap-2 rounded-lg border-2 px-3 py-2.5 text-xs font-semibold cursor-pointer transition-all ${
-                            val
+                          className={`flex items-center gap-2 rounded-lg border-2 px-3 py-2.5 text-xs font-semibold cursor-pointer transition-all ${val
                               ? "border-primary bg-primary/5 text-primary"
                               : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
-                          }`}
+                            }`}
                         >
                           <input
                             type="checkbox"
@@ -448,9 +483,7 @@ export default function UploadLandPage() {
                     className={
                       INPUT +
                       " border-amber-300 focus:border-amber-500 focus:ring-amber-500" +
-                      (basic.title_deed_number.trim() === ""
-                        ? " border-red-300"
-                        : "")
+                      (fieldErrors.title_deed_number ? " border-red-400 focus:border-red-500 focus:ring-red-400" : "")
                     }
                     placeholder="e.g. KJI-9928-XX"
                     value={basic.title_deed_number}
@@ -458,6 +491,7 @@ export default function UploadLandPage() {
                       setBasic({ ...basic, title_deed_number: e.target.value })
                     }
                   />
+                  {fieldErrors.title_deed_number && <p className="mt-1 text-xs text-red-500">{fieldErrors.title_deed_number}</p>}
                   <p className="mt-1.5 text-xs text-amber-700 flex items-start gap-1.5">
                     <span className="material-symbols-outlined text-sm mt-0.5">
                       lock
@@ -470,14 +504,21 @@ export default function UploadLandPage() {
               </div>
 
               {/* Right: Location */}
-              <div className="lg:col-span-1 rounded-xl md:rounded-2xl bg-white border border-slate-200 shadow-sm p-5 md:p-8">
+              <div className="lg:col-span-1 rounded-xl md:rounded-2xl bg-white border border-slate-200 shadow-sm p-5 md:p-8 space-y-4 lg:self-start">
                 <LocationPicker
                   latitude={basic.latitude}
                   longitude={basic.longitude}
+                  locationName={basic.location_name}
+                  onLocationNameChange={(name) =>
+                    setBasic((prev) => ({ ...prev, location_name: name }))
+                  }
                   onLocationChange={(lat, lng) =>
-                    setBasic({ ...basic, latitude: lat, longitude: lng })
+                    setBasic((prev) => ({ ...prev, latitude: lat, longitude: lng }))
                   }
                 />
+                {fieldErrors.location && (
+                  <p className="mt-2 text-xs text-red-500">{fieldErrors.location}</p>
+                )}
               </div>
 
               {/* Navigation - full width at bottom */}
@@ -561,7 +602,7 @@ export default function UploadLandPage() {
                       Soil pH Level
                     </label>
                     <span className="text-sm font-bold text-primary">
-                      {soil.ph_level || "6.5"}
+                      {soil.ph_level || "—"}
                     </span>
                   </div>
                   <input
@@ -569,7 +610,7 @@ export default function UploadLandPage() {
                     min="0"
                     max="14"
                     step="0.1"
-                    value={soil.ph_level || "6.5"}
+                    value={soil.ph_level || "0"}
                     onChange={(e) =>
                       setSoil({ ...soil, ph_level: e.target.value })
                     }
@@ -645,7 +686,7 @@ export default function UploadLandPage() {
                       Soil Moisture Content
                     </label>
                     <span className="text-sm font-bold text-primary">
-                      {soil.moisture || "40"}%
+                      {soil.moisture ? `${soil.moisture}%` : "—"}
                     </span>
                   </div>
                   <input
@@ -653,7 +694,7 @@ export default function UploadLandPage() {
                     min="0"
                     max="100"
                     step="1"
-                    value={soil.moisture || "40"}
+                    value={soil.moisture || "0"}
                     onChange={(e) =>
                       setSoil({ ...soil, moisture: e.target.value })
                     }
@@ -879,6 +920,13 @@ export default function UploadLandPage() {
                   <span>Minimum 3 photos required for verification.</span>
                 </div>
 
+                {photos && photos.length > 0 && photos.length < 3 && (
+                  <p className="text-xs text-amber-600 font-medium flex items-center gap-1">
+                    <span className="material-symbols-outlined text-sm">warning</span>
+                    {3 - photos.length} more photo{3 - photos.length !== 1 ? "s" : ""} required (minimum 3)
+                  </p>
+                )}
+
                 {/* Uploaded Photos Preview */}
                 {photos && photos.length > 0 && (
                   <div className="space-y-4">
@@ -1044,7 +1092,7 @@ export default function UploadLandPage() {
                   </button>
                   <button
                     onClick={handlePhotosSubmit}
-                    disabled={loading}
+                    disabled={loading || !photos || photos.length < 3}
                     type="button"
                     className="inline-flex items-center justify-center gap-2 md:gap-3 rounded-lg bg-green-600 px-6 md:px-8 py-3 md:py-3.5 text-sm md:text-base font-bold text-white hover:bg-green-700 disabled:opacity-60 transition-all shadow-lg hover:shadow-xl min-w-35 md:min-w-40"
                   >

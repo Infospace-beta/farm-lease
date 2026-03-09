@@ -16,6 +16,7 @@
     "jwt-decode": "^4.0.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.475.0",
+    "material-icons": "^1.13.14",
     "next": "^16.1.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

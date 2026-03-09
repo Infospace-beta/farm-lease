@@ -4,11 +4,15 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from .views import (
     AdminDashboardStatsView,
     ChangePasswordView,
+    LesseeDashboardView,
+    LesseeNotificationListView,
     LogoutView,
     MyTokenObtainPairView,
     SignupView,
     UserProfileView,
     get_user_profile,
+    mark_notification_read,
+    mark_all_notifications_read,
 )
 
 app_name = 'accounts'

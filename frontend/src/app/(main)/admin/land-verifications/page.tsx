@@ -398,8 +398,8 @@ export default function LandVerificationsPage() {
               key={f}
               onClick={() => setFilter(f)}
               className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition ${filter === f
-                  ? "bg-sidebar-bg text-white border-sidebar-bg"
-                  : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
+                ? "bg-sidebar-bg text-white border-sidebar-bg"
+                : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
                 }`}
             >
               {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -637,36 +637,7 @@ export default function LandVerificationsPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-            <h4 className="font-bold text-earth mb-4 text-sm uppercase tracking-widest">
-              Quick Filters
-            </h4>
-            <div className="space-y-3">
-              {(["pending", "verified", "flagged"] as const).map((f, i) => {
-                const labels = [
-                  "Show Pending Only",
-                  "Verified Only",
-                  "Flagged for Correction",
-                ];
-                return (
-                  <label
-                    key={f}
-                    className="flex items-center gap-2 cursor-pointer group"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={filter === f}
-                      onChange={() => setFilter(filter === f ? "all" : f)}
-                      className="rounded border-gray-300 text-sidebar-bg focus:ring-sidebar-bg"
-                    />
-                    <span className="text-sm text-gray-600 group-hover:text-gray-900">
-                      {labels[i]}
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
-          </div>
+
         </div>
       </div>
     </div>

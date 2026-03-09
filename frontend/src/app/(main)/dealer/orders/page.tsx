@@ -1,6 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DealerPageHeader from "@/components/dealer/DealerPageHeader";
+import { dealerApi } from "@/lib/services/api";
 
 type Order = {
   id: string;
@@ -19,59 +20,33 @@ type TimelineStep = { label: string; done: boolean; current: boolean };
 
 const tabs = ["All Orders", "Delivery", "Pick-up", "Pending", "Completed"];
 
-const orders = [
-  {
-    id: "#ORD-2489",
-    customer: "Grace N.",
-    initials: "GN",
-    type: "Delivery",
-    typeIcon: "local_shipping",
-    amount: 72500,
-    status: "Pending",
-    statusClass: "bg-orange-100 text-orange-700",
-  },
-  {
-    id: "#ORD-2488",
-    customer: "Samuel K.",
-    initials: "SK",
-    type: "Pickup",
-    typeIcon: "store",
-    amount: 3500,
-    status: "Ready",
-    statusClass: "bg-blue-100 text-blue-700",
-  },
-  {
-    id: "#ORD-2487",
-    customer: "FarmCorp Ltd.",
-    initials: "FC",
-    type: "Delivery",
-    typeIcon: "local_shipping",
-    amount: 145200,
-    status: "Dispute",
-    statusClass: "bg-red-100 text-red-700",
-  },
-  {
-    id: "#ORD-2486",
-    customer: "John D.",
-    initials: "JD",
-    type: "Pickup",
-    typeIcon: "store",
-    amount: 12000,
-    status: "Collected",
-    statusClass: "bg-green-100 text-green-700",
-  },
-  {
-    id: "#ORD-2485",
-    customer: "Mary W.",
-    initials: "MW",
-    type: "Delivery",
-    typeIcon: "local_shipping",
-    amount: 45600,
-    status: "Pending",
-    statusClass: "bg-orange-100 text-orange-700",
-  },
-];
+function getStatusClass(status: string): string {
+  const s = status.toLowerCase();
+  if (s === "pending") return "bg-orange-100 text-orange-700";
+  if (s === "ready") return "bg-blue-100 text-blue-700";
+  if (s === "delivered" || s === "collected" || s === "completed") return "bg-green-100 text-green-700";
+  if (s === "dispute" || s === "cancelled") return "bg-red-100 text-red-700";
+  return "bg-gray-100 text-gray-600";
+}
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapOrder(o: any): Order {
+  const type = o.delivery_type ?? o.type ?? "Delivery";
+  return {
+    id: o.id ? `#ORD-${String(o.id).padStart(4, "0")}` : String(o.id),
+    customer: o.customer_name ?? o.buyer_name ?? o.customer ?? "Customer",
+    initials: (o.customer_name ?? o.buyer_name ?? "C").split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase(),
+    type: type.charAt(0).toUpperCase() + type.slice(1).toLowerCase(),
+    typeIcon: type.toLowerCase().includes("pickup") || type.toLowerCase().includes("pick") ? "store" : "local_shipping",
+    amount: Number(o.total_amount ?? o.amount ?? 0),
+    status: o.status ? o.status.charAt(0).toUpperCase() + o.status.slice(1).toLowerCase() : "Pending",
+    statusClass: getStatusClass(o.status ?? "pending"),
+    phone: o.phone ?? o.customer_phone ?? undefined,
+    address: o.delivery_address ?? o.address ?? undefined,
+  };
+}
+
+const orders: Order[] = [];
 const TIMELINE: Record<string, TimelineStep[]> = {
   Pending: [
     { label: "Order Received", done: true, current: false },
@@ -174,20 +149,24 @@ const ORDER_DETAILS: Record<
   },
 };
 
-function getStatusClass(status: string) {
-  if (status === "Pending") return "bg-orange-100 text-orange-700";
-  if (status === "Ready") return "bg-blue-100 text-blue-700";
-  if (status === "Dispute") return "bg-red-100 text-red-700";
-  if (status === "Collected" || status === "Delivered")
-    return "bg-green-100 text-green-700";
-  if (status === "Cancelled") return "bg-gray-100 text-gray-500";
-  return "bg-gray-100 text-gray-600";
-}
-
 export default function OrdersPage() {
   const [allOrders, setAllOrders] = useState<Order[]>(orders);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("All Orders");
-  const [selectedId, setSelectedId] = useState("#ORD-2489");
+  const [selectedId, setSelectedId] = useState<string>("");
+
+  useEffect(() => {
+    dealerApi.orders()
+      .then((res) => {
+        const raw = Array.isArray(res.data) ? res.data : (res.data?.results ?? []);
+        const mapped = raw.map(mapOrder);
+        setAllOrders(mapped);
+        if (mapped.length > 0) setSelectedId(mapped[0].id);
+      })
+      .catch(() => { })
+      .finally(() => setLoading(false));
+  }, []);
+
   const [search, setSearch] = useState("");
   const [toast, setToast] = useState<string | null>(null);
 

@@ -1,79 +1,61 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import DealerPageHeader from "@/components/dealer/DealerPageHeader";
+import { dealerApi } from "@/lib/services/api";
 
 const timePeriods = ["All Time", "This Month", "Custom"];
-type Transaction = (typeof transactions)[0];
 
-const transactions = [
-  {
-    id: "#TRX-88210",
-    date: "Oct 24",
-    desc: "Order #4421 – 50kg DAP Fertilizer (20 Bags)",
-    customer: "Grace N.",
-    initials: "GN",
-    type: "Sale",
-    typeClass: "bg-green-100 text-green-800",
-    amount: 4500,
-    fee: -225,
-    status: "Direct Payment",
-    statusClass: "bg-blue-100 text-blue-700",
-  },
-  {
-    id: "#TRX-88209",
-    date: "Oct 23",
-    desc: "Order #4420 – Solar Pump Kit",
-    customer: "FarmCorp Ltd.",
-    initials: "FC",
-    type: "Sale",
-    typeClass: "bg-green-100 text-green-800",
-    amount: 45000,
-    fee: -2250,
-    status: "Direct Payment",
-    statusClass: "bg-blue-100 text-blue-700",
-  },
-  {
-    id: "#TRX-88207",
-    date: "Oct 22",
-    desc: "Order #4418 – Hybrid Maize Seeds",
-    customer: "Samuel K.",
-    initials: "SK",
-    type: "Sale",
-    typeClass: "bg-green-100 text-green-800",
-    amount: 12500,
-    fee: -625,
-    status: "Direct Payment",
-    statusClass: "bg-blue-100 text-blue-700",
-  },
-  {
-    id: "#TRX-88206",
-    date: "Oct 22",
-    desc: "Order #4417 – Herbicide 1L",
-    customer: "Mary W.",
-    initials: "MW",
-    type: "Sale",
-    typeClass: "bg-green-100 text-green-800",
-    amount: 8200,
-    fee: -410,
-    status: "Direct Payment",
-    statusClass: "bg-blue-100 text-blue-700",
-  },
-  {
-    id: "#TRX-88205",
-    date: "Oct 21",
-    desc: "Refund – Order #4402 (Wrong item delivered)",
-    customer: "John D.",
-    initials: "JD",
-    type: "Refund",
-    typeClass: "bg-red-100 text-red-800",
-    amount: -3200,
-    fee: 0,
-    status: "Refunded",
-    statusClass: "bg-red-100 text-red-700",
-  },
-];
+interface Transaction {
+  id: string;
+  date: string;
+  desc: string;
+  customer: string;
+  initials: string;
+  type: string;
+  typeClass: string;
+  amount: number;
+  fee: number;
+  status: string;
+  statusClass: string;
+}
+
+function mapTransaction(t: any): Transaction {
+  const isRefund = (t.transaction_type ?? t.type ?? "").toLowerCase().includes("refund");
+  const amount = parseFloat(t.amount ?? t.net_amount ?? 0);
+  const fee = parseFloat(t.platform_fee ?? t.fee ?? 0);
+  const customerName: string = t.customer_name ?? t.buyer_name ?? t.customer ?? "—";
+  const initials = customerName
+    .split(" ")
+    .slice(0, 2)
+    .map((w: string) => w[0] ?? "")
+    .join("")
+    .toUpperCase() || "??";
+  const rawDate = t.created_at ?? t.date ?? "";
+  const date = rawDate
+    ? new Date(rawDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+    : "—";
+  const status: string = t.payment_status ?? t.status ?? (isRefund ? "Refunded" : "Direct Payment");
+  return {
+    id: t.transaction_id ?? t.id ? `#TRX-${String(t.transaction_id ?? t.id).padStart(5, "0")}` : "—",
+    date,
+    desc: t.description ?? t.desc ?? `Order ${t.order_id ? `#${t.order_id}` : ""}`,
+    customer: customerName,
+    initials,
+    type: isRefund ? "Refund" : "Sale",
+    typeClass: isRefund ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800",
+    amount: isRefund ? -Math.abs(amount) : amount,
+    fee: fee !== 0 ? -Math.abs(fee) : 0,
+    status,
+    statusClass:
+      status.toLowerCase().includes("refund")
+        ? "bg-red-100 text-red-700"
+        : "bg-blue-100 text-blue-700",
+  };
+}
 
 export default function TransactionsPage() {
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activePeriod, setActivePeriod] = useState("All Time");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
@@ -81,16 +63,39 @@ export default function TransactionsPage() {
   const [toast, setToast] = useState<string | null>(null);
   const [viewingTx, setViewingTx] = useState<Transaction | null>(null);
 
+  useEffect(() => {
+    dealerApi
+      .transactions()
+      .then((res) => {
+        const raw = Array.isArray(res.data) ? res.data : (res.data?.results ?? []);
+        setTransactions(raw.map(mapTransaction));
+      })
+      .catch(() => { })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const summary = useMemo(() => {
+    const sales = transactions.filter((t) => t.amount > 0);
+    const totalEarnings = sales.reduce((s, t) => s + t.amount, 0);
+    const totalFees = transactions.reduce((s, t) => s + Math.abs(t.fee), 0);
+    const directPayments = sales.reduce((s, t) => s + t.amount, 0);
+    return { totalEarnings, directPayments, totalFees };
+  }, [transactions]);
+
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
   };
 
-  const filtered = transactions.filter(
-    (t) =>
-      (t.desc.toLowerCase().includes(search.toLowerCase()) ||
-        t.id.toLowerCase().includes(search.toLowerCase())) &&
-      (statusFilter === "All Status" || t.status === statusFilter),
+  const filtered = useMemo(
+    () =>
+      transactions.filter(
+        (t) =>
+          (t.desc.toLowerCase().includes(search.toLowerCase()) ||
+            t.id.toLowerCase().includes(search.toLowerCase())) &&
+          (statusFilter === "All Status" || t.status === statusFilter),
+      ),
+    [transactions, search, statusFilter],
   );
 
   return (
@@ -209,30 +214,30 @@ export default function TransactionsPage() {
           {[
             {
               label: "Total Earnings",
-              value: "Ksh 1,452,300",
-              sub: "+12% from last period",
+              value: loading ? "—" : `Ksh ${summary.totalEarnings.toLocaleString()}`,
+              sub: "All time",
               icon: "account_balance_wallet",
               iconBg: "bg-emerald-50",
               iconColor: "text-[#047857]",
-              trend: true,
+              trend: false,
             },
             {
               label: "Direct M-Pesa Sales",
-              value: "Ksh 1,410,150",
+              value: loading ? "—" : `Ksh ${summary.directPayments.toLocaleString()}`,
               sub: "Sent to your account",
               icon: "phone_android",
               iconBg: "bg-blue-50",
               iconColor: "text-blue-600",
-              trend: null,
+              trend: false,
             },
             {
               label: "Platform Fees Paid",
-              value: "Ksh 42,150",
-              sub: "Last 30 days",
+              value: loading ? "—" : `Ksh ${summary.totalFees.toLocaleString()}`,
+              sub: "Across all transactions",
               icon: "receipt_long",
               iconBg: "bg-orange-50",
               iconColor: "text-orange-600",
-              trend: null,
+              trend: false,
             },
           ].map((c) => (
             <div
@@ -274,7 +279,7 @@ export default function TransactionsPage() {
                 Transaction History
               </h3>
               <span className="text-xs font-bold text-white bg-[#047857] px-2 py-0.5 rounded-full">
-                141
+                {transactions.length}
               </span>
             </div>
             <div className="flex gap-3">
@@ -335,73 +340,91 @@ export default function TransactionsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {filtered.map((t) => (
-                  <tr key={t.id} className="hover:bg-gray-50/50 transition">
-                    <td className="py-4 px-5 font-mono text-xs font-bold text-[#047857]">
-                      {t.id}
-                    </td>
-                    <td className="py-4 px-5 text-xs text-gray-500">
-                      {t.date}
-                    </td>
-                    <td className="py-4 px-5">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 bg-[#0f392b] rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0">
-                          {t.initials}
-                        </div>
-                        <div>
-                          <p className="text-xs font-semibold text-gray-800 max-w-[180px] truncate">
-                            {t.desc}
-                          </p>
-                          <p className="text-[9px] text-gray-400">
-                            {t.customer}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-4 px-5 text-center">
-                      <span
-                        className={`text-[9px] font-bold px-2 py-1 rounded-full ${t.typeClass}`}
-                      >
-                        {t.type}
-                      </span>
-                    </td>
-                    <td
-                      className={`py-4 px-5 text-right text-sm font-bold ${t.amount < 0 ? "text-red-600" : "text-gray-800"}`}
-                    >
-                      {t.amount < 0 ? "-" : ""}Ksh{" "}
-                      {Math.abs(t.amount).toLocaleString()}
-                    </td>
-                    <td className="py-4 px-5 text-right text-xs font-semibold text-red-500">
-                      {t.fee !== 0
-                        ? `Ksh ${Math.abs(t.fee).toLocaleString()}`
-                        : "–"}
-                    </td>
-                    <td className="py-4 px-5 text-center">
-                      <span
-                        className={`text-[9px] font-bold px-2 py-1 rounded-full ${t.statusClass}`}
-                      >
-                        {t.status}
-                      </span>
-                    </td>
-                    <td className="py-4 px-5 text-center">
-                      <button
-                        onClick={() => setViewingTx(t)}
-                        className="p-1.5 text-gray-400 hover:text-[#047857] hover:bg-emerald-50 rounded-lg transition"
-                      >
-                        <span className="material-icons-round text-base">
-                          visibility
-                        </span>
-                      </button>
+                {loading ? (
+                  [0, 1, 2, 3, 4].map((i) => (
+                    <tr key={i}>
+                      {[0, 1, 2, 3, 4, 5, 6, 7].map((j) => (
+                        <td key={j} className="py-4 px-5">
+                          <div className="h-4 bg-gray-100 rounded animate-pulse" />
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                ) : filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-16 text-center text-sm text-gray-400">
+                      No transactions found.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filtered.map((t) => (
+                    <tr key={t.id} className="hover:bg-gray-50/50 transition">
+                      <td className="py-4 px-5 font-mono text-xs font-bold text-[#047857]">
+                        {t.id}
+                      </td>
+                      <td className="py-4 px-5 text-xs text-gray-500">
+                        {t.date}
+                      </td>
+                      <td className="py-4 px-5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 bg-[#0f392b] rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0">
+                            {t.initials}
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-gray-800 max-w-[180px] truncate">
+                              {t.desc}
+                            </p>
+                            <p className="text-[9px] text-gray-400">
+                              {t.customer}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-4 px-5 text-center">
+                        <span
+                          className={`text-[9px] font-bold px-2 py-1 rounded-full ${t.typeClass}`}
+                        >
+                          {t.type}
+                        </span>
+                      </td>
+                      <td
+                        className={`py-4 px-5 text-right text-sm font-bold ${t.amount < 0 ? "text-red-600" : "text-gray-800"}`}
+                      >
+                        {t.amount < 0 ? "-" : ""}Ksh{" "}
+                        {Math.abs(t.amount).toLocaleString()}
+                      </td>
+                      <td className="py-4 px-5 text-right text-xs font-semibold text-red-500">
+                        {t.fee !== 0
+                          ? `Ksh ${Math.abs(t.fee).toLocaleString()}`
+                          : "–"}
+                      </td>
+                      <td className="py-4 px-5 text-center">
+                        <span
+                          className={`text-[9px] font-bold px-2 py-1 rounded-full ${t.statusClass}`}
+                        >
+                          {t.status}
+                        </span>
+                      </td>
+                      <td className="py-4 px-5 text-center">
+                        <button
+                          onClick={() => setViewingTx(t)}
+                          className="p-1.5 text-gray-400 hover:text-[#047857] hover:bg-emerald-50 rounded-lg transition"
+                        >
+                          <span className="material-icons-round text-base">
+                            visibility
+                          </span>
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
 
           <div className="p-4 border-t border-gray-100 flex justify-between items-center">
             <p className="text-xs text-gray-400">
-              Showing {filtered.length} of 141 transactions
+              Showing {filtered.length} of {transactions.length} transactions
             </p>
             <div className="flex gap-1">
               <button

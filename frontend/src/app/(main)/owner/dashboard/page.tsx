@@ -317,10 +317,21 @@ export default function OwnerDashboardPage() {
                     <div className="inline-block h-6 w-6 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
                   </div>
                 ) : displayLands.length === 0 ? (
-                  <div className="col-span-full text-center py-10">
-                    <p className="text-sm text-slate-500">
-                      No lands yet. Add your first plot!
+                  <div className="col-span-full flex flex-col items-center justify-center py-14 px-6 text-center">
+                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                      <span className="material-symbols-outlined text-primary text-3xl">landscape</span>
+                    </div>
+                    <h4 className="text-base font-bold text-slate-700 mb-1">No lands listed yet</h4>
+                    <p className="text-sm text-slate-500 mb-5 max-w-xs">
+                      Start building your portfolio by listing your first plot of land.
                     </p>
+                    <a
+                      href="/owner/lands/add"
+                      className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-bold text-white hover:bg-primary/90 transition-colors shadow-sm"
+                    >
+                      <span className="material-symbols-outlined text-lg">add_circle</span>
+                      List Your First Land
+                    </a>
                   </div>
                 ) : (
                   displayLands.map((land) => {
