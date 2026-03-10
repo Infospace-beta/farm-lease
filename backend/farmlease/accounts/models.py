@@ -33,6 +33,16 @@ class User(AbstractUser):
     class Meta:
         ordering = ['-created_at']
 
+    def save(self, *args, **kwargs):
+        """
+        Ensure only users with role='admin' can have is_staff=True.
+        Owners, farmers, and dealers should never be staff/superuser.
+        """
+        if self.role != 'admin':
+            self.is_staff = False
+            self.is_superuser = False
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.email} ({self.role})"
 

@@ -35,8 +35,8 @@ class UserSerializer(serializers.ModelSerializer):
         ]
 
 
-class RegisterSerializer(serializers.ModelSerializer):
-    """Serializer for user registration"""
+class SignupSerializer(serializers.ModelSerializer):
+    """Serializer for user signup"""
 
     password = serializers.CharField(
         write_only=True, validators=[validate_password]
@@ -67,13 +67,55 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {"password": "Password fields didn't match."}
             )
+        
+        # Check for duplicate email
+        if 'email' in attrs:
+            email = attrs['email']
+            if User.objects.filter(email=email).exists():
+                raise serializers.ValidationError(
+                    {"email": "A user with this email already exists."}
+                )
+        
+        # Check for duplicate phone number
+        if 'phone_number' in attrs:
+            phone = attrs['phone_number']
+            if User.objects.filter(phone_number=phone).exists():
+                raise serializers.ValidationError(
+                    {"phone_number": "A user with this phone number already exists."}
+                )
+        
+        # Convert empty strings to None for optional unique fields
+        if 'id_number' in attrs and not attrs['id_number']:
+            attrs['id_number'] = None
+        if 'address' in attrs and not attrs['address']:
+            attrs['address'] = None
+        if 'county' in attrs and not attrs['county']:
+            attrs['county'] = None
+            
         return attrs
 
     def create(self, validated_data):
+        # Remove password2 from validated data
         validated_data.pop('password2', None)
+        
+        # Extract password before creating user
+        password = validated_data.pop('password')
+        
+        # Generate unique username if not provided
         if not validated_data.get('username'):
-            validated_data['username'] = validated_data['email'].split('@')[0]
-        user = User.objects.create_user(**validated_data)
+            base_username = validated_data['email'].split('@')[0]
+            username = base_username
+            counter = 1
+            
+            # Ensure username is unique
+            while User.objects.filter(username=username).exists():
+                username = f"{base_username}{counter}"
+                counter += 1
+            
+            validated_data['username'] = username
+        
+        # Create user with password
+        user = User.objects.create_user(password=password, **validated_data)
         return user
 
 

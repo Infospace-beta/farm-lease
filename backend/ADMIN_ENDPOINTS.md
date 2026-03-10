@@ -6,6 +6,183 @@ Base URL: `/api/auth/`
 
 ---
 
+## Land Verification Endpoints
+
+### GET `/api/land/admin/all/`
+Retrieve all land listings with full details (including title deed numbers) for admin review.
+
+**Permission:** `IsSystemAdmin` (admin or staff users only)
+
+**Query Parameters:**
+- `filter` (optional): Filter lands by status
+  - `all` (default) — Return all lands
+  - `pending` — Only lands awaiting verification (`is_verified=false` and `is_flagged=false`)
+  - `verified` — Only verified lands (`is_verified=true`)
+  - `flagged` — Only flagged lands (`is_flagged=true`)
+
+**Request Example:**
+```bash
+GET /api/land/admin/all/?filter=pending
+Authorization: Bearer <admin_access_token>
+```
+
+**Response `200`:**
+```json
+[
+  {
+    "id": 7,
+    "owner": 12,
+    "owner_username": "john_farmer",
+    "owner_email": "john@example.com",
+    "title": "Fertile Farm in Nakuru",
+    "description": "Well-drained red soil...",
+    "total_area": "10.50",
+    "price_per_month": "15000.00",
+    "preferred_duration": "6 months",
+    "title_deed_number": "TD-00123",
+    "has_irrigation": true,
+    "has_electricity": false,
+    "has_road_access": true,
+    "has_fencing": false,
+    "location_name": "Nakuru County",
+    "latitude": "-0.303099",
+    "longitude": "36.080026",
+    "status": "Under_Review",
+    "is_verified": false,
+    "is_flagged": false,
+    "flag_reason": null,
+    "current_lessee": null,
+    "created_at": "2026-02-20T10:30:00Z",
+    "soil_data": { ... },
+    "images": [...]
+  }
+]
+```
+
+---
+
+### POST `/api/land/admin/<land_id>/verify/`
+Verify a land listing, marking it as approved and changing status to "Vacant".
+
+**Permission:** `IsSystemAdmin`
+
+**URL Parameter:** `land_id` — ID of the land to verify
+
+**Request:**
+```bash
+POST /api/land/admin/7/verify/
+Authorization: Bearer <admin_access_token>
+```
+
+**Response `200`:**
+```json
+{
+  "message": "Land 'Fertile Farm in Nakuru' verified successfully."
+}
+```
+
+**What it does:**
+- Sets `is_verified = true`
+- Sets `is_flagged = false`
+- Clears `flag_reason`
+- **Updates `status` to `'Vacant'`** — making it visible to lessees
+- Sends notification to the land owner
+
+---
+
+### POST `/api/land/admin/<land_id>/flag/`
+Flag a land listing for issues requiring owner correction.
+
+**Permission:** `IsSystemAdmin`
+
+**URL Parameter:** `land_id` — ID of the land to flag
+
+**Request Body:**
+```json
+{
+  "reason": "Title deed number does not match land registry records. Please verify and resubmit."
+}
+```
+
+**Response `200`:**
+```json
+{
+  "message": "Land 'Fertile Farm in Nakuru' flagged.",
+  "reason": "Title deed number does not match..."
+}
+```
+
+**What it does:**
+- Sets `is_flagged = true`
+- Sets `is_verified = false`
+- Stores the `reason` in `flag_reason`
+- Sends notification to the land owner with the reason
+
+---
+
+### GET `/api/land/admin/stats/`
+Retrieve aggregated statistics for the admin dashboard.
+
+**Permission:** `IsSystemAdmin`
+
+**Response `200`:**
+```json
+{
+  "total_lands": 45,
+  "pending_verification": 12,
+  "verified": 30,
+  "flagged": 3
+}
+```
+
+---
+
+## Land Verification Workflow
+
+### 1. Owner Creates Land Listing
+When an owner creates a new land listing (via `/api/land/create-basic/`):
+- Land is created with `status = "Under_Review"`
+- `is_verified = false` (pending admin verification)
+- Owner sees "Pending Verification" on their dashboard
+
+### 2. Admin Reviews Land
+Admin accesses the Land Verification page:
+- Fetches pending lands: `GET /api/land/admin/all/?filter=pending`
+- Reviews title deed number and other details
+- Can cross-check with land registry
+
+### 3. Admin Decision
+**Option A — Verify:**
+- `POST /api/land/admin/<land_id>/verify/`
+- Land status changes to `"Vacant"`
+- Land becomes visible in public listings for lessees
+- Owner receives verification notification
+
+**Option B — Flag:**
+- `POST /api/land/admin/<land_id>/flag/` with reason
+- Land remains hidden from public
+- Owner receives notification with correction instructions
+- Owner can update and resubmit
+
+### 4. Owner Sees Update
+- Owner dashboard shows updated status
+- Verified lands display as "Vacant"
+- Flagged lands show the flag reason
+- Owner can view lands at `/api/land/my-lands/`
+
+---
+
+## Status Field Reference
+
+| Status Value      | Meaning                                  |
+|-------------------|------------------------------------------|
+| `Under_Review`    | Newly created, pending admin verification|
+| `Vacant`          | Verified and available for lease        |
+| `Pending_Payment` | Lease approved, awaiting payment         |
+| `Leased`          | Currently leased to a farmer             |
+
+---
+
 ## Authentication Endpoints (Public / Any User)
 
 ### POST `/api/auth/register/`
