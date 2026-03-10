@@ -422,6 +422,8 @@ export default function BrowseLandPage() {
 
   // ── Listing detail modal ───────────────────────────────────
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
+  const [carouselIndex, setCarouselIndex] = useState(0);
+  useEffect(() => { setCarouselIndex(0); }, [selectedListing]);
 
   // ── Wishlist — persisted to localStorage ─────────────────────
   const [wishlist, setWishlist] = useState<Set<string>>(() => {
@@ -1164,11 +1166,12 @@ export default function BrowseLandPage() {
             >
               {/* Image area */}
               <div className="relative h-52 bg-gray-200 rounded-t-2xl overflow-hidden">
-                {selectedListing.photoUrl ? (
+                {selectedListing.photoUrls.length > 0 ? (
                   <img
-                    src={selectedListing.photoUrl}
-                    alt={selectedListing.name}
+                    src={selectedListing.photoUrls[carouselIndex]}
+                    alt={`${selectedListing.name} photo ${carouselIndex + 1}`}
                     className="absolute inset-0 w-full h-full object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).style.visibility = "hidden"; }}
                   />
                 ) : (
                   <div className="absolute inset-0 bg-[#0f392b]/10 flex items-center justify-center">
@@ -1176,6 +1179,32 @@ export default function BrowseLandPage() {
                   </div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-transparent" />
+                {/* Prev arrow */}
+                {selectedListing.photoUrls.length > 1 && carouselIndex > 0 && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setCarouselIndex(i => i - 1); }}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full w-8 h-8 flex items-center justify-center transition-colors z-10"
+                    aria-label="Previous photo"
+                  >
+                    <span className="material-icons-round text-lg">chevron_left</span>
+                  </button>
+                )}
+                {/* Next arrow */}
+                {selectedListing.photoUrls.length > 1 && carouselIndex < selectedListing.photoUrls.length - 1 && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setCarouselIndex(i => i + 1); }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full w-8 h-8 flex items-center justify-center transition-colors z-10"
+                    aria-label="Next photo"
+                  >
+                    <span className="material-icons-round text-lg">chevron_right</span>
+                  </button>
+                )}
+                {/* Photo counter */}
+                {selectedListing.photoUrls.length > 1 && (
+                  <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-0.5 rounded-full">
+                    {carouselIndex + 1} / {selectedListing.photoUrls.length}
+                  </div>
+                )}
                 {/* Acres badge */}
                 <div className="absolute top-4 left-4">
                   <span className="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg text-sm font-bold text-gray-800 shadow">
@@ -1198,6 +1227,21 @@ export default function BrowseLandPage() {
                   <span className="material-icons-round text-xl">close</span>
                 </button>
               </div>
+              {/* Thumbnail strip */}
+              {selectedListing.photoUrls.length > 1 && (
+                <div className="flex gap-2 px-4 py-2 bg-gray-50 overflow-x-auto">
+                  {selectedListing.photoUrls.map((url, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setCarouselIndex(i)}
+                      className={`shrink-0 w-16 h-12 rounded overflow-hidden border-2 transition-colors ${i === carouselIndex ? "border-[#047857]" : "border-transparent hover:border-gray-300"}`}
+                      aria-label={`Photo ${i + 1}`}
+                    >
+                      <img src={url} alt={`Thumbnail ${i + 1}`} className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
 
               {/* Content */}
               <div className="p-6">
