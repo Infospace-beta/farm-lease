@@ -454,11 +454,10 @@ export default function OwnerDashboardPage() {
                     activities.map((act, i) => (
                       <div
                         key={i}
-                        className={`relative pl-6 ${
-                          i === activities.length - 1
+                        className={`relative pl-6 ${i === activities.length - 1
                             ? ""
                             : "before:absolute before:left-0 before:top-2 before:h-full before:w-px before:bg-slate-200"
-                        }`}
+                          }`}
                       >
                         <div
                           className={`absolute -left-1.25 top-1 h-2.5 w-2.5 rounded-full border-2 border-white ${act.dotColor}`}

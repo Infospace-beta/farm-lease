@@ -19,7 +19,7 @@ class LandListing(models.Model):
         decimal_places=2
     )  # In Acres
     price_per_month = models.DecimalField(max_digits=12, decimal_places=2)
-    preferred_duration = models.CharField(max_length=50)
+    preferred_duration = models.CharField(max_length=50, blank=True, default='')
     title_deed_number = models.CharField(
         max_length=100,
         help_text="For admin verification only — compulsory"

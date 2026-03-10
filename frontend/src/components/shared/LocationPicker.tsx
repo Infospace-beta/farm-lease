@@ -28,6 +28,7 @@ interface LocationPickerProps {
   onLocationChange: (lat: string, lng: string) => void;
   locationName?: string;
   onLocationNameChange?: (name: string) => void;
+  errorMessage?: string;
 }
 
 /** Component to update map center when coordinates change externally */
@@ -53,22 +54,30 @@ function MapClickHandler({
   return null;
 }
 
+const KENYA_CENTER: [number, number] = [-0.0236, 37.9062];
+const KENYA_ZOOM = 6;
+
 export default function LocationPicker({
   latitude,
   longitude,
   onLocationChange,
   locationName,
   onLocationNameChange,
+  errorMessage,
 }: LocationPickerProps) {
   const [isMounted, setIsMounted] = useState(false);
   const [position, setPosition] = useState<[number, number]>(() => {
-    const lat = parseFloat(latitude) || -1.2921;
-    const lng = parseFloat(longitude) || 36.8219;
-    return [lat, lng];
+    const lat = parseFloat(latitude);
+    const lng = parseFloat(longitude);
+    return !isNaN(lat) && !isNaN(lng) ? [lat, lng] : KENYA_CENTER;
   });
 
   const [error, setError] = useState<string | null>(null);
   const markerRef = useRef<L.Marker>(null);
+
+  const hasValidPosition =
+    latitude !== "" && longitude !== "" &&
+    !isNaN(parseFloat(latitude)) && !isNaN(parseFloat(longitude));
 
   // Ensure component only renders map on client side
   useEffect(() => {
@@ -178,7 +187,7 @@ export default function LocationPicker({
         ) : (
           <MapContainer
             center={position}
-            zoom={13}
+            zoom={hasValidPosition ? 13 : KENYA_ZOOM}
             scrollWheelZoom={true}
             style={{ height: "100%", width: "100%" }}
             zoomControl={true}
@@ -187,15 +196,17 @@ export default function LocationPicker({
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            <Marker
-              position={position}
-              draggable={true}
-              eventHandlers={{
-                dragend: handleMarkerDragEnd,
-              }}
-              ref={markerRef}
-            />
-            <MapUpdater position={position} />
+            {hasValidPosition && (
+              <Marker
+                position={position}
+                draggable={true}
+                eventHandlers={{
+                  dragend: handleMarkerDragEnd,
+                }}
+                ref={markerRef}
+              />
+            )}
+            {hasValidPosition && <MapUpdater position={position} />}
             <MapClickHandler onLocationSelect={handleMapClick} />
           </MapContainer>
         )}
@@ -247,14 +258,19 @@ export default function LocationPicker({
           </label>
           <input
             type="text"
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+            className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-700 focus:border-primary focus:ring-1 focus:ring-primary outline-none ${errorMessage ? "border-red-400" : "border-slate-300"
+              }`}
             value={locationName ?? ""}
             onChange={(e) => onLocationNameChange(e.target.value)}
             placeholder="e.g. Naivasha Town, Nakuru County"
           />
-          <p className="mt-1 text-xs text-slate-400">
-            Auto-filled on pin drop. Shown to lessees as the plot location.
-          </p>
+          {errorMessage ? (
+            <p className="mt-1 text-xs text-red-500">{errorMessage}</p>
+          ) : (
+            <p className="mt-1 text-xs text-slate-400">
+              Auto-filled on pin drop. Shown to lessees as the plot location.
+            </p>
+          )}
         </div>
       )}
 
