@@ -55,8 +55,8 @@ export default function ShopPage() {
   const [productsLoading, setProductsLoading] = useState(true);
   const [productsError, setProductsError] = useState<string | null>(null);
 
-  const fetchProducts = () => {
-    setProductsLoading(true);
+  const fetchProducts = (showLoader = true) => {
+    if (showLoader) setProductsLoading(true);
     setProductsError(null);
     lesseeApi
       .shopProducts()
@@ -65,10 +65,15 @@ export default function ShopPage() {
         setProducts(Array.isArray(data) ? data.map(mapApiProduct) : []);
       })
       .catch(() => setProductsError("Could not load products. Please try again."))
-      .finally(() => setProductsLoading(false));
+      .finally(() => { if (showLoader) setProductsLoading(false); });
   };
 
-  useEffect(() => { fetchProducts(); }, []);
+  useEffect(() => { 
+    fetchProducts(); 
+    // Poll for new products every 3 seconds
+    const interval = setInterval(() => fetchProducts(false), 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   // ── Cart: productId → quantity ─────────────────────────────
   const [cart, setCart] = useState<Record<number, number>>(() => {
@@ -157,7 +162,7 @@ export default function ShopPage() {
         >
           <span className="material-icons-round text-[22px]">shopping_cart</span>
           {cartTotal > 0 && (
-            <span className="absolute -top-1 -right-1 bg-[#13ec80] text-[#0f392b] text-[10px] font-extrabold w-5 h-5 rounded-full flex items-center justify-center shadow">
+            <span className="absolute -top-1 -right-1 bg-[#13ec80] text-sidebar-bg text-[10px] font-extrabold w-5 h-5 rounded-full flex items-center justify-center shadow">
               {cartTotal}
             </span>
           )}
@@ -174,7 +179,7 @@ export default function ShopPage() {
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${activeCategory === cat
-                  ? "bg-[#0f392b] text-white border-[#0f392b] shadow-md"
+                  ? "bg-sidebar-bg text-white border-sidebar-bg shadow-md"
                   : "bg-white text-gray-600 border-gray-200 hover:border-[#047857] hover:text-[#047857]"
                   }`}
               >
@@ -203,7 +208,7 @@ export default function ShopPage() {
               <span className="material-icons-round text-6xl text-red-200 mb-4">error_outline</span>
               <p className="text-lg font-bold text-gray-500">{productsError}</p>
               <button
-                onClick={fetchProducts}
+                onClick={() => fetchProducts()}
                 className="mt-5 px-6 py-2.5 bg-[#047857] text-white text-sm font-semibold rounded-xl hover:bg-emerald-800 transition"
               >
                 Retry
@@ -228,7 +233,7 @@ export default function ShopPage() {
                   className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:shadow-lg hover:border-[#047857]/20 transition-all duration-300 group"
                 >
                   {/* Product Image */}
-                  <div className="relative h-56 bg-gradient-to-br from-[#0f392b]/5 to-emerald-50 flex items-center justify-center">
+                  <div className="relative h-56 bg-gradient-to-br from-sidebar-bg/5 to-emerald-50 flex items-center justify-center">
                     <span className="material-icons-round text-[#047857]/20 text-[80px]">
                       {product.icon}
                     </span>
@@ -285,12 +290,12 @@ export default function ShopPage() {
                     </p>
 
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-xl font-extrabold text-[#0f392b]">
+                      <span className="text-xl font-extrabold text-sidebar-bg">
                         Ksh {product.price.toLocaleString()}
                       </span>
                       {/* Add / qty control */}
                       {(cart[product.id] ?? 0) > 0 ? (
-                        <div className="flex items-center gap-1 bg-[#0f392b] rounded-xl px-2 py-1">
+                        <div className="flex items-center gap-1 bg-sidebar-bg rounded-xl px-2 py-1">
                           <button
                             onClick={() => removeFromCart(product.id)}
                             className="text-white w-5 h-5 flex items-center justify-center hover:text-[#13ec80] transition-colors"
@@ -310,7 +315,7 @@ export default function ShopPage() {
                       ) : (
                         <button
                           onClick={() => addToCart(product.id)}
-                          className="flex items-center gap-1.5 bg-[#0f392b] hover:bg-[#1c4a3a] text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-colors shadow-sm"
+                          className="flex items-center gap-1.5 bg-sidebar-bg hover:bg-[#1c4a3a] text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-colors shadow-sm"
                         >
                           <span className="material-icons-round text-sm">add_shopping_cart</span>
                           Add
@@ -389,7 +394,7 @@ export default function ShopPage() {
                           Ksh {(p.price * (cart[p.id] ?? 0)).toLocaleString()}
                         </p>
                       </div>
-                      <div className="flex items-center gap-1 bg-[#0f392b] rounded-lg px-1.5 py-1 shrink-0">
+                      <div className="flex items-center gap-1 bg-sidebar-bg rounded-lg px-1.5 py-1 shrink-0">
                         <button onClick={() => removeFromCart(p.id)} className="text-white hover:text-[#13ec80]">
                           <span className="material-icons-round text-sm">remove</span>
                         </button>
@@ -407,7 +412,7 @@ export default function ShopPage() {
                 <div className="px-5 py-4 border-t border-gray-100">
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-sm font-semibold text-gray-500">Total</span>
-                    <span className="text-xl font-extrabold text-[#0f392b]">
+                    <span className="text-xl font-extrabold text-sidebar-bg">
                       Ksh {cartValue.toLocaleString()}
                     </span>
                   </div>

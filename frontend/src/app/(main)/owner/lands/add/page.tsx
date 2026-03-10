@@ -216,10 +216,6 @@ export default function UploadLandPage() {
 
   const handlePhotosSubmit = async () => {
     if (!landId) return;
-    if (!photos || photos.length < 3) {
-      setError("Please upload at least 3 photos before submitting.");
-      return;
-    }
     setLoading(true);
     setError(null);
     try {
@@ -917,15 +913,8 @@ export default function UploadLandPage() {
 
                 <div className="flex items-center gap-2 text-xs text-slate-500">
                   <span className="material-symbols-outlined text-sm">info</span>
-                  <span>Minimum 3 photos required for verification.</span>
+                  <span>Upload photos of your land (optional).</span>
                 </div>
-
-                {photos && photos.length > 0 && photos.length < 3 && (
-                  <p className="text-xs text-amber-600 font-medium flex items-center gap-1">
-                    <span className="material-symbols-outlined text-sm">warning</span>
-                    {3 - photos.length} more photo{3 - photos.length !== 1 ? "s" : ""} required (minimum 3)
-                  </p>
-                )}
 
                 {/* Uploaded Photos Preview */}
                 {photos && photos.length > 0 && (
@@ -1092,7 +1081,7 @@ export default function UploadLandPage() {
                   </button>
                   <button
                     onClick={handlePhotosSubmit}
-                    disabled={loading || !photos || photos.length < 3}
+                    disabled={loading}
                     type="button"
                     className="inline-flex items-center justify-center gap-2 md:gap-3 rounded-lg bg-green-600 px-6 md:px-8 py-3 md:py-3.5 text-sm md:text-base font-bold text-white hover:bg-green-700 disabled:opacity-60 transition-all shadow-lg hover:shadow-xl min-w-35 md:min-w-40"
                   >

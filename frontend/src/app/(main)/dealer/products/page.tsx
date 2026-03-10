@@ -91,7 +91,7 @@ export default function ProductsPage() {
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       {/* Toast */}
       {toast && (
-        <div className="fixed top-6 right-6 bg-[#0f392b] text-white text-sm px-4 py-3 rounded-xl shadow-xl z-50 flex items-center gap-2">
+        <div className="fixed top-6 right-6 bg-sidebar-bg text-white text-sm px-4 py-3 rounded-xl shadow-xl z-50 flex items-center gap-2">
           <span className="material-icons-round text-sm">check_circle</span>
           {toast}
         </div>
@@ -114,7 +114,7 @@ export default function ProductsPage() {
         </div>
         <Link
           href="/dealer/products/add"
-          className="flex px-5 py-2.5 text-sm bg-[#0f392b] text-white rounded-lg items-center gap-2 hover:opacity-90 shadow-lg shadow-[#0f392b]/20"
+          className="flex px-5 py-2.5 text-sm bg-sidebar-bg text-white rounded-lg items-center gap-2 hover:opacity-90 shadow-lg shadow-sidebar-bg/20"
         >
           <span className="material-icons-round text-sm">add</span>
           New Product
@@ -128,7 +128,7 @@ export default function ProductsPage() {
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`px-4 py-2 text-sm font-semibold rounded-xl transition ${activeCategory === cat ? "bg-[#0f392b] text-white shadow-md" : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"}`}
+              className={`px-4 py-2 text-sm font-semibold rounded-xl transition ${activeCategory === cat ? "bg-sidebar-bg text-white shadow-md" : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"}`}
             >
               {cat}
             </button>

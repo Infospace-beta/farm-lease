@@ -3,6 +3,7 @@ import { useState, useRef } from "react";
 import Link from "next/link";
 import DealerPageHeader from "@/components/dealer/DealerPageHeader";
 import { useRouter } from "next/navigation";
+import { dealerApi } from "@/lib/services/api";
 
 export default function AddProductPage() {
   const router = useRouter();
@@ -11,6 +12,8 @@ export default function AddProductPage() {
   const [immediatePublish, setImmediatePublish] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
   const [form, setForm] = useState({
     name: "",
@@ -55,14 +58,47 @@ export default function AddProductPage() {
     return e;
   };
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
     const e = validate();
     if (Object.keys(e).length > 0) {
       setErrors(e);
       return;
     }
-    showToast("Product published successfully!");
-    setTimeout(() => router.push("/dealer/products"), 2000);
+
+    setIsPublishing(true);
+    
+    try {
+      // Create FormData to send to backend
+      const formData = new FormData();
+      formData.append("name", form.name);
+      formData.append("category", form.category);
+      formData.append("price", form.unitPrice);
+      formData.append("quantity", form.qty);
+      formData.append("description", form.description || form.summary);
+      formData.append("is_visible", visibility === "public" ? "true" : "false");
+      formData.append("is_active", immediatePublish ? "true" : "false");
+      
+      // Optional fields
+      if (form.sku) formData.append("sku", form.sku);
+      if (form.discountPrice) formData.append("discount_price", form.discountPrice);
+      if (form.lowStockLevel) formData.append("low_stock_level", form.lowStockLevel);
+      if (form.summary) formData.append("summary", form.summary);
+      
+      // Add images if any
+      selectedFiles.forEach((file, index) => {
+        formData.append(`image_${index}`, file);
+      });
+
+      // Call the API
+      await dealerApi.createProduct(formData);
+      
+      showToast("Product published successfully!");
+      setTimeout(() => router.push("/dealer/products"), 2000);
+    } catch (error: any) {
+      console.error("Error creating product:", error);
+      showToast("Failed to publish product. Please try again.");
+      setIsPublishing(false);
+    }
   };
 
   const handleSaveDraft = () => {
@@ -73,6 +109,19 @@ export default function AddProductPage() {
     showToast("Draft saved");
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length + selectedFiles.length > 4) {
+      showToast("Maximum 4 images allowed");
+      return;
+    }
+    setSelectedFiles(prev => [...prev, ...files].slice(0, 4));
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   const inputCls = (field: string) =>
     `w-full px-4 py-3 border rounded-xl text-sm focus:outline-none focus:ring-2 transition ${errors[field] ? "border-red-300 focus:ring-red-200 focus:border-red-400" : "border-gray-200 focus:ring-[#047857]/20 focus:border-[#047857]"}`;
 
@@ -80,7 +129,7 @@ export default function AddProductPage() {
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       {/* Toast */}
       {toast && (
-        <div className="fixed top-6 right-6 bg-[#0f392b] text-white text-sm px-4 py-3 rounded-xl shadow-xl z-50 flex items-center gap-2">
+        <div className="fixed top-6 right-6 bg-sidebar-bg text-white text-sm px-4 py-3 rounded-xl shadow-xl z-50 flex items-center gap-2">
           <span className="material-icons-round text-sm">check_circle</span>
           {toast}
         </div>
@@ -111,17 +160,18 @@ export default function AddProductPage() {
         type="file"
         accept="image/*"
         multiple
+        onChange={handleFileSelect}
         className="hidden"
       />
 
       <div className="flex-1 overflow-y-auto p-4 lg:p-8 bg-[#f8fafc]">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-[1200px]">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-300">
           {/* Left — Main Form */}
           <div className="lg:col-span-8 space-y-6">
             {/* Section 1: Basic Information */}
             <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-8 h-8 bg-[#0f392b] rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                <div className="w-8 h-8 bg-sidebar-bg rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0">
                   1
                 </div>
                 <div>
@@ -189,7 +239,7 @@ export default function AddProductPage() {
             {/* Section 2: Pricing & Stock */}
             <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-8 h-8 bg-[#0f392b] rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                <div className="w-8 h-8 bg-sidebar-bg rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0">
                   2
                 </div>
                 <div>
@@ -301,7 +351,7 @@ export default function AddProductPage() {
             {/* Section 3: Description */}
             <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-8 h-8 bg-[#0f392b] rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                <div className="w-8 h-8 bg-sidebar-bg rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0">
                   3
                 </div>
                 <div>
@@ -352,7 +402,7 @@ export default function AddProductPage() {
             {/* Section 4: Media */}
             <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
               <div className="flex items-center gap-3 mb-5">
-                <div className="w-8 h-8 bg-[#0f392b] rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                <div className="w-8 h-8 bg-sidebar-bg rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0">
                   4
                 </div>
                 <div>
@@ -377,17 +427,40 @@ export default function AddProductPage() {
                 </p>
               </div>
               <div className="grid grid-cols-4 gap-2">
-                {[0, 1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    onClick={() => fileRef.current?.click()}
-                    className="aspect-square bg-gray-100 rounded-xl flex items-center justify-center border-2 border-dashed border-gray-200 cursor-pointer hover:border-[#047857] hover:bg-emerald-50/30 transition"
-                  >
-                    <span className="material-icons-round text-gray-300 text-sm">
-                      add
-                    </span>
-                  </div>
-                ))}
+                {[0, 1, 2, 3].map((i) => {
+                  const file = selectedFiles[i];
+                  if (file) {
+                    return (
+                      <div key={i} className="aspect-square relative group">
+                        <img
+                          src={URL.createObjectURL(file)}
+                          alt={`Preview ${i + 1}`}
+                          className="w-full h-full object-cover rounded-xl"
+                        />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeFile(i);
+                          }}
+                          className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                        >
+                          <span className="material-icons-round text-xs">close</span>
+                        </button>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div
+                      key={i}
+                      onClick={() => fileRef.current?.click()}
+                      className="aspect-square bg-gray-100 rounded-xl flex items-center justify-center border-2 border-dashed border-gray-200 cursor-pointer hover:border-[#047857] hover:bg-emerald-50/30 transition"
+                    >
+                      <span className="material-icons-round text-gray-300 text-sm">
+                        add
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -445,7 +518,7 @@ export default function AddProductPage() {
                 </div>
                 <button
                   onClick={() => setImmediatePublish(!immediatePublish)}
-                  className={`w-10 h-5 rounded-full transition-colors relative flex-shrink-0 ${immediatePublish ? "bg-blue-500" : "bg-gray-300"}`}
+                  className={`w-10 h-5 rounded-full transition-colors relative shrink-0 ${immediatePublish ? "bg-blue-500" : "bg-gray-300"}`}
                 >
                   <span
                     className={`absolute w-4 h-4 bg-white rounded-full top-0.5 transition-all shadow ${immediatePublish ? "left-5" : "left-0.5"}`}
@@ -457,12 +530,24 @@ export default function AddProductPage() {
             {/* Publish Button */}
             <button
               onClick={handlePublish}
-              className="w-full py-4 bg-[#047857] text-white rounded-2xl text-sm font-bold hover:opacity-90 transition shadow-lg shadow-[#047857]/20 flex items-center justify-center gap-2"
+              disabled={isPublishing}
+              className="w-full py-4 bg-[#047857] text-white rounded-2xl text-sm font-bold hover:opacity-90 transition shadow-lg shadow-[#047857]/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Publish Product
-              <span className="material-icons-round text-base">
-                arrow_forward
-              </span>
+              {isPublishing ? (
+                <>
+                  <span className="material-icons-round text-base animate-spin">
+                    refresh
+                  </span>
+                  Publishing...
+                </>
+              ) : (
+                <>
+                  Publish Product
+                  <span className="material-icons-round text-base">
+                    arrow_forward
+                  </span>
+                </>
+              )}
             </button>
             <p className="text-center text-[10px] text-gray-400">
               By publishing, you agree to our{" "}

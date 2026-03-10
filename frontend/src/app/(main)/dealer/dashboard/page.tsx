@@ -176,7 +176,7 @@ export default function DealerDashboardPage() {
         </button>
         <Link
           href="/dealer/products/add"
-          className="flex px-5 py-2.5 bg-[#0f392b] text-white rounded-lg items-center gap-2 hover:opacity-90 transition shadow-lg shadow-[#0f392b]/20"
+          className="flex px-5 py-2.5 bg-sidebar-bg text-white rounded-lg items-center gap-2 hover:opacity-90 transition shadow-lg shadow-sidebar-bg/20"
         >
           <span className="material-icons-round text-white text-sm">add</span>
           <span className="font-medium text-sm">New Product</span>
@@ -184,7 +184,7 @@ export default function DealerDashboardPage() {
       </DealerPageHeader>
 
       <div className="flex-1 overflow-y-auto p-4 lg:p-8 bg-[#f8fafc]">
-        <div className="grid grid-cols-12 gap-6 lg:gap-8 max-w-[1600px] mx-auto pb-8">
+        <div className="grid grid-cols-12 gap-6 lg:gap-8 max-w-400 mx-auto pb-8">
           {/* Left Column */}
           <div className="col-span-12 lg:col-span-8 xl:col-span-9 space-y-8 flex flex-col min-w-0">
             {/* Stat Cards */}
@@ -346,7 +346,7 @@ export default function DealerDashboardPage() {
                       <option key={k}>{k}</option>
                     ))}
                   </select>
-                  <button className="p-1.5 text-gray-400 hover:text-[#0f392b] hover:bg-gray-50 rounded-lg transition">
+                  <button className="p-1.5 text-gray-400 hover:text-sidebar-bg hover:bg-gray-50 rounded-lg transition">
                     <span className="material-icons-round text-lg">
                       download
                     </span>

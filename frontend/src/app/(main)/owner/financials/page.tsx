@@ -48,7 +48,7 @@ export default function FinancialsPage() {
         ownerApi.revenueChart("7months"),
       ]);
 
-      setTransactions(transactionsRes.data);
+      setTransactions(transactionsRes.data.results || []);
       setSummary(summaryRes.data);
       setChartData(chartRes.data.values || []);
     } catch (err: any) {

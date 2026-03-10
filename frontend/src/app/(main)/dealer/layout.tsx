@@ -19,16 +19,7 @@ const navItems = [
     icon: "add_circle",
     label: "Add New Products",
   },
-  { href: "/dealer/queries", icon: "support_agent", label: "Customer Queries" },
   { href: "/dealer/transactions", icon: "receipt_long", label: "Transactions" },
-  { href: "/dealer/analytics", icon: "insights", label: "Sales Analytics" },
-  { href: "/dealer/trends", icon: "trending_up", label: "Market Trends" },
-  {
-    href: "/dealer/notifications",
-    icon: "notifications",
-    label: "Notifications",
-    badge: "2",
-  },
 ];
 
 export default function DealerLayout({
@@ -63,7 +54,7 @@ export default function DealerLayout({
   return (
     <div className="bg-[#f8fafc] text-gray-800 antialiased overflow-hidden h-screen flex flex-col lg:flex-row">
       {/* ── Mobile top-bar ─────────────────────────────────────── */}
-      <header className="lg:hidden fixed top-0 inset-x-0 z-40 h-14 bg-[#0f392b] flex items-center gap-3 px-4 shadow-lg shrink-0">
+      <header className="lg:hidden fixed top-0 inset-x-0 z-40 h-14 bg-sidebar-bg flex items-center gap-3 px-4 shadow-lg shrink-0">
         <button
           onClick={() => setMobileSidebarOpen(true)}
           className="p-2 text-white rounded-lg hover:bg-white/10 transition-colors"
@@ -97,7 +88,7 @@ export default function DealerLayout({
       <aside
         className={`
           fixed lg:relative top-0 left-0 z-50 h-full w-72 lg:w-72
-          bg-[#0f392b] flex flex-col py-6 px-6
+          bg-sidebar-bg flex flex-col py-6 px-6
           shadow-xl border-r border-white/5 shrink-0 overflow-y-auto
           transition-transform duration-300 ease-in-out
           ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"}
@@ -168,7 +159,7 @@ export default function DealerLayout({
           <Link
             href="/dealer/profile"
             onClick={() => setMobileSidebarOpen(false)}
-            className="bg-[#0a261c]/30 rounded-xl p-3 flex items-center gap-3 cursor-pointer hover:bg-[#0a261c]/50 transition-colors border border-white/5 block"
+            className="bg-[#0a261c]/30 rounded-xl p-3 flex items-center gap-3 cursor-pointer hover:bg-[#0a261c]/50 transition-colors border border-white/5"
           >
             <div className="w-10 h-10 rounded-full bg-[#047857]/40 border-2 border-white/20 flex items-center justify-center shrink-0">
               <span className="material-icons-round text-white text-xl">person</span>
