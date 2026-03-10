@@ -32,17 +32,44 @@ class IsAdminUser(permissions.BasePermission):
 
 
 # ─── STEP 1: Basic Info ───────────────────────────────────────
-@api_view(['POST'])
+@api_view(['GET', 'POST'])
 @permission_classes([permissions.IsAuthenticated])
 def create_basic_info(request):
     """Create the basic land listing record (Step 1 of the upload flow)."""
-    serializer = LandListingSerializer(
-        data=request.data, context={'request': request}
-    )
-    if serializer.is_valid():
-        land = serializer.save()
-        return Response({"land_id": land.id}, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        import traceback
+        
+        # Handle GET request (for debugging)
+        if request.method == 'GET':
+            return Response({
+                'message': 'This endpoint expects POST request',
+                'user': str(request.user),
+                'authenticated': request.user.is_authenticated
+            })
+        
+        print("==== create_basic_info called ====")
+        print(f"User: {request.user}")
+        print(f"Request data: {request.data}")
+        
+        serializer = LandListingSerializer(
+            data=request.data, context={'request': request}
+        )
+        if serializer.is_valid():
+            land = serializer.save()
+            print(f"Land created successfully: ID={land.id}")
+            return Response({"land_id": land.id}, status=status.HTTP_201_CREATED)
+        print(f"Serializer errors: {serializer.errors}")
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        import traceback
+        print(f"==== Error in create_basic_info ====")
+        print(f"Error: {str(e)}")
+        print(f"Traceback: {traceback.format_exc()}")
+        print(f"===================================")
+        return Response(
+            {'error': 'Internal server error', 'detail': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 
 # ─── STEP 2: Soil & Climate ───────────────────────────────────
@@ -110,15 +137,27 @@ def upload_land_images(request, land_id):
 @permission_classes([permissions.IsAuthenticated])
 def list_user_lands(request):
     """Return all land listings belonging to the authenticated owner."""
-    lands = LandListing.objects.filter(
-        owner=request.user
-    ).select_related('soil_data').prefetch_related('images').order_by(
-        '-created_at'
-    )
-    serializer = LandListingSerializer(
-        lands, many=True, context={'request': request}
-    )
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    try:
+        lands = LandListing.objects.filter(
+            owner=request.user
+        ).select_related('soil_data').prefetch_related('images').order_by(
+            '-created_at'
+        )
+        serializer = LandListingSerializer(
+            lands, many=True, context={'request': request}
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Exception as e:
+        import traceback
+        print(f"==== Error in list_user_lands ====")
+        print(f"User: {request.user}")
+        print(f"Error: {str(e)}")
+        print(f"Traceback: {traceback.format_exc()}")
+        print(f"==================================")
+        return Response(
+            {'error': 'Internal server error', 'detail': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 
 # ─── Public: VERIFIED LANDS for lessees ──────────────────────
@@ -238,34 +277,46 @@ class LandownerDashboardStats(APIView):
 
     def get(self, request):
         """Handle GET — compute and return portfolio stats."""
-        lands = LandListing.objects.filter(owner=request.user)
+        try:
+            lands = LandListing.objects.filter(owner=request.user)
 
-        total_lands = lands.count()
-        active_leases = lands.filter(status='Leased').count()
-        vacant_lands = lands.filter(status='Vacant').count()
-        pending_verifications = lands.filter(
-            is_verified=False, is_flagged=False
-        ).count()
-        flagged_lands = lands.filter(is_flagged=True).count()
+            total_lands = lands.count()
+            active_leases = lands.filter(status='Leased').count()
+            vacant_lands = lands.filter(status='Vacant').count()
+            pending_verifications = lands.filter(
+                is_verified=False, is_flagged=False
+            ).count()
+            flagged_lands = lands.filter(is_flagged=True).count()
 
-        area_result = lands.aggregate(total=Sum('total_area'))
-        total_area = float(area_result['total'] or 0)
+            area_result = lands.aggregate(total=Sum('total_area'))
+            total_area = float(area_result['total'] or 0)
 
-        # Monthly revenue = sum of price_per_month for all Leased lands
-        revenue_result = lands.filter(
-            status='Leased'
-        ).aggregate(rev=Sum('price_per_month'))
-        monthly_revenue = float(revenue_result['rev'] or 0)
+            # Monthly revenue = sum of price_per_month for all Leased lands
+            revenue_result = lands.filter(
+                status='Leased'
+            ).aggregate(rev=Sum('price_per_month'))
+            monthly_revenue = float(revenue_result['rev'] or 0)
 
-        return Response({
-            'total_lands': total_lands,
-            'active_leases': active_leases,
-            'vacant_lands': vacant_lands,
-            'pending_verifications': pending_verifications,
-            'flagged_lands': flagged_lands,
-            'total_area': total_area,
-            'monthly_revenue': monthly_revenue,
-        })
+            return Response({
+                'total_lands': total_lands,
+                'active_leases': active_leases,
+                'vacant_lands': vacant_lands,
+                'pending_verifications': pending_verifications,
+                'flagged_lands': flagged_lands,
+                'total_area': total_area,
+                'monthly_revenue': monthly_revenue,
+            })
+        except Exception as e:
+            import traceback
+            print(f"==== Error in LandownerDashboardStats ====")
+            print(f"User: {request.user}")
+            print(f"Error: {str(e)}")
+            print(f"Traceback: {traceback.format_exc()}")
+            print(f"==========================================")
+            return Response(
+                {'error': 'Internal server error', 'detail': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 # ─── ADMIN DASHBOARD STATS ────────────────────────────────────
@@ -363,51 +414,67 @@ def owner_notifications(request):
 @permission_classes([permissions.IsAuthenticated])
 def owner_activity_feed(request):
     """Return recent activity feed for the authenticated land owner."""
-    lands = LandListing.objects.filter(owner=request.user).order_by('-created_at')
-    activities = []
-    
-    # Recently created lands
-    for land in lands[:3]:
-        days_ago = (date.today() - land.created_at.date()).days
-        time_str = (
-            'Today' if days_ago == 0 else
-            'Yesterday' if days_ago == 1 else
-            f'{days_ago} days ago'
-        )
+    try:
+        lands = LandListing.objects.filter(owner=request.user).order_by('-created_at')
+        activities = []
         
-        if land.is_verified:
+        # Recently created lands
+        for land in lands[:3]:
+            # Safety check for created_at
+            if not land.created_at:
+                continue
+                
+            days_ago = (date.today() - land.created_at.date()).days
+            time_str = (
+                'Today' if days_ago == 0 else
+                'Yesterday' if days_ago == 1 else
+                f'{days_ago} days ago'
+            )
+            
+            if land.is_verified:
+                activities.append({
+                    'dotColor': 'bg-green-500',
+                    'time': time_str,
+                    'title': f'Land "{land.title}" listed successfully',
+                    'body': f'Your {land.total_area} acre plot is now visible to lessees.',
+                    'type': 'verified',
+                })
+            elif land.is_flagged:
+                activities.append({
+                    'dotColor': 'bg-red-500',
+                    'time': time_str,
+                    'title': f'Land "{land.title}" flagged',
+                    'body': land.flag_reason or 'Please contact admin.',
+                    'type': 'flagged',
+                })
+            else:
+                activities.append({
+                    'dotColor': 'bg-amber-500',
+                    'time': time_str,
+                    'title': f'Land "{land.title}" pending verification',
+                    'body': 'Awaiting admin verification of Title Deed Number.',
+                    'type': 'pending',
+                })
+        
+        # Add a welcome message if no lands
+        if not activities:
             activities.append({
-                'dotColor': 'bg-green-500',
-                'time': time_str,
-                'title': f'Land "{land.title}" listed successfully',
-                'body': f'Your {land.total_area} acre plot is now visible to lessees.',
-                'type': 'verified',
+                'dotColor': 'bg-blue-500',
+                'time': 'Now',
+                'title': 'Welcome to FarmLease',
+                'body': 'Start by listing your first land plot.',
+                'type': 'info',
             })
-        elif land.is_flagged:
-            activities.append({
-                'dotColor': 'bg-red-500',
-                'time': time_str,
-                'title': f'Land "{land.title}" flagged',
-                'body': land.flag_reason or 'Please contact admin.',
-                'type': 'flagged',
-            })
-        else:
-            activities.append({
-                'dotColor': 'bg-amber-500',
-                'time': time_str,
-                'title': f'Land "{land.title}" pending verification',
-                'body': 'Awaiting admin verification of Title Deed Number.',
-                'type': 'pending',
-            })
-    
-    # Add a welcome message if no lands
-    if not activities:
-        activities.append({
-            'dotColor': 'bg-blue-500',
-            'time': 'Now',
-            'title': 'Welcome to FarmLease',
-            'body': 'Start by listing your first land plot.',
-            'type': 'info',
-        })
-    
-    return Response(activities[:10])  # Return max 10 activities
+        
+        return Response(activities[:10])  # Return max 10 activities
+    except Exception as e:
+        import traceback
+        print(f"==== Error in owner_activity_feed ====")
+        print(f"User: {request.user}")
+        print(f"Error: {str(e)}")
+        print(f"Traceback: {traceback.format_exc()}")
+        print(f"======================================")
+        return Response(
+            {'error': 'Internal server error', 'detail': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

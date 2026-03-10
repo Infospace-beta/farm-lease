@@ -25,6 +25,7 @@ from accounts.views import (
     mark_notification_read,
     mark_all_notifications_read,
 )
+from productplace.views import dealer_dashboard
 
 def favicon_view(request):
     return HttpResponse(status=204)  # No Content
@@ -36,6 +37,10 @@ urlpatterns = [
     path('api/lands/', include('landmanagement.urls')),
     path('api/contracts/', include('contracts.urls')),
     path('api/payments/', include('payments.urls')),
+    path('api/productplace/', include('productplace.urls')),
+
+    # Dealer-specific endpoints
+    path('api/dealer/dashboard/', dealer_dashboard, name='dealer-dashboard'),
 
     # Lessee-specific endpoints
     path('api/lessee/dashboard/', LesseeDashboardView.as_view(), name='lessee-dashboard'),

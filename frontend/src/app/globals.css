@@ -10,6 +10,14 @@
   /* Brand primary green — used across all owner/lessee pages */
   --color-primary: #16a34a;
   --color-primary-dark: #15803d;
+
+  /* Custom spacing values */
+  --spacing-2\.75: 11px;
+  --spacing-5\.5: 22px;
+
+  /* Custom max-width values */
+  --max-width-300: 1200px;
+  --max-width-400: 1600px;
 }
 
 :root {

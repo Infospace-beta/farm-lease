@@ -203,10 +203,6 @@ export default function OrdersPage() {
 
   const printInvoice = () => window.print();
 
-  const selected = allOrders.find((o) => o.id === selectedId) ?? allOrders[0];
-  const selDetail = ORDER_DETAILS[selectedId] ?? ORDER_DETAILS["#ORD-2489"];
-  const timeline = TIMELINE[selected.status] ?? TIMELINE["Pending"];
-
   const filtered = allOrders.filter((o) => {
     const matchTab =
       activeTab === "All Orders" ||
@@ -221,7 +217,11 @@ export default function OrdersPage() {
     return matchTab && matchSearch;
   });
 
-  const canAct =
+  const selected = allOrders.find((o) => o.id === selectedId) ?? allOrders[0];
+  const selDetail = ORDER_DETAILS[selectedId] ?? ORDER_DETAILS["#ORD-2489"];
+  const timeline = selected ? TIMELINE[selected.status] ?? TIMELINE["Pending"] : TIMELINE["Pending"];
+
+  const canAct = selected && 
     selected.status !== "Cancelled" &&
     selected.status !== "Collected" &&
     selected.status !== "Delivered";
@@ -230,7 +230,7 @@ export default function OrdersPage() {
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       {/* Toast */}
       {toast && (
-        <div className="fixed top-6 right-6 bg-[#0f392b] text-white text-sm px-4 py-3 rounded-xl shadow-xl z-50 flex items-center gap-2">
+        <div className="fixed top-6 right-6 bg-sidebar-bg text-white text-sm px-4 py-3 rounded-xl shadow-xl z-50 flex items-center gap-2">
           <span className="material-icons-round text-sm">check_circle</span>
           {toast}
         </div>
@@ -254,12 +254,27 @@ export default function OrdersPage() {
         <button className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-500">
           <span className="material-icons-round text-base">tune</span>
         </button>
-        <button className="flex px-4 py-2 text-sm bg-[#0f392b] text-white rounded-lg items-center gap-2 hover:opacity-90 shadow-lg shadow-[#0f392b]/20">
+        <button className="flex px-4 py-2 text-sm bg-sidebar-bg text-white rounded-lg items-center gap-2 hover:opacity-90 shadow-lg shadow-sidebar-bg/20">
           <span className="material-icons-round text-sm">download</span>
           Export
         </button>
       </DealerPageHeader>
 
+      {loading ? (
+        <div className="flex-1 flex items-center justify-center bg-[#f8fafc]">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#047857]"></div>
+            <p className="mt-4 text-sm text-gray-500">Loading orders...</p>
+          </div>
+        </div>
+      ) : !selected ? (
+        <div className="flex-1 flex items-center justify-center bg-[#f8fafc]">
+          <div className="text-center">
+            <span className="material-icons-round text-6xl text-gray-300">shopping_bag</span>
+            <p className="mt-4 text-sm text-gray-500">No orders found</p>
+          </div>
+        </div>
+      ) : (
       <div className="flex gap-6 flex-1 min-h-0 p-4 lg:p-8 bg-[#f8fafc]">
         {/* Left — Orders Table */}
         <div className="flex-1 flex flex-col min-w-0 bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
@@ -314,7 +329,7 @@ export default function OrdersPage() {
                     </td>
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-[#0f392b] rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
+                        <div className="w-8 h-8 bg-sidebar-bg rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0">
                           {order.initials}
                         </div>
                         <span className="text-sm font-semibold text-gray-800">
@@ -372,7 +387,7 @@ export default function OrdersPage() {
         </div>
 
         {/* Right — Order Detail Panel */}
-        <div className="w-80 xl:w-96 bg-white rounded-3xl border border-gray-100 shadow-sm overflow-y-auto flex flex-col flex-shrink-0">
+        <div className="w-80 xl:w-96 bg-white rounded-3xl border border-gray-100 shadow-sm overflow-y-auto flex flex-col shrink-0">
           <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
             <span className="font-bold text-[#047857] font-mono text-sm">
               {selected.id}
@@ -394,14 +409,14 @@ export default function OrdersPage() {
                 Order Status
               </h4>
               <div className="relative">
-                <div className="absolute left-[11px] top-0 bottom-0 w-0.5 bg-gray-100" />
+                <div className="absolute left-2.75 top-0 bottom-0 w-0.5 bg-gray-100" />
                 {timeline.map((step, i) => (
                   <div
                     key={i}
                     className="relative flex items-start gap-3 mb-4 last:mb-0"
                   >
                     <div
-                      className={`relative z-10 w-[22px] h-[22px] rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${step.done ? "bg-[#047857]" : step.current ? "bg-orange-500" : "bg-gray-200"}`}
+                      className={`relative z-10 w-5.5 h-5.5 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${step.done ? "bg-[#047857]" : step.current ? "bg-orange-500" : "bg-gray-200"}`}
                     >
                       {step.done ? (
                         <span className="material-icons-round text-white text-xs">
@@ -436,7 +451,7 @@ export default function OrdersPage() {
                 Customer
               </h4>
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 bg-[#0f392b] rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                <div className="w-10 h-10 bg-sidebar-bg rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0">
                   {selected.initials}
                 </div>
                 <div>
@@ -528,6 +543,7 @@ export default function OrdersPage() {
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }

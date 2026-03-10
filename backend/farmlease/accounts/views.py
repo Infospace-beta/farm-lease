@@ -127,6 +127,31 @@ class SignupView(generics.CreateAPIView):
     serializer_class = SignupSerializer
     permission_classes = [permissions.AllowAny]
 
+    def create(self, request, *args, **kwargs):
+        """Override to add better error logging and handling"""
+        serializer = self.get_serializer(data=request.data)
+        
+        try:
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            headers = self.get_success_headers(serializer.data)
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED,
+                headers=headers
+            )
+        except Exception as e:
+            # Log the error for debugging
+            import traceback
+            print(f"==== Signup Error ====")
+            print(f"Request data: {request.data}")
+            print(f"Error: {str(e)}")
+            if hasattr(e, 'detail'):
+                print(f"Error detail: {e.detail}")
+            print(f"Traceback: {traceback.format_exc()}")
+            print(f"=====================")
+            raise
+
 
 class MyTokenObtainPairView(TokenObtainPairView):
     """Login view returning JWT tokens with custom claims."""

@@ -989,7 +989,7 @@ export default function UploadLandPage() {
 
                 <div className="flex items-center gap-2 text-xs text-slate-500">
                   <span className="material-symbols-outlined text-sm">info</span>
-                  <span>Minimum 3 photos required for verification.</span>
+                  <span>Upload photos of your land (optional).</span>
                 </div>
 
                 {photos.length > 0 && photos.length < 3 && (
