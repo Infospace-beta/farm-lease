@@ -334,6 +334,7 @@ type Listing = {
   matchColor: string;
   status: string | null;
   photoUrl?: string;
+  photoUrls: string[];
 };
 
 // ── Map a verified API land to the Listing display shape ──────
@@ -381,15 +382,19 @@ function mapApiToListing(l: ApiLand): Listing {
     ["horticulture", "Horticulture"], ["cassava", "Cassava"], ["coconut", "Coconut"],
   ];
   for (const [kw, label] of cropHints) { if (desc.includes(kw)) { badge = label; break; } }
-  const photoUrl = l.images?.[0]?.image
-    ? `${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}${l.images[0].image}`
-    : undefined;
+  const BASE = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
+  const photoUrls = (l.images ?? []).map((img) => {
+    const raw = img.image;
+    return raw.startsWith("http") ? raw : `${BASE}${raw}`;
+  });
+  const photoUrl = photoUrls[0];
   return {
     id: l.id, name: l.title, acresNum: Number(l.total_area),
     location: loc, region, price, soil, water, slope: "Flat",
     badge, badgeColor: BADGE_COLORS[l.id % BADGE_COLORS.length],
     match: null, matchColor: "", status: null,
     photoUrl,
+    photoUrls,
   };
 }
 
@@ -509,12 +514,12 @@ export default function BrowseLandPage() {
   }, []);
 
   // ── Filter panel state ─────────────────────────────────────
-  const [minAcres, setMinAcres] = useState(5);
-  const [maxAcres, setMaxAcres] = useState(100);
+  const [minAcres, setMinAcres] = useState(0);
+  const [maxAcres, setMaxAcres] = useState(500);
   const [soilType, setSoilType] = useState("Any Soil Type");
   const [waterSource, setWaterSource] = useState("Any Water Source");
   const [minPrice, setMinPrice] = useState(0);
-  const [maxPrice, setMaxPrice] = useState(200000);
+  const [maxPrice, setMaxPrice] = useState(10000000);
 
   // Region searchable multi-select
   const [regionQuery, setRegionQuery] = useState("");
@@ -559,12 +564,12 @@ export default function BrowseLandPage() {
   }, [selectedRegions]);
 
   function resetFilters() {
-    setMinAcres(5);
-    setMaxAcres(100);
+    setMinAcres(0);
+    setMaxAcres(500);
     setSoilType("Any Soil Type");
     setWaterSource("Any Water Source");
     setMinPrice(0);
-    setMaxPrice(200000);
+    setMaxPrice(10000000);
     setSelectedRegions([]);
     setRegionQuery("");
     setHeaderSearch("");
@@ -850,17 +855,27 @@ export default function BrowseLandPage() {
             <div>
               <div className="flex justify-between items-center mb-1.5">
                 <span className="text-[10px] text-gray-500 font-medium">Min (Acres)</span>
-                <span className="text-[11px] font-bold text-[#047857]">{minAcres} ac</span>
+                <input
+                  type="number"
+                  min="0"
+                  max={maxAcres - 1}
+                  value={minAcres}
+                  onChange={(e) => {
+                    const v = Math.max(0, Math.min(Number(e.target.value), maxAcres - 1));
+                    setMinAcres(isNaN(v) ? 0 : v);
+                  }}
+                  className="w-20 text-right text-[11px] font-bold text-[#047857] border border-[#047857]/30 rounded px-1.5 py-0.5 bg-white focus:outline-none focus:border-[#047857]"
+                />
               </div>
               <input
                 type="range"
-                min="1"
-                max="100"
+                min="0"
+                max="500"
                 value={minAcres}
                 onChange={(e) => setMinAcres(Math.min(Number(e.target.value), maxAcres - 1))}
                 className="w-full h-2 rounded-full appearance-none cursor-pointer"
                 style={{
-                  background: `linear-gradient(to right, #047857 0%, #047857 ${((minAcres - 1) / 99) * 100}%, #e5e7eb ${((minAcres - 1) / 99) * 100}%, #e5e7eb 100%)`,
+                  background: `linear-gradient(to right, #047857 0%, #047857 ${(minAcres / 500) * 100}%, #e5e7eb ${(minAcres / 500) * 100}%, #e5e7eb 100%)`,
                   accentColor: "#047857",
                 }}
               />
@@ -868,17 +883,27 @@ export default function BrowseLandPage() {
             <div>
               <div className="flex justify-between items-center mb-1.5">
                 <span className="text-[10px] text-gray-500 font-medium">Max (Acres)</span>
-                <span className="text-[11px] font-bold text-[#047857]">{maxAcres} ac</span>
+                <input
+                  type="number"
+                  min={minAcres + 1}
+                  max="500"
+                  value={maxAcres}
+                  onChange={(e) => {
+                    const v = Math.min(500, Math.max(Number(e.target.value), minAcres + 1));
+                    setMaxAcres(isNaN(v) ? 500 : v);
+                  }}
+                  className="w-20 text-right text-[11px] font-bold text-[#047857] border border-[#047857]/30 rounded px-1.5 py-0.5 bg-white focus:outline-none focus:border-[#047857]"
+                />
               </div>
               <input
                 type="range"
-                min="1"
-                max="100"
+                min="0"
+                max="500"
                 value={maxAcres}
                 onChange={(e) => setMaxAcres(Math.max(Number(e.target.value), minAcres + 1))}
                 className="w-full h-2 rounded-full appearance-none cursor-pointer"
                 style={{
-                  background: `linear-gradient(to right, #047857 0%, #047857 ${((maxAcres - 1) / 99) * 100}%, #e5e7eb ${((maxAcres - 1) / 99) * 100}%, #e5e7eb 100%)`,
+                  background: `linear-gradient(to right, #047857 0%, #047857 ${(maxAcres / 500) * 100}%, #e5e7eb ${(maxAcres / 500) * 100}%, #e5e7eb 100%)`,
                   accentColor: "#047857",
                 }}
               />
@@ -1023,6 +1048,7 @@ export default function BrowseLandPage() {
                           src={listing.photoUrl}
                           alt={listing.name}
                           className="absolute inset-0 w-full h-full object-cover"
+                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
                         />
                       ) : (
                         <div className="absolute inset-0 bg-[#0f392b]/10 flex items-center justify-center">

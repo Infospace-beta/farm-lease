@@ -90,8 +90,8 @@ export default function UploadLandPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [landId, setLandId] = useState<number | null>(null);
-  const [photos, setPhotos] = useState<FileList | null>(null);
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
 
   const [basic, setBasic] = useState<BasicForm>({
     title: "",
@@ -101,8 +101,8 @@ export default function UploadLandPage() {
     preferred_duration: "",
     title_deed_number: "",
     location_name: "",
-    latitude: "-1.2921",
-    longitude: "36.8219",
+    latitude: "",
+    longitude: "",
     has_irrigation: false,
     has_electricity: false,
     has_road_access: false,
@@ -121,24 +121,43 @@ export default function UploadLandPage() {
   });
 
   // ── Persist form across page refreshes ──────────────────
+  // hasHydrated guards the save effect from overwriting storage with
+  // default state before the restore effect has run.
+  const [hasHydrated, setHasHydrated] = useState(false);
+
   useEffect(() => {
     const savedBasic = sessionStorage.getItem("fl_add_basic");
     const savedSoil = sessionStorage.getItem("fl_add_soil");
+    const savedStep = sessionStorage.getItem("fl_add_step");
     if (savedBasic) {
-      try { setBasic(JSON.parse(savedBasic)); } catch { /* ignore */ }
+      try {
+        // Restore all fields including location so a page refresh preserves everything
+        setBasic((prev) => ({ ...prev, ...JSON.parse(savedBasic) }));
+      } catch { /* ignore */ }
     }
     if (savedSoil) {
       try { setSoil(JSON.parse(savedSoil)); } catch { /* ignore */ }
     }
+    if (savedStep) {
+      try { setStep(parseInt(savedStep, 10)); } catch { /* ignore */ }
+    }
+    setHasHydrated(true);
   }, []);
 
   useEffect(() => {
+    if (!hasHydrated) return;
     sessionStorage.setItem("fl_add_basic", JSON.stringify(basic));
-  }, [basic]);
+  }, [basic, hasHydrated]);
 
   useEffect(() => {
+    if (!hasHydrated) return;
     sessionStorage.setItem("fl_add_soil", JSON.stringify(soil));
-  }, [soil]);
+  }, [soil, hasHydrated]);
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+    sessionStorage.setItem("fl_add_step", String(step));
+  }, [step, hasHydrated]);
 
   /* ── Helpers ────────────────────────────────────────── */
   /** Returns null for empty string so the backend gets null not "" */
@@ -149,8 +168,8 @@ export default function UploadLandPage() {
     v.trim() === "" ? null : v.trim();
 
   /* ── Handlers ───────────────────────────────────────── */
-  const handleBasicSubmit = async () => {
-    // Collect all field validation errors at once
+  // Step 0 → 1: validate locally only, no API call
+  const handleBasicSubmit = () => {
     const errs: Record<string, string> = {};
     if (!basic.title.trim()) errs.title = "Plot title is required.";
     if (!basic.description.trim()) errs.description = "Description is required.";
@@ -158,88 +177,130 @@ export default function UploadLandPage() {
     const rawPrice = basic.price_per_month.replace(/,/g, "");
     if (!rawPrice) errs.price_per_month = "Monthly price is required.";
     if (!basic.title_deed_number.trim()) errs.title_deed_number = "Title Deed Number is required for verification.";
+    if (!basic.preferred_duration) errs.preferred_duration = "Preferred duration is required.";
     if (!basic.latitude || !basic.longitude) errs.location = "Please pick a location on the map or use current location.";
+    if (!basic.location_name.trim()) errs.location_name = "Location name is required.";
     if (Object.keys(errs).length > 0) {
       setFieldErrors(errs);
       return;
     }
     setFieldErrors({});
-
-    setLoading(true);
     setError(null);
-    try {
-      const { data } = await landsApi.createBasic({ ...basic, price_per_month: rawPrice });
-      setLandId(data.land_id);
-      setStep(1);
-    } catch (e: unknown) {
-      const errData = (e as { response?: { data?: Record<string, unknown> } })
-        ?.response?.data;
-      if (errData) {
-        const msgs = Object.entries(errData)
-          .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
-          .join(" | ");
-        setError(msgs);
-      } else {
-        setError("Failed to save basic info. Check your inputs.");
-      }
-    } finally {
-      setLoading(false);
-    }
+    setStep(1);
   };
 
-  const handleSoilSubmit = async () => {
-    if (!landId) return;
-    setLoading(true);
-    setError(null);
-    try {
-      // Send null for any empty field — all optional
-      const payload = {
-        soil_type: strOrNull(soil.soil_type),
-        ph_level: numOrNull(soil.ph_level),
-        nitrogen: numOrNull(soil.nitrogen),
-        phosphorus: numOrNull(soil.phosphorus),
-        potassium: numOrNull(soil.potassium),
-        moisture: numOrNull(soil.moisture),
-        temperature: numOrNull(soil.temperature),
-        rainfall: numOrNull(soil.rainfall),
-      };
-      await landsApi.addSoil(landId, payload);
-      setStep(2);
-    } catch (e: unknown) {
-      const msg = (e as { response?: { data?: { detail?: string } } })?.response
-        ?.data?.detail;
-      setError(msg ?? "Failed to save soil data.");
-    } finally {
-      setLoading(false);
-    }
+  // Step 1 → 2: pure UI transition, no API call
+  const handleSoilSubmit = () => {
+    setStep(2);
   };
 
+  // Step 2: final submit — all API calls consolidated here
   const handlePhotosSubmit = async () => {
-    if (!landId) return;
-    if (!photos || photos.length < 3) {
+    if (photos.length < 3) {
       setError("Please upload at least 3 photos before submitting.");
       return;
     }
     setLoading(true);
     setError(null);
+    setFieldErrors({});
     try {
-      if (photos && photos.length > 0) {
-        const fd = new FormData();
-        Array.from(photos).forEach((f) => fd.append("images", f));
-        await landsApi.uploadPhotos(landId, fd);
+      // 1) Create the basic listing
+      const rawPrice = basic.price_per_month.replace(/,/g, "");
+      const { data: basicData } = await landsApi.createBasic({
+        ...basic,
+        price_per_month: rawPrice,
+      });
+      const newLandId: number = basicData.land_id;
+
+      // 2) Add soil/climate data only if any field was filled in
+      const hasAnySoil = Object.values(soil).some((v) => v !== "");
+      if (hasAnySoil) {
+        const soilPayload = {
+          soil_type: strOrNull(soil.soil_type),
+          ph_level: numOrNull(soil.ph_level),
+          nitrogen: numOrNull(soil.nitrogen),
+          phosphorus: numOrNull(soil.phosphorus),
+          potassium: numOrNull(soil.potassium),
+          moisture: numOrNull(soil.moisture),
+          temperature: numOrNull(soil.temperature),
+          rainfall: numOrNull(soil.rainfall),
+        };
+        await landsApi.addSoil(newLandId, soilPayload);
       }
-      // Clear saved form data on successful submission
+
+      // 3) Upload photos
+      const fd = new FormData();
+      photos.forEach((f) => fd.append("images", f));
+      await landsApi.uploadPhotos(newLandId, fd);
+
+      // Clear persisted form data and redirect
       sessionStorage.removeItem("fl_add_basic");
       sessionStorage.removeItem("fl_add_soil");
-      // Success! Redirect to My Lands page with a success flag and new land ID
-      router.push(`/owner/lands?success=true&newId=${landId}`);
+      sessionStorage.removeItem("fl_add_step");
+      setPhotos([]);
+      router.push(`/owner/lands?success=true&newId=${newLandId}`);
     } catch (e: unknown) {
-      const msg = (e as { response?: { data?: { detail?: string } } })?.response
-        ?.data?.detail;
-      setError(msg ?? "Failed to upload photos.");
+      const errData = (
+        e as { response?: { data?: Record<string, unknown> } }
+      )?.response?.data;
+      if (errData && typeof errData === "object") {
+        const fieldMap: Record<string, string> = {};
+        let generalMsg = "";
+        for (const [k, v] of Object.entries(errData)) {
+          const msg = Array.isArray(v) ? v.join(", ") : String(v);
+          if (k === "detail" || k === "non_field_errors") {
+            generalMsg += msg + " ";
+          } else {
+            fieldMap[k] = msg;
+          }
+        }
+        const basicFields = [
+          "title", "description", "total_area", "price_per_month",
+          "preferred_duration", "title_deed_number", "location_name",
+          "latitude", "longitude",
+        ];
+        const soilFields = [
+          "soil_type", "ph_level", "nitrogen", "phosphorus",
+          "potassium", "moisture", "temperature", "rainfall",
+        ];
+        if (basicFields.some((f) => f in fieldMap)) {
+          setFieldErrors(fieldMap);
+          setStep(0);
+          setError("Please fix the highlighted errors and resubmit.");
+        } else if (soilFields.some((f) => f in fieldMap)) {
+          setFieldErrors(fieldMap);
+          setStep(1);
+          setError("Please fix the highlighted soil errors and resubmit.");
+        } else {
+          setError(generalMsg.trim() || "Submission failed. Please try again.");
+        }
+      } else {
+        setError("Submission failed. Check your connection and try again.");
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  /* ── Clear all form fields ──────────────────────── */
+  const handleClearForm = () => {
+    setBasic({
+      title: "", description: "", total_area: "", price_per_month: "",
+      preferred_duration: "", title_deed_number: "", location_name: "",
+      latitude: "", longitude: "",
+      has_irrigation: false, has_electricity: false,
+      has_road_access: false, has_fencing: false,
+    });
+    setSoil({
+      soil_type: "", ph_level: "", nitrogen: "", phosphorus: "",
+      potassium: "", moisture: "", temperature: "", rainfall: "",
+    });
+    setPhotos([]);
+    setFieldErrors({});
+    setError(null);
+    sessionStorage.removeItem("fl_add_basic");
+    sessionStorage.removeItem("fl_add_soil");
+    sessionStorage.removeItem("fl_add_step");
   };
 
   /* ── UI ─────────────────────────────────────────────── */
@@ -258,8 +319,8 @@ export default function UploadLandPage() {
                 <div className="flex flex-col items-center">
                   <div
                     className={`flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-full text-xs md:text-sm font-bold transition-colors ${i === step
-                        ? "bg-green-600 text-white ring-4 ring-green-600/20"
-                        : "bg-white text-slate-600 border-2 border-slate-300"
+                      ? "bg-green-600 text-white ring-4 ring-green-600/20"
+                      : "bg-white text-slate-600 border-2 border-slate-300"
                       }`}
                   >
                     {i + 1}
@@ -330,6 +391,9 @@ export default function UploadLandPage() {
                         className={INPUT + " pr-16" + (fieldErrors.total_area ? " border-red-400 focus:border-red-500 focus:ring-red-400" : "")}
                         placeholder="0.0"
                         value={basic.total_area}
+                        onKeyDown={(e) => {
+                          if (["e", "E", "+", "-"].includes(e.key)) e.preventDefault();
+                        }}
                         onChange={(e) =>
                           setBasic({ ...basic, total_area: e.target.value })
                         }
@@ -415,6 +479,9 @@ export default function UploadLandPage() {
                         <option key={d}>{d}</option>
                       ))}
                     </select>
+                    {fieldErrors.preferred_duration && (
+                      <p className="mt-1 text-xs text-red-500">{fieldErrors.preferred_duration}</p>
+                    )}
                   </div>
                 </div>
 
@@ -451,8 +518,8 @@ export default function UploadLandPage() {
                         <label
                           key={key}
                           className={`flex items-center gap-2 rounded-lg border-2 px-3 py-2.5 text-xs font-semibold cursor-pointer transition-all ${val
-                              ? "border-primary bg-primary/5 text-primary"
-                              : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                            ? "border-primary bg-primary/5 text-primary"
+                            : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
                             }`}
                         >
                           <input
@@ -515,6 +582,7 @@ export default function UploadLandPage() {
                   onLocationChange={(lat, lng) =>
                     setBasic((prev) => ({ ...prev, latitude: lat, longitude: lng }))
                   }
+                  errorMessage={fieldErrors.location_name}
                 />
                 {fieldErrors.location && (
                   <p className="mt-2 text-xs text-red-500">{fieldErrors.location}</p>
@@ -525,14 +593,12 @@ export default function UploadLandPage() {
               <div className="lg:col-span-3 rounded-xl md:rounded-2xl bg-white border border-slate-200 shadow-sm px-5 md:px-8 py-4">
                 <div className="flex items-center justify-between gap-3">
                   <button
+                    onClick={handleClearForm}
                     type="button"
-                    onClick={() => router.back()}
-                    className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors"
+                    className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-red-600 transition-colors"
                   >
-                    <span className="material-symbols-outlined text-lg">
-                      close
-                    </span>
-                    <span>Cancel</span>
+                    <span className="material-symbols-outlined text-lg">delete_sweep</span>
+                    <span>Clear All</span>
                   </button>
                   <button
                     onClick={handleBasicSubmit}
@@ -890,13 +956,19 @@ export default function UploadLandPage() {
                 </div>
 
                 {/* Upload Area */}
-                <div className="relative border-2 border-dashed border-slate-300 rounded-xl p-10 text-center hover:border-primary hover:bg-slate-50 transition-all cursor-pointer group">
+                <label className="border-2 border-dashed border-slate-300 rounded-xl p-10 text-center hover:border-primary hover:bg-slate-50 transition-all cursor-pointer group block">
                   <input
                     type="file"
                     multiple
                     accept="image/*"
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                    onChange={(e) => setPhotos(e.target.files)}
+                    className="sr-only"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        const newFiles = Array.from(e.target.files);
+                        e.target.value = "";
+                        setPhotos((prev) => [...prev, ...newFiles]);
+                      }
+                    }}
                   />
                   <div className="flex flex-col items-center justify-center space-y-4">
                     <div className="p-4 rounded-full bg-slate-100 text-slate-400 group-hover:text-primary group-hover:bg-primary/10 transition-colors">
@@ -913,14 +985,14 @@ export default function UploadLandPage() {
                       </p>
                     </div>
                   </div>
-                </div>
+                </label>
 
                 <div className="flex items-center gap-2 text-xs text-slate-500">
                   <span className="material-symbols-outlined text-sm">info</span>
                   <span>Minimum 3 photos required for verification.</span>
                 </div>
 
-                {photos && photos.length > 0 && photos.length < 3 && (
+                {photos.length > 0 && photos.length < 3 && (
                   <p className="text-xs text-amber-600 font-medium flex items-center gap-1">
                     <span className="material-symbols-outlined text-sm">warning</span>
                     {3 - photos.length} more photo{3 - photos.length !== 1 ? "s" : ""} required (minimum 3)
@@ -928,13 +1000,13 @@ export default function UploadLandPage() {
                 )}
 
                 {/* Uploaded Photos Preview */}
-                {photos && photos.length > 0 && (
+                {photos.length > 0 && (
                   <div className="space-y-4">
                     <h4 className="text-sm font-semibold text-slate-700">
                       Uploaded Photos ({photos.length})
                     </h4>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                      {Array.from(photos).map((f, i) => (
+                      {photos.map((f, i) => (
                         <div
                           key={i}
                           className="group relative rounded-lg overflow-hidden bg-slate-100 border border-slate-200"
@@ -948,6 +1020,7 @@ export default function UploadLandPage() {
                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                             <button
                               type="button"
+                              onClick={() => setPreviewIndex(i)}
                               className="p-1.5 bg-white/20 hover:bg-white/40 backdrop-blur-sm rounded text-white transition-colors"
                               title="View"
                             >
@@ -957,6 +1030,7 @@ export default function UploadLandPage() {
                             </button>
                             <button
                               type="button"
+                              onClick={() => setPhotos((prev) => prev.filter((_, idx) => idx !== i))}
                               className="p-1.5 bg-red-500/80 hover:bg-red-500 backdrop-blur-sm rounded text-white transition-colors"
                               title="Remove"
                             >
@@ -972,6 +1046,32 @@ export default function UploadLandPage() {
                           )}
                         </div>
                       ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Fullscreen preview overlay */}
+                {previewIndex !== null && photos[previewIndex] && (
+                  <div
+                    className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+                    onClick={() => setPreviewIndex(null)}
+                  >
+                    <div className="relative max-w-3xl w-full" onClick={(e) => e.stopPropagation()}>
+                      <img
+                        src={URL.createObjectURL(photos[previewIndex])}
+                        alt="Preview"
+                        className="w-full max-h-[80vh] object-contain rounded-xl"
+                      />
+                      <p className="text-center text-white/70 text-xs mt-2">
+                        Photo {previewIndex + 1} of {photos.length} — {photos[previewIndex].name}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewIndex(null)}
+                        className="absolute -top-3 -right-3 bg-white rounded-full p-1 shadow-lg text-slate-700 hover:text-red-600"
+                      >
+                        <span className="material-symbols-outlined text-xl">close</span>
+                      </button>
                     </div>
                   </div>
                 )}
@@ -1092,7 +1192,7 @@ export default function UploadLandPage() {
                   </button>
                   <button
                     onClick={handlePhotosSubmit}
-                    disabled={loading || !photos || photos.length < 3}
+                    disabled={loading || photos.length < 3}
                     type="button"
                     className="inline-flex items-center justify-center gap-2 md:gap-3 rounded-lg bg-green-600 px-6 md:px-8 py-3 md:py-3.5 text-sm md:text-base font-bold text-white hover:bg-green-700 disabled:opacity-60 transition-all shadow-lg hover:shadow-xl min-w-35 md:min-w-40"
                   >

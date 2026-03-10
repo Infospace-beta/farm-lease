@@ -14,6 +14,11 @@ api.interceptors.request.use((config) => {
     const token = localStorage.getItem("access_token");
     if (token) config.headers.Authorization = `Bearer ${token}`;
   }
+  // For FormData bodies, remove the default application/json Content-Type so
+  // the browser can set multipart/form-data with the correct boundary itself.
+  if (config.data instanceof FormData) {
+    config.headers.delete("Content-Type");
+  }
   return config;
 });
 
@@ -99,9 +104,7 @@ export const landsApi = {
   addSoil: (landId: number, data: object) =>
     api.post(`/lands/${landId}/add-soil/`, data),
   uploadPhotos: (landId: number, formData: FormData) =>
-    api.post(`/lands/${landId}/upload-photos/`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    }),
+    api.post(`/lands/${landId}/upload-photos/`, formData),
 
   // Owner — lists & dashboard
   myLands: () => api.get("/lands/my-lands/"),
@@ -123,7 +126,10 @@ export const landsApi = {
 
 export const adminApi = {
   // Notifications
-  unreadCount: () => api.get("/accounts/notifications/unread-count/").catch(() => ({ data: { unread_count: 0 } })),
+  unreadCount: () =>
+    api
+      .get("/accounts/notifications/unread-count/")
+      .catch(() => ({ data: { unread_count: 0 } })),
   notifications: (params?: { page?: number }) =>
     api.get("/accounts/notifications/", { params }),
   markNotificationRead: (id: number) =>
@@ -168,7 +174,8 @@ export const lesseeApi = {
   // Active Leases / Agreements
   myLeases: () => api.get("/contracts/lease-requests/"),
   leaseDetail: (id: number) => api.get(`/contracts/lease-requests/${id}/`),
-  signLease: (id: number) => api.post(`/contracts/lease-requests/${id}/cancel/`),
+  signLease: (id: number) =>
+    api.post(`/contracts/lease-requests/${id}/cancel/`),
   terminateLease: (id: number, reason: string) =>
     api.post(`/contracts/lease-requests/${id}/cancel/`, { reason }),
 
@@ -341,11 +348,8 @@ export const ownerApi = {
   landDetail: (landId: number) => api.get(`/lands/${landId}/`),
 
   // Lease Requests (These would come from contracts app when implemented)
-  leaseRequests: (params?: {
-    status?: string;
-    land?: number;
-    page?: number;
-  }) => api.get("/contracts/owner/lease-requests/", { params }),
+  leaseRequests: (params?: { status?: string; land?: number; page?: number }) =>
+    api.get("/contracts/owner/lease-requests/", { params }),
   leaseRequestDetail: (id: number) =>
     api.get(`/contracts/owner/lease-requests/${id}/`),
   approveLeaseRequest: (id: number, data?: { escrow_amount?: number }) =>

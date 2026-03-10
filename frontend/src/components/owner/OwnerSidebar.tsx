@@ -121,8 +121,8 @@ function OwnerSidebar() {
                   href={href}
                   onClick={() => setMobileSidebarOpen(false)}
                   className={`flex items-center gap-4 px-4 py-3 rounded-lg transition-all group ${active
-                      ? "bg-white/10 text-white shadow-sm backdrop-blur-sm"
-                      : "text-gray-400 hover:text-white hover:bg-white/5"
+                    ? "bg-white/10 text-white shadow-sm backdrop-blur-sm"
+                    : "text-gray-400 hover:text-white hover:bg-white/5"
                     }`}
                 >
                   <span

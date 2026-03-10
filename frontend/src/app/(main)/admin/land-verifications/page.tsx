@@ -12,6 +12,9 @@ import {
   ChevronRight,
   Download,
   CheckCircle2,
+  Eye,
+  X,
+  MapPin,
 } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { landsApi } from "@/lib/services/api";
@@ -23,13 +26,35 @@ interface LandListing {
   title: string;
   title_deed_number: string;
   owner: number;
+  owner_username?: string;
+  owner_email?: string;
   status: string;
   is_verified: boolean;
   is_flagged: boolean;
   flag_reason?: string;
   created_at: string;
   total_area: number;
+  price_per_month?: number;
+  preferred_duration?: string;
+  description?: string;
+  location_name?: string;
+  latitude?: number;
+  longitude?: number;
+  has_irrigation?: boolean;
+  has_electricity?: boolean;
+  has_road_access?: boolean;
+  has_fencing?: boolean;
   images: Array<{ id: number; image: string }>;
+  soil_data?: {
+    soil_type?: string;
+    ph_level?: number;
+    nitrogen?: number;
+    phosphorus?: number;
+    potassium?: number;
+    moisture?: number;
+    temperature?: number;
+    rainfall?: number;
+  } | null;
 }
 
 interface AdminStats {
@@ -83,6 +108,7 @@ export default function LandVerificationsPage() {
   >("all");
   const [flagModalId, setFlagModalId] = useState<number | null>(null);
   const [flagReason, setFlagReason] = useState("");
+  const [detailLand, setDetailLand] = useState<LandListing | null>(null);
   const [toast, setToast] = useState<{
     msg: string;
     type: "success" | "error";
@@ -282,6 +308,206 @@ export default function LandVerificationsPage() {
             <AlertCircle className="w-4 h-4" />
           )}
           {toast.msg}
+        </div>
+      )}
+
+      {/* Land Detail Modal */}
+      {detailLand !== null && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-auto max-h-[90vh] overflow-y-auto">
+            {/* Modal header */}
+            <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
+              <div>
+                <h4 className="font-bold text-lg text-gray-900 font-serif truncate max-w-sm">{detailLand.title}</h4>
+                <p className="text-xs text-gray-400 mt-0.5">Plot ID: PL-{detailLand.id}</p>
+              </div>
+              <button
+                onClick={() => setDetailLand(null)}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Photos */}
+              {detailLand.images && detailLand.images.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Photos</p>
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {detailLand.images.map((img) => (
+                      <img
+                        key={img.id}
+                        src={img.image}
+                        alt="land"
+                        className="w-32 h-24 object-cover rounded-lg flex-shrink-0 border border-gray-100"
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Key details grid */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Owner</p>
+                  <p className="text-sm font-semibold text-gray-800">{detailLand.owner_username ?? `ID: ${detailLand.owner}`}</p>
+                  {detailLand.owner_email && <p className="text-xs text-gray-500">{detailLand.owner_email}</p>}
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Status</p>
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border w-fit ${getRowStatus(detailLand).style
+                    }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${getRowStatus(detailLand).dot}`} />
+                    {getRowStatus(detailLand).label}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Area</p>
+                  <p className="text-sm font-semibold text-gray-800">{detailLand.total_area} Acres</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Price / Month</p>
+                  <p className="text-sm font-semibold text-gray-800">
+                    {detailLand.price_per_month ? `KES ${Number(detailLand.price_per_month).toLocaleString()}` : "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Preferred Duration</p>
+                  <p className="text-sm text-gray-700">{detailLand.preferred_duration || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Submitted</p>
+                  <p className="text-sm text-gray-700">{timeAgo(detailLand.created_at)}</p>
+                </div>
+              </div>
+
+              {/* Description */}
+              {detailLand.description && (
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Description</p>
+                  <p className="text-sm text-gray-700 leading-relaxed">{detailLand.description}</p>
+                </div>
+              )}
+
+              {/* Location */}
+              <div>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Location</p>
+                <div className="flex items-center gap-2 text-sm text-gray-700">
+                  <MapPin className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                  <span>{detailLand.location_name || "Not specified"}</span>
+                </div>
+                {detailLand.latitude && detailLand.longitude && (
+                  <p className="text-xs text-gray-400 mt-1 ml-6">
+                    {Number(detailLand.latitude).toFixed(6)}, {Number(detailLand.longitude).toFixed(6)}
+                  </p>
+                )}
+              </div>
+
+              {/* Amenities */}
+              <div>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Amenities</p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { label: "Irrigation", val: detailLand.has_irrigation },
+                    { label: "Electricity", val: detailLand.has_electricity },
+                    { label: "Road Access", val: detailLand.has_road_access },
+                    { label: "Fencing", val: detailLand.has_fencing },
+                  ].map(({ label, val }) => (
+                    <span
+                      key={label}
+                      className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${val
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          : "bg-gray-50 text-gray-400 border-gray-200 line-through"
+                        }`}
+                    >
+                      {label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Soil & Climate */}
+              {detailLand.soil_data && (
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Soil & Climate Data</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {([
+                      { label: "Soil Type", val: detailLand.soil_data.soil_type },
+                      { label: "pH Level", val: detailLand.soil_data.ph_level },
+                      { label: "Nitrogen", val: detailLand.soil_data.nitrogen != null ? `${detailLand.soil_data.nitrogen} mg/kg` : null },
+                      { label: "Phosphorus", val: detailLand.soil_data.phosphorus != null ? `${detailLand.soil_data.phosphorus} mg/kg` : null },
+                      { label: "Potassium", val: detailLand.soil_data.potassium != null ? `${detailLand.soil_data.potassium} mg/kg` : null },
+                      { label: "Moisture", val: detailLand.soil_data.moisture != null ? `${detailLand.soil_data.moisture}%` : null },
+                      { label: "Temperature", val: detailLand.soil_data.temperature != null ? `${detailLand.soil_data.temperature}°C` : null },
+                      { label: "Rainfall", val: detailLand.soil_data.rainfall != null ? `${detailLand.soil_data.rainfall} mm` : null },
+                    ] as { label: string; val: string | number | null | undefined }[]).map(({ label, val }) =>
+                      val != null ? (
+                        <div key={label} className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                          <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{label}</p>
+                          <p className="text-sm font-semibold text-gray-800 mt-0.5">{val}</p>
+                        </div>
+                      ) : null
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Title Deed */}
+              <div>
+                <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest mb-1">Title Deed Number</p>
+                <div
+                  className="flex items-center gap-2 cursor-pointer group/deed"
+                  onClick={() => copyDeed(detailLand.id, detailLand.title_deed_number ?? "")}
+                  title="Click to copy"
+                >
+                  <span className="font-bold text-lg text-sidebar-bg tracking-wide">
+                    {detailLand.title_deed_number || "—"}
+                  </span>
+                  {copiedId === detailLand.id ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  ) : (
+                    <Copy className="w-4 h-4 text-emerald-600 opacity-40 group-hover/deed:opacity-100 transition-opacity" />
+                  )}
+                </div>
+              </div>
+
+              {/* Flag reason if flagged */}
+              {detailLand.is_flagged && detailLand.flag_reason && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <p className="text-[10px] font-bold text-red-600 uppercase tracking-widest mb-1">Flag Reason</p>
+                  <p className="text-sm text-red-700">{detailLand.flag_reason}</p>
+                </div>
+              )}
+
+              {/* Action buttons */}
+              {!detailLand.is_verified && (
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => {
+                      setDetailLand(null);
+                      setFlagModalId(detailLand.id);
+                      setFlagReason("");
+                    }}
+                    disabled={!!actionLoading[detailLand.id]}
+                    className="flex-1 py-2.5 text-sm font-bold rounded-xl border border-earth text-earth hover:bg-earth hover:text-white transition disabled:opacity-50"
+                  >
+                    Flag
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleVerify(detailLand.id);
+                      setDetailLand(null);
+                    }}
+                    disabled={!!actionLoading[detailLand.id]}
+                    className="flex-1 py-2.5 text-sm font-bold rounded-xl bg-emerald-700 text-white hover:bg-sidebar-bg transition disabled:opacity-50"
+                  >
+                    Verify Property
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
@@ -540,6 +766,15 @@ export default function LandVerificationsPage() {
 
                         {/* Actions */}
                         <td className="py-4 px-5 text-right">
+                          <div className="flex justify-end gap-2 mb-2">
+                            <button
+                              onClick={() => setDetailLand(land)}
+                              className="inline-flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-bold rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 transition shadow-sm"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              Details
+                            </button>
+                          </div>
                           {!land.is_verified ? (
                             <div className="flex justify-end gap-2">
                               <button

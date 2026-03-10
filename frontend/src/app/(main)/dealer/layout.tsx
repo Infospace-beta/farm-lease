@@ -140,8 +140,8 @@ export default function DealerLayout({
                   href={item.href}
                   onClick={() => setMobileSidebarOpen(false)}
                   className={`flex items-center gap-4 px-4 py-3 rounded-lg transition-all group ${active
-                      ? "bg-[#047857] text-white shadow-sm"
-                      : "text-gray-400 hover:text-white hover:bg-white/5"
+                    ? "bg-[#047857] text-white shadow-sm"
+                    : "text-gray-400 hover:text-white hover:bg-white/5"
                     }`}
                 >
                   <span

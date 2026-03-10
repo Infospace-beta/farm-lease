@@ -15,7 +15,6 @@ import {
   dashboardPathFor,
   getAccessToken,
   getRefreshToken,
-  isAuthenticated as checkAuth,
   setTokens,
 } from "@/lib/auth";
 import { accountsApi } from "@/lib/services/api";
@@ -42,9 +41,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isLoading: true,
   });
 
-  // Fetch logged-in user from /auth/me/ on mount
+  // Fetch logged-in user from /auth/me/ on mount.
+  // We intentionally skip the local clock-based token check here so that
+  // an expired access token still reaches the 401 interceptor, which will
+  // use the refresh token to obtain a new access token automatically.
+  // We only bail early when there are NO tokens whatsoever.
   const refreshUser = useCallback(async () => {
-    if (!checkAuth()) {
+    const access = getAccessToken();
+    const refresh = getRefreshToken();
+    if (!access && !refresh) {
       setState({ user: null, tokens: null, isAuthenticated: false, isLoading: false });
       return;
     }
