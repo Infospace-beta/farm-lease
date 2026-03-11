@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import MiniMapThumb from "@/components/owner/MiniMapThumb";
 import OwnerPageHeader from "@/components/owner/OwnerPageHeader";
 import { ownerApi } from "@/lib/services/api";
 
@@ -14,6 +13,9 @@ interface LeaseRequest {
     id: number;
     title: string;
     location?: string;
+    total_area?: number;
+    price_per_month?: number;
+    images?: Array<{ id: number; image: string }>;
   };
   lessee: {
     id: number;
@@ -26,6 +28,7 @@ interface LeaseRequest {
   proposed_end_date: string;
   proposed_rent?: number;
   message?: string;
+  requested_area?: number;
   status: StatusKey;
   created_at: string;
 }
@@ -162,7 +165,7 @@ export default function LeaseRequestsPage() {
         </button>
       </OwnerPageHeader>
       <div className="flex-1 overflow-y-auto p-4 lg:p-8 bg-slate-50">
-        <div className="mx-auto max-w-5xl">
+        <div className="w-full">
           {/* Loading state */}
           {loading && (
             <div className="flex items-center justify-center py-12">
@@ -195,19 +198,17 @@ export default function LeaseRequestsPage() {
                   <button
                     key={t.key}
                     onClick={() => setTab(t.key)}
-                    className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
-                      tab === t.key
+                    className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${tab === t.key
                         ? "bg-primary text-white shadow"
                         : "text-slate-600 hover:bg-slate-100"
-                    }`}
+                      }`}
                   >
                     {t.label}
                     <span
-                      className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
-                        tab === t.key
+                      className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${tab === t.key
                           ? "bg-white/20 text-white"
                           : "bg-slate-100 text-slate-500"
-                      }`}
+                        }`}
                     >
                       {counts[t.key]}
                     </span>
@@ -308,23 +309,34 @@ export default function LeaseRequestsPage() {
                       {isExpanded && (
                         <div className="border-t border-slate-100 p-5">
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                            {/* Mini map */}
-                            <div className="rounded-xl overflow-hidden">
-                              <MiniMapThumb
-                                plotId={`PL-${req.land.id}`}
-                                name={req.land.title}
-                                location={req.land.location || "Unknown"}
-                                status={
-                                  req.status === "accepted"
-                                    ? "leased"
-                                    : req.status === "review"
-                                      ? "review"
-                                      : req.status === "rejected"
-                                        ? "vacant"
-                                        : "pending"
-                                }
-                                seed={req.id % 5}
-                              />
+                          {/* Land image */}
+                            <div className="rounded-xl overflow-hidden h-44 bg-slate-100 relative">
+                              {req.land.images && req.land.images.length > 0 ? (
+                                <img
+                                  src={
+                                    req.land.images[0].image.startsWith("http")
+                                      ? req.land.images[0].image
+                                      : `${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}${req.land.images[0].image}`
+                                  }
+                                  alt={req.land.title}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
+                                  <span className="material-symbols-outlined text-4xl mb-1">landscape</span>
+                                  <span className="text-xs">No photo uploaded</span>
+                                </div>
+                              )}
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                              <div className="absolute bottom-3 left-3 right-3">
+                                <p className="text-white text-sm font-bold truncate">{req.land.title}</p>
+                                {req.land.location && (
+                                  <p className="text-white/80 text-xs flex items-center gap-1 mt-0.5">
+                                    <span className="material-symbols-outlined text-xs">location_on</span>
+                                    {req.land.location}
+                                  </p>
+                                )}
+                              </div>
                             </div>
 
                             {/* Details */}
@@ -372,6 +384,31 @@ export default function LeaseRequestsPage() {
                                     {new Date(req.proposed_end_date).toLocaleDateString()}
                                   </p>
                                 </div>
+                                {req.requested_area != null && (
+                                  <div>
+                                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                                      Requested Area
+                                    </p>
+                                    <p className="text-sm font-bold text-slate-800 mt-0.5">
+                                      {req.requested_area} Acres
+                                      {req.land.total_area && req.requested_area < req.land.total_area && (
+                                        <span className="ml-1 text-xs font-normal text-amber-600">
+                                          (of {req.land.total_area} ac total)
+                                        </span>
+                                      )}
+                                    </p>
+                                  </div>
+                                )}
+                                {req.proposed_rent && (
+                                  <div>
+                                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                                      Proposed Rent
+                                    </p>
+                                    <p className="text-sm font-bold text-primary mt-0.5">
+                                      Ksh {req.proposed_rent.toLocaleString()}/mo
+                                    </p>
+                                  </div>
+                                )}
                               </div>
 
                               {(req.status === "pending" ||

@@ -67,6 +67,16 @@ class LandListing(models.Model):
         related_name='rented_lands'
     )
 
+    # Partial lease support — how many acres are currently leased
+    leased_area = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        default=0,
+        help_text="Acres currently under active lease (supports partial leases)"
+    )
+
     def __str__(self):
         return str(self.title)
 

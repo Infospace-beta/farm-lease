@@ -198,8 +198,8 @@ export default function NotificationsPage() {
                               : showToast(`${action.label}: action triggered`);
                           }}
                           className={`text-xs font-bold px-4 py-2 rounded-xl transition ${action.primary
-                              ? "bg-[#047857] text-white hover:opacity-90"
-                              : "border border-gray-200 text-gray-600 hover:bg-gray-50"
+                            ? "bg-[#047857] text-white hover:opacity-90"
+                            : "border border-gray-200 text-gray-600 hover:bg-gray-50"
                             }`}
                         >
                           {action.label}
@@ -245,7 +245,7 @@ export default function NotificationsPage() {
       </DealerPageHeader>
 
       <div className="flex-1 overflow-y-auto p-4 lg:p-8 bg-[#f8fafc]">
-        <div className="max-w-3xl">
+        <div className="w-full">
           {loading ? (
             <div className="space-y-3">
               {[0, 1, 2, 3].map((i) => (

@@ -64,59 +64,61 @@ class LesseeDashboardView(APIView):
         })
 
 
-# ─── Lessee Notifications View ────────────────────────────────────────────────
-class LesseeNotificationListView(APIView):
-    """Return notifications for the authenticated lessee."""
+# ─── Notification Views ────────────────────────────────────────────────────────
+class MyNotificationListView(APIView):
+    """Return all DB-persisted notifications for the authenticated user."""
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        from contracts.models import LeaseRequest
-        user = request.user
-        notifications = []
+        from .models import Notification
+        notifs = Notification.objects.filter(user=request.user)[:50]
+        results = [
+            {
+                'id': n.id,
+                'title': n.title,
+                'body': n.body,
+                'notif_type': n.notif_type,
+                'icon': n.icon,
+                'related_id': n.related_id,
+                'is_read': n.is_read,
+                'read': n.is_read,
+                'created_at': n.created_at.isoformat(),
+            }
+            for n in notifs
+        ]
+        unread = sum(1 for r in results if not r['is_read'])
+        return Response({'results': results, 'count': len(results), 'unread': unread})
 
-        try:
-            requests = LeaseRequest.objects.filter(lessee=user).order_by('-created_at')[:20]
-            for lr in requests:
-                land_title = lr.land.title if hasattr(lr, 'land') and lr.land else 'Land Plot'
-                if lr.status == 'accepted':
-                    msg = f'Your lease request for "{land_title}" was approved.'
-                    icon = 'check_circle'
-                    notif_type = 'success'
-                elif lr.status == 'rejected':
-                    msg = f'Your lease request for "{land_title}" was declined.'
-                    icon = 'cancel'
-                    notif_type = 'error'
-                else:
-                    msg = f'Your lease request for "{land_title}" is pending review.'
-                    icon = 'hourglass_top'
-                    notif_type = 'info'
 
-                notifications.append({
-                    'id': lr.id,
-                    'message': msg,
-                    'icon': icon,
-                    'type': notif_type,
-                    'read': lr.status != 'pending',
-                    'created_at': lr.created_at.isoformat() if hasattr(lr, 'created_at') else '',
-                    'land_title': land_title,
-                })
-        except Exception:
-            pass
+class LesseeNotificationListView(MyNotificationListView):
+    """Alias: lessee uses the same endpoint."""
+    pass
 
-        return Response({'results': notifications, 'count': len(notifications)})
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def notification_unread_count(request):
+    from .models import Notification
+    count = Notification.objects.filter(user=request.user, is_read=False).count()
+    return Response({'unread_count': count})
 
 
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 def mark_notification_read(request, pk):
-    """Mark a specific notification as read (no-op, returns success)."""
+    from .models import Notification
+    notif = Notification.objects.filter(pk=pk, user=request.user).first()
+    if notif:
+        notif.is_read = True
+        notif.save(update_fields=['is_read'])
     return Response({'detail': 'Marked as read.'})
 
 
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 def mark_all_notifications_read(request):
-    """Mark all notifications as read (no-op, returns success)."""
+    from .models import Notification
+    Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
     return Response({'detail': 'All notifications marked as read.'})
 
 

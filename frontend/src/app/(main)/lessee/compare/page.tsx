@@ -139,7 +139,7 @@ export default function CompareFarmAssetsPage() {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-[1200px] mx-auto pb-12">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full pb-12">
             {assets.map((asset) => (
               <div
                 key={asset.id}

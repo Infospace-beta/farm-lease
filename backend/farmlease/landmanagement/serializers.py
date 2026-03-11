@@ -41,7 +41,7 @@ class LandListingSerializer(serializers.ModelSerializer):
         model = LandListing
         fields = [
             'id', 'owner', 'owner_username', 'title', 'description',
-            'total_area', 'price_per_month', 'preferred_duration',
+            'total_area', 'leased_area', 'price_per_month', 'preferred_duration',
             'title_deed_number', 'has_irrigation', 'has_electricity',
             'has_road_access', 'has_fencing', 'location_name',
             'latitude', 'longitude', 'status', 'is_verified',
@@ -65,7 +65,7 @@ class PublicLandListingSerializer(serializers.ModelSerializer):
         """Meta configuration for PublicLandListingSerializer."""
         model = LandListing
         fields = [
-            'id', 'title', 'description', 'total_area',
+            'id', 'title', 'description', 'total_area', 'leased_area',
             'price_per_month', 'preferred_duration',
             'has_irrigation', 'has_electricity',
             'has_road_access', 'has_fencing',
@@ -90,7 +90,7 @@ class AdminLandListingSerializer(serializers.ModelSerializer):
         model = LandListing
         fields = [
             'id', 'owner', 'owner_username', 'owner_email',
-            'title', 'description', 'total_area', 'price_per_month',
+            'title', 'description', 'total_area', 'leased_area', 'price_per_month',
             'preferred_duration', 'title_deed_number',
             'has_irrigation', 'has_electricity', 'has_road_access',
             'has_fencing', 'location_name', 'latitude', 'longitude',
