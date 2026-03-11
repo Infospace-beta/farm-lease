@@ -195,15 +195,14 @@ export const lesseeApi = {
 
   // AI Crop Predictor
   predictCrop: (data: {
-    mode: "regional" | "manual";
     region?: string;
     ph?: number;
     nitrogen?: number;
     phosphorus?: number;
     potassium?: number;
     rainfall?: number;
-    temperature?: number;
-  }) => api.post("/lessee/ai-predict/", data),
+  }) => api.post("/ai/predict/", data, { timeout: 60000 }), // 60 seconds for AI processing
+  aiHealthCheck: () => api.get("/ai/health/"),
   predictionHistory: (params?: { page?: number }) =>
     api.get("/lessee/ai-predict/history/", { params }),
 

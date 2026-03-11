@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import LesseePageHeader from "@/components/lessee/LesseePageHeader";
+import { lesseeApi } from "@/lib/services/api";
 
 const PREDICTOR_AREAS = [
   // Broad regions
@@ -22,6 +23,15 @@ const PREDICTOR_AREAS = [
   "Malindi", "Mtwapa", "Voi", "Wundanyi",
 ];
 
+interface CropRecommendation {
+  crop_name: string;
+  suitability_score: number;
+  predicted_yield: string;
+  estimated_revenue: string;
+  description: string;
+  care_tips: string;
+}
+
 export default function AIPredictorPage() {
   const [showRegional, setShowRegional] = useState(true);
   const [showManual, setShowManual] = useState(true);
@@ -30,6 +40,19 @@ export default function AIPredictorPage() {
   const [regionInput, setRegionInput] = useState("");
   const [showRegionDrop, setShowRegionDrop] = useState(false);
   const regionDropRef = useRef<HTMLDivElement>(null);
+
+  // Manual entry slider values
+  const [ph, setPh] = useState(0);
+  const [nitrogen, setNitrogen] = useState(0);
+  const [phosphorus, setPhosphorus] = useState(0);
+  const [potassium, setPotassium] = useState(0);
+  const [rainfall, setRainfall] = useState(0);
+
+  // API state
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [predictions, setPredictions] = useState<CropRecommendation[]>([]);
+  const [hasPredicted, setHasPredicted] = useState(false);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -45,12 +68,53 @@ export default function AIPredictorPage() {
     a.toLowerCase().includes(regionInput.toLowerCase())
   ).slice(0, 8);
 
-  // Manual entry slider values — start at 0 (not pre-filled)
-  const [ph, setPh] = useState(0);
-  const [nitrogen, setNitrogen] = useState(0);
-  const [phosphorus, setPhosphorus] = useState(0);
-  const [potassium, setPotassium] = useState(0);
-  const [rainfall, setRainfall] = useState(0);
+  const handleGetRecommendation = async () => {
+    // Validate that at least some data is provided
+    if (!regionInput && ph === 0 && nitrogen === 0 && phosphorus === 0 && potassium === 0 && rainfall === 0) {
+      setError("Please provide at least one parameter (region or soil data) to get recommendations.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await lesseeApi.predictCrop({
+        region: regionInput || undefined,
+        ph: ph > 0 ? ph : undefined,
+        nitrogen: nitrogen > 0 ? nitrogen : undefined,
+        phosphorus: phosphorus > 0 ? phosphorus : undefined,
+        potassium: potassium > 0 ? potassium : undefined,
+        rainfall: rainfall > 0 ? rainfall : undefined,
+      });
+
+      if (response.data.success && response.data.predictions) {
+        setPredictions(response.data.predictions);
+        setHasPredicted(true);
+        setError(null);
+      } else {
+        setError("No predictions returned. Please try again with different parameters.");
+      }
+    } catch (err: any) {
+      console.error("AI Prediction Error:", err);
+      console.error("Error details:", err.response?.data);
+      
+      if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else if (err.response?.data?.details) {
+        setError(err.response.data.details);
+      } else if (err.response?.status === 503) {
+        setError("AI service is not configured. Please contact support.");
+      } else if (err.response?.status === 429) {
+        setError("Too many requests. Please wait a moment and try again.");
+      } else {
+        setError("Failed to get predictions. Please check the browser console for details.");
+      }
+      setPredictions([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
@@ -292,239 +356,155 @@ export default function AIPredictorPage() {
               </div>
 
               {/* ── Single CTA ────────────────────────────── */}
-              <button className="w-full py-4 bg-[#0f392b] text-white rounded-full font-bold shadow-lg hover:bg-[#0a261c] transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-wider group">
-                <span className="material-icons-round text-[#13ec80] group-hover:animate-pulse">auto_awesome</span>
-                Get AI Recommendation
+              <button 
+                onClick={handleGetRecommendation}
+                disabled={loading}
+                className="w-full py-4 bg-[#0f392b] text-white rounded-full font-bold shadow-lg hover:bg-[#0a261c] disabled:bg-gray-400 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-wider group"
+              >
+                {loading ? (
+                  <>
+                    <span className="material-icons-round animate-spin">refresh</span>
+                    AI is analyzing... (may take 30-60 seconds)
+                  </>
+                ) : (
+                  <>
+                    <span className="material-icons-round text-[#13ec80] group-hover:animate-pulse">auto_awesome</span>
+                    Get AI Recommendation
+                  </>
+                )}
               </button>
+
+              {/* Info Message */}
+              {!loading && !hasPredicted && (
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+                  <div className="flex gap-2">
+                    <span className="material-icons-round text-blue-500 text-sm">info</span>
+                    <p className="text-xs text-blue-600">
+                      AI analysis may take 30-60 seconds. Please be patient while our AI processes your data.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Error Message */}
+              {error && (
+                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl">
+                  <div className="flex gap-3">
+                    <span className="material-icons-round text-red-500 text-base">error</span>
+                    <p className="text-sm text-red-600">{error}</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Right Panel - Results */}
           <div className="col-span-12 lg:col-span-7 space-y-6">
-            {/* Top Recommendation Card */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div className="col-span-1 md:col-span-2 bg-[#0f392b] text-white rounded-2xl p-6 lg:p-8 relative overflow-hidden shadow-xl">
-                <div className="absolute right-0 top-0 h-full w-1/2 bg-gradient-to-l from-white/10 to-transparent"></div>
-                <div className="absolute -right-10 -bottom-10 opacity-10 rotate-12">
-                  <span className="material-icons-round text-[200px]">coffee</span>
-                </div>
-                <div className="relative z-10">
-                  <div className="flex justify-between items-start mb-6">
-                    <span className="bg-[#13ec80]/20 text-[#13ec80] border border-[#13ec80]/30 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">
-                      Combined Match
-                    </span>
-                    <span className="text-4xl font-bold text-[#13ec80]">96%</span>
-                  </div>
-                  <h3 className="text-3xl font-bold mb-1" style={{ fontFamily: "Playfair Display, serif" }}>
-                    Arabica Coffee (SL28)
-                  </h3>
-                  <p className="text-gray-300 text-sm mb-6">
-                    Excellent suitability based on regional climate data and your soil parameters.
-                  </p>
-                  <div className="grid grid-cols-2 gap-8 border-t border-white/10 pt-6">
-                    <div>
-                      <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Predicted Yield</p>
-                      <p className="text-2xl font-bold">
-                        1.8 <span className="text-sm font-normal text-gray-400">tons/acre</span>
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Est. Revenue</p>
-                      <p className="text-2xl font-bold text-[#13ec80]">Ksh 450,000</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Secondary Card 1 */}
-              <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] flex flex-col justify-between h-full group hover:-translate-y-1 transition-transform">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="w-12 h-12 rounded-full bg-[#5D4037]/10 flex items-center justify-center text-[#5D4037] group-hover:bg-[#5D4037] group-hover:text-white transition-colors">
-                    <span className="material-icons-round text-2xl">emoji_food_beverage</span>
-                  </div>
-                  <span className="text-lg font-bold text-gray-400 group-hover:text-[#0f392b] transition-colors">88%</span>
-                </div>
-                <div>
-                  <h4 className="text-xl font-bold text-[#5D4037] mb-1" style={{ fontFamily: "Playfair Display, serif" }}>
-                    Purple Tea
-                  </h4>
-                  <p className="text-xs text-gray-500 mb-4 line-clamp-2">
-                    High demand export crop. Requires acidic soil in Nakuru/Kericho border areas.
-                  </p>
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                    <div>
-                      <p className="text-[10px] text-gray-400 uppercase">Est. Revenue</p>
-                      <p className="text-lg font-bold text-gray-800">Ksh 320,000</p>
-                    </div>
-                    <button className="text-[#0f392b] hover:bg-[#0f392b]/10 p-2 rounded-full transition-colors">
-                      <span className="material-icons-round text-lg">arrow_forward</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Secondary Card 2 */}
-              <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] flex flex-col justify-between h-full group hover:-translate-y-1 transition-transform">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="w-12 h-12 rounded-full bg-[#13ec80]/10 flex items-center justify-center text-[#047857] group-hover:bg-[#13ec80] group-hover:text-[#0a261c] transition-colors">
-                    <span className="material-icons-round text-2xl">nutrition</span>
-                  </div>
-                  <span className="text-lg font-bold text-gray-400 group-hover:text-[#0f392b] transition-colors">82%</span>
-                </div>
-                <div>
-                  <h4 className="text-xl font-bold text-[#5D4037] mb-1" style={{ fontFamily: "Playfair Display, serif" }}>
-                    Hass Avocado
-                  </h4>
-                  <p className="text-xs text-gray-500 mb-4 line-clamp-2">
-                    Requires well-drained soil. Good long-term investment for this region.
-                  </p>
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                    <div>
-                      <p className="text-[10px] text-gray-400 uppercase">Est. Revenue</p>
-                      <p className="text-lg font-bold text-gray-800">Ksh 280,000</p>
-                    </div>
-                    <button className="text-[#0f392b] hover:bg-[#0f392b]/10 p-2 rounded-full transition-colors">
-                      <span className="material-icons-round text-lg">arrow_forward</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Verified Farms + Suitable Assets — both always shown */}
-            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)]">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="font-bold text-lg text-[#5D4037] flex items-center gap-2" style={{ fontFamily: "Playfair Display, serif" }}>
-                  <span className="material-icons-round text-[#13ec80] text-xl">verified</span>
-                  Verified Farms &amp; Suitable Assets
+            {!hasPredicted ? (
+              // Initial state - show placeholder
+              <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] flex flex-col items-center justify-center min-h-[600px]">
+                <span className="material-icons-round text-gray-300 text-[120px] mb-4">analytics</span>
+                <h3 className="text-2xl font-bold text-gray-400 mb-2" style={{ fontFamily: "Playfair Display, serif" }}>
+                  AI Predictions Will Appear Here
                 </h3>
-                <Link href="/lessee/compare" className="text-xs font-bold text-[#0f392b] hover:underline flex items-center gap-1">
-                  View All <span className="material-icons-round text-sm">arrow_forward</span>
-                </Link>
+                <p className="text-gray-400 text-center max-w-md">
+                  Provide regional or soil parameters on the left, then click "Get AI Recommendation" to receive
+                  personalized crop suggestions powered by Google Gemini AI.
+                </p>
               </div>
-
-              {/* Plot listings */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                {[
-                  { id: "#NK-402", size: "5.0 Acres", soil: "Clay Loam Soil", price: "Ksh 15,000" },
-                  { id: "#NK-118", size: "2.5 Acres", soil: "Volcanic Soil", price: "Ksh 8,500" },
-                ].map((plot) => (
-                  <div key={plot.id} className="border border-gray-100 rounded-xl p-3 flex gap-3 hover:border-[#0f392b]/30 transition-all cursor-pointer group">
-                    <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden shrink-0 relative">
-                      <div className="absolute inset-0 bg-[#0f392b]/10 flex items-center justify-center">
-                        <span className="material-icons-round text-[#0f392b]/30 text-3xl">landscape</span>
+            ) : (
+              <>
+                {/* Top Recommendation Card */}
+                {predictions.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div className="col-span-1 md:col-span-2 bg-[#0f392b] text-white rounded-2xl p-6 lg:p-8 relative overflow-hidden shadow-xl">
+                      <div className="absolute right-0 top-0 h-full w-1/2 bg-gradient-to-l from-white/10 to-transparent"></div>
+                      <div className="absolute -right-10 -bottom-10 opacity-10 rotate-12">
+                        <span className="material-icons-round text-[200px]">agriculture</span>
                       </div>
-                    </div>
-                    <div className="flex flex-col justify-between py-0.5 w-full">
-                      <div>
-                        <div className="flex justify-between items-start">
-                          <h5 className="text-sm font-bold text-gray-800 group-hover:text-[#0f392b]">Plot {plot.id}</h5>
-                          <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-bold">Available</span>
+                      <div className="relative z-10">
+                        <div className="flex justify-between items-start mb-6">
+                          <span className="bg-[#13ec80]/20 text-[#13ec80] border border-[#13ec80]/30 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                            Top Match
+                          </span>
+                          <span className="text-4xl font-bold text-[#13ec80]">{predictions[0].suitability_score}%</span>
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">{plot.size} • {plot.soil}</p>
-                      </div>
-                      <p className="text-sm font-bold text-[#5D4037]">{plot.price} <span className="text-[10px] font-normal text-gray-400">/month</span></p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Asset cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {[
-                  { name: "50 Acres – Rift Valley", location: "Nakuru, Kenya", ph: "pH 6.2", rain: "900mm rain", price: "Ksh 15k", match: "94%" },
-                  { name: "12 Acres – Narok Prime", location: "Narok, Kenya", ph: "pH 6.8", rain: "820mm rain", price: "Ksh 12k", match: "89%" },
-                  { name: "30 Acres – Eldoret East", location: "Eldoret, Kenya", ph: "pH 6.0", rain: "950mm rain", price: "Ksh 18k", match: "85%" },
-                ].map((asset) => (
-                  <div key={asset.name} className="border border-gray-100 rounded-xl overflow-hidden hover:border-[#0f392b]/30 hover:shadow-lg transition-all group cursor-pointer">
-                    <div className="h-32 bg-gray-200 relative overflow-hidden">
-                      <div className="absolute inset-0 bg-[#0f392b]/10 flex items-center justify-center">
-                        <span className="material-icons-round text-[#0f392b]/30 text-4xl">landscape</span>
-                      </div>
-                      <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-md shadow-sm border border-white/50">
-                        <div className="flex items-center gap-1">
-                          <span className="material-icons-round text-[#047857] text-[10px]">verified</span>
-                          <span className="text-[10px] font-bold text-[#0f392b]">{asset.match} Suitability</span>
+                        <h3 className="text-3xl font-bold mb-1" style={{ fontFamily: "Playfair Display, serif" }}>
+                          {predictions[0].crop_name}
+                        </h3>
+                        <p className="text-gray-300 text-sm mb-6">
+                          {predictions[0].description}
+                        </p>
+                        <div className="grid grid-cols-2 gap-8 border-t border-white/10 pt-6">
+                          <div>
+                            <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Predicted Yield</p>
+                            <p className="text-2xl font-bold">{predictions[0].predicted_yield}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Est. Revenue</p>
+                            <p className="text-2xl font-bold text-[#13ec80]">{predictions[0].estimated_revenue}</p>
+                          </div>
+                        </div>
+                        <div className="mt-6 pt-6 border-t border-white/10">
+                          <p className="text-xs text-gray-400 uppercase tracking-widest mb-2">Care Tips</p>
+                          <p className="text-sm text-gray-200">{predictions[0].care_tips}</p>
                         </div>
                       </div>
                     </div>
-                    <div className="p-4">
-                      <h5 className="text-sm font-bold text-[#5D4037] mb-1 truncate" style={{ fontFamily: "Playfair Display, serif" }}>{asset.name}</h5>
-                      <p className="text-xs text-gray-500 mb-3 flex items-center gap-1">
-                        <span className="material-icons-round text-[12px]">location_on</span>{asset.location}
-                      </p>
-                      <div className="flex items-center gap-2 mb-4 text-[10px] text-gray-500 font-medium">
-                        <span className="bg-gray-50 px-2 py-1 rounded border border-gray-100">{asset.ph}</span>
-                        <span className="bg-gray-50 px-2 py-1 rounded border border-gray-100">{asset.rain}</span>
-                      </div>
-                      <div className="flex items-center justify-between pt-3 border-t border-gray-50">
+
+                    {/* Secondary Recommendation Cards */}
+                    {predictions.slice(1, 3).map((crop, idx) => (
+                      <div key={idx} className="bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] flex flex-col justify-between h-full group hover:-translate-y-1 transition-transform">
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="w-12 h-12 rounded-full bg-[#5D4037]/10 flex items-center justify-center text-[#5D4037] group-hover:bg-[#5D4037] group-hover:text-white transition-colors">
+                            <span className="material-icons-round text-2xl">nature</span>
+                          </div>
+                          <span className="text-lg font-bold text-gray-400 group-hover:text-[#0f392b] transition-colors">{crop.suitability_score}%</span>
+                        </div>
                         <div>
-                          <p className="text-[10px] text-gray-400 uppercase tracking-wide">Lease Price</p>
-                          <p className="text-sm font-bold text-[#0f392b]">{asset.price}<span className="text-[10px] font-normal text-gray-400">/acre</span></p>
+                          <h4 className="text-xl font-bold text-[#5D4037] mb-1" style={{ fontFamily: "Playfair Display, serif" }}>
+                            {crop.crop_name}
+                          </h4>
+                          <p className="text-xs text-gray-500 mb-4 line-clamp-2">
+                            {crop.description}
+                          </p>
+                          <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                            <div>
+                              <p className="text-[10px] text-gray-400 uppercase">Est. Revenue</p>
+                              <p className="text-lg font-bold text-gray-800">{crop.estimated_revenue}</p>
+                            </div>
+                          </div>
                         </div>
-                        <button className="bg-[#0f392b] text-white text-[10px] font-bold px-3 py-1.5 rounded hover:bg-[#1c4a3a] transition-colors shadow-sm uppercase tracking-wide">
-                          View Asset
-                        </button>
                       </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Additional Recommendations */}
+                {predictions.length > 3 && (
+                  <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)]">
+                    <h3 className="font-bold text-lg text-[#5D4037] mb-4" style={{ fontFamily: "Playfair Display, serif" }}>
+                      Alternative Options
+                    </h3>
+                    <div className="space-y-3">
+                      {predictions.slice(3).map((crop, idx) => (
+                        <div key={idx} className="border border-gray-100 rounded-xl p-4 hover:border-[#0f392b]/30 transition-all">
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className="text-md font-bold text-gray-800">{crop.crop_name}</h4>
+                            <span className="text-sm font-bold text-[#0f392b]">{crop.suitability_score}%</span>
+                          </div>
+                          <p className="text-xs text-gray-600 mb-2">{crop.description}</p>
+                          <div className="flex items-center gap-4 text-xs">
+                            <span className="text-gray-500">Yield: {crop.predicted_yield}</span>
+                            <span className="text-[#047857] font-semibold">{crop.estimated_revenue}</span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Market Trends */}
-            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)]">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="font-bold text-lg text-[#5D4037]" style={{ fontFamily: "Playfair Display, serif" }}>
-                  Market Trends
-                </h3>
-                <a href="#" className="text-xs font-bold text-[#0f392b] hover:underline flex items-center gap-1">
-                  Full Report <span className="material-icons-round text-sm">arrow_forward</span>
-                </a>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer border border-transparent hover:border-gray-100">
-                  <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center text-green-700 shrink-0">
-                    <span className="material-icons-round text-lg">trending_up</span>
-                  </div>
-                  <div className="flex-1">
-                    <h5 className="text-sm font-bold text-gray-800">Coffee Grade AA Demand</h5>
-                    <p className="text-xs text-gray-500">Global export demand surge</p>
-                  </div>
-                  <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded">+8%</span>
-                </div>
-                <div className="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer border border-transparent hover:border-gray-100">
-                  <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center text-red-700 shrink-0">
-                    <span className="material-icons-round text-lg">trending_down</span>
-                  </div>
-                  <div className="flex-1">
-                    <h5 className="text-sm font-bold text-gray-800">Maize surplus expected</h5>
-                    <p className="text-xs text-gray-500">Predicted price drop post-harvest</p>
-                  </div>
-                  <span className="text-xs font-bold text-red-600 bg-red-50 px-2 py-1 rounded">-4%</span>
-                </div>
-                <div className="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer border border-transparent hover:border-gray-100">
-                  <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center text-green-700 shrink-0">
-                    <span className="material-icons-round text-lg">trending_up</span>
-                  </div>
-                  <div className="flex-1">
-                    <h5 className="text-sm font-bold text-gray-800">Maize prices rising</h5>
-                    <p className="text-xs text-gray-500">Nakuru market +5%</p>
-                  </div>
-                  <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded">+5%</span>
-                </div>
-                <div className="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer border border-transparent hover:border-gray-100">
-                  <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-700 shrink-0">
-                    <span className="material-icons-round text-lg">trending_down</span>
-                  </div>
-                  <div className="flex-1">
-                    <h5 className="text-sm font-bold text-gray-800">Fertilizer costs dip</h5>
-                    <p className="text-xs text-gray-500">Subsidy effect</p>
-                  </div>
-                  <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">-12%</span>
-                </div>
-              </div>
-            </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       </div>
