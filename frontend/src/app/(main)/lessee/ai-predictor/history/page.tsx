@@ -79,7 +79,7 @@ export default function AIPredictorHistoryPage() {
 
       <div className="flex-1 overflow-y-auto p-4 lg:p-8 bg-[#f8fafc]">
         {/* Prediction History Panel */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] p-6 lg:p-8 max-w-[1600px] mx-auto">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] p-6 lg:p-8 w-full">
           <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
             <div>
               <h3
@@ -145,8 +145,8 @@ export default function AIPredictorHistoryPage() {
                     <td className="py-5 pr-6">
                       <span
                         className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${item.mode === "Regional Data"
-                            ? "bg-blue-50 text-blue-700"
-                            : "bg-purple-50 text-purple-700"
+                          ? "bg-blue-50 text-blue-700"
+                          : "bg-purple-50 text-purple-700"
                           }`}
                       >
                         <span className="material-icons-round text-[12px]">

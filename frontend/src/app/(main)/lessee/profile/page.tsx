@@ -19,7 +19,7 @@ export default function ProfilePage() {
       </LesseePageHeader>
 
       <div className="flex-1 overflow-y-auto p-8 bg-[#f8fafc]">
-        <div className="max-w-3xl mx-auto space-y-6">
+        <div className="w-full space-y-6">
           {/* Personal Information */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="px-7 py-5 border-b border-gray-100">

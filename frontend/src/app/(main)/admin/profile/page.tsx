@@ -27,7 +27,7 @@ const sideNav = [
 
 export default function ProfilePage() {
   const [activeSection, setActiveSection] = useState(0);
-  
+
   // Form state
   const [formData, setFormData] = useState({
     fullName: "David M.",
@@ -51,7 +51,7 @@ export default function ProfilePage() {
         subtitle="Manage your personal information, security preferences, and system access levels."
       />
       <div className="flex-1 overflow-y-auto p-4 lg:p-8 bg-[#f8fafc]">
-        <div className="grid grid-cols-12 gap-6 max-w-5xl">
+        <div className="grid grid-cols-12 gap-6 w-full">
           {/* Left Column */}
           <div className="col-span-12 lg:col-span-4 space-y-5">
             {/* Avatar Card */}
@@ -119,8 +119,8 @@ export default function ProfilePage() {
                       key={item.label}
                       onClick={() => setActiveSection(i)}
                       className={`flex items-center gap-3 px-5 py-4 text-sm font-medium border-l-4 transition-all ${activeSection === i
-                          ? "text-sidebar-bg bg-green-50/60 border-sidebar-bg"
-                          : "text-gray-500 border-transparent hover:bg-gray-50 hover:text-gray-800"
+                        ? "text-sidebar-bg bg-green-50/60 border-sidebar-bg"
+                        : "text-gray-500 border-transparent hover:bg-gray-50 hover:text-gray-800"
                         }`}
                     >
                       <Icon className="w-4 h-4" />

@@ -66,7 +66,7 @@ export default function AddProductPage() {
     }
 
     setIsPublishing(true);
-    
+
     try {
       // Create FormData to send to backend
       const formData = new FormData();
@@ -77,13 +77,13 @@ export default function AddProductPage() {
       formData.append("description", form.description || form.summary);
       formData.append("is_visible", visibility === "public" ? "true" : "false");
       formData.append("is_active", immediatePublish ? "true" : "false");
-      
+
       // Optional fields
       if (form.sku) formData.append("sku", form.sku);
       if (form.discountPrice) formData.append("discount_price", form.discountPrice);
       if (form.lowStockLevel) formData.append("low_stock_level", form.lowStockLevel);
       if (form.summary) formData.append("summary", form.summary);
-      
+
       // Add images if any
       selectedFiles.forEach((file, index) => {
         formData.append(`image_${index}`, file);
@@ -91,7 +91,7 @@ export default function AddProductPage() {
 
       // Call the API
       await dealerApi.createProduct(formData);
-      
+
       showToast("Product published successfully!");
       setTimeout(() => router.push("/dealer/products"), 2000);
     } catch (error: any) {
@@ -165,7 +165,7 @@ export default function AddProductPage() {
       />
 
       <div className="flex-1 overflow-y-auto p-4 lg:p-8 bg-[#f8fafc]">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-300">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 w-full">
           {/* Left — Main Form */}
           <div className="lg:col-span-8 space-y-6">
             {/* Section 1: Basic Information */}

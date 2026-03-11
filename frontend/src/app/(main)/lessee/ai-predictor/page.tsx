@@ -73,7 +73,7 @@ export default function AIPredictorPage() {
       </LesseePageHeader>
 
       <div className="flex-1 overflow-y-auto p-4 lg:p-8 bg-[#f8fafc]">
-        <div className="grid grid-cols-12 gap-8 max-w-[1600px] mx-auto pb-8">
+        <div className="grid grid-cols-12 gap-8 w-full pb-8">
           {/* Left Panel - Input Parameters */}
           <div className="col-span-12 lg:col-span-5 space-y-6">
             <div className="bg-white rounded-2xl p-6 lg:p-8 border border-gray-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] h-full flex flex-col">

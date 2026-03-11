@@ -6,6 +6,7 @@ from .views import (
     ChangePasswordView,
     LesseeDashboardView,
     LesseeNotificationListView,
+    MyNotificationListView,
     LogoutView,
     MyTokenObtainPairView,
     SignupView,
@@ -13,6 +14,7 @@ from .views import (
     get_user_profile,
     mark_notification_read,
     mark_all_notifications_read,
+    notification_unread_count,
 )
 
 app_name = 'accounts'
@@ -26,4 +28,9 @@ urlpatterns = [
     path('me/', get_user_profile, name='get_user_profile'),
     path('change-password/', ChangePasswordView.as_view(), name='change_password'),
     path('admin/', AdminDashboardStatsView.as_view(), name='admin'),
+    # Notifications
+    path('notifications/', MyNotificationListView.as_view(), name='notifications'),
+    path('notifications/unread-count/', notification_unread_count, name='notification_unread_count'),
+    path('notifications/<int:pk>/read/', mark_notification_read, name='mark_notification_read'),
+    path('notifications/mark-all-read/', mark_all_notifications_read, name='mark_all_notifications_read'),
 ]
