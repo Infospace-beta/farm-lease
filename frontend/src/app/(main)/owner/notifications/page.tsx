@@ -153,15 +153,15 @@ export default function OwnerNotificationsPage() {
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={`relative flex items-center gap-2 px-4 py-4 text-sm font-semibold transition-colors border-b-2 -mb-px whitespace-nowrap ${activeTab === tab.key
-                  ? "text-[#047857] border-[#047857]"
-                  : "text-gray-500 border-transparent hover:text-gray-800"
+                ? "text-[#047857] border-[#047857]"
+                : "text-gray-500 border-transparent hover:text-gray-800"
                 }`}
             >
               {tab.label}
               <span
                 className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full ${activeTab === tab.key
-                    ? "bg-[#047857] text-white"
-                    : "bg-gray-100 text-gray-500"
+                  ? "bg-[#047857] text-white"
+                  : "bg-gray-100 text-gray-500"
                   }`}
               >
                 {tab.count}
@@ -171,7 +171,7 @@ export default function OwnerNotificationsPage() {
         </div>
 
         {/* Notification List */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 w-full max-w-7xl mx-auto">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 w-full">
           {loading ? (
             <div className="space-y-3">
               {[0, 1, 2, 3].map((i) => (
@@ -214,8 +214,8 @@ export default function OwnerNotificationsPage() {
                         key={notif.id}
                         onClick={() => notif.unread && handleMarkRead(notif.id)}
                         className={`flex items-start gap-4 p-4 rounded-2xl border transition-all cursor-pointer ${notif.unread
-                            ? "bg-white border-[#047857]/20 shadow-sm"
-                            : "bg-white/60 border-gray-100 hover:bg-white hover:border-gray-200"
+                          ? "bg-white border-[#047857]/20 shadow-sm"
+                          : "bg-white/60 border-gray-100 hover:bg-white hover:border-gray-200"
                           }`}
                       >
                         <div

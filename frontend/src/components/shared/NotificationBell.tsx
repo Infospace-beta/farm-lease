@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { landsApi } from "@/lib/services/api";
+import { ownerApi, lesseeApi, adminApi } from "@/lib/services/api";
 
 interface Notification {
   id: string | number;
@@ -15,9 +15,41 @@ interface Notification {
   read: boolean;
 }
 
+interface RawNotification {
+  id: number;
+  title: string;
+  body?: string;
+  notif_type?: string;
+  icon?: string;
+  is_read?: boolean;
+  read?: boolean;
+  created_at?: string;
+}
+
 interface NotificationBellProps {
   href: string;
   variant?: "dealer" | "lessee" | "owner" | "admin";
+}
+
+const ICON_STYLES: Record<string, { bg: string; color: string }> = {
+  success:  { bg: 'bg-green-50',  color: 'text-green-600' },
+  error:    { bg: 'bg-red-50',    color: 'text-red-600' },
+  warning:  { bg: 'bg-amber-50',  color: 'text-amber-600' },
+  info:     { bg: 'bg-blue-50',   color: 'text-blue-600' },
+};
+
+function mapRaw(n: RawNotification): Notification {
+  const style = ICON_STYLES[n.notif_type ?? 'info'] ?? ICON_STYLES.info;
+  return {
+    id: n.id,
+    icon: n.icon ?? 'notifications',
+    iconBg: style.bg,
+    iconColor: style.color,
+    title: n.title,
+    msg: n.body ?? '',
+    time: n.created_at ? new Date(n.created_at).toLocaleDateString() : '',
+    read: n.is_read ?? n.read ?? false,
+  };
 }
 
 export default function NotificationBell({
@@ -28,33 +60,43 @@ export default function NotificationBell({
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Fetch notifications when dropdown opens (for owner variant)
   useEffect(() => {
-    if (open && variant === "owner" && notifications.length === 0) {
-      const fetchNotifications = async () => {
-        setLoading(true);
-        try {
-          const { data } = await landsApi.ownerNotifications();
-          setNotifications(data);
-        } catch (error) {
-          console.error("Failed to fetch notifications:", error);
-        } finally {
-          setLoading(false);
-        }
-      };
-      fetchNotifications();
-    }
-  }, [open, variant]);
+    if (!open || notifications.length > 0) return;
+    setLoading(true);
+    const api =
+      variant === "admin" ? adminApi :
+      variant === "lessee" ? lesseeApi :
+      ownerApi;
+    api.notifications()
+      .then(({ data }) => {
+        const raw: RawNotification[] = Array.isArray(data) ? data : (data.results ?? []);
+        setNotifications(raw.map(mapRaw));
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [open, variant, notifications.length]);
 
   const unread = notifications.filter((n) => !n.read).length;
 
-  const markRead = (id: string | number) =>
+  const markRead = (id: string | number) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
     );
+    const api =
+      variant === "admin" ? adminApi :
+      variant === "lessee" ? lesseeApi :
+      ownerApi;
+    api.markNotificationRead(Number(id)).catch(() => {});
+  };
 
-  const markAllRead = () =>
+  const markAllRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    const api =
+      variant === "admin" ? adminApi :
+      variant === "lessee" ? lesseeApi :
+      ownerApi;
+    api.markAllNotificationsRead().catch(() => {});
+  };
 
   return (
     <div className="relative">

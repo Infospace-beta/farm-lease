@@ -84,8 +84,8 @@ export default function SystemSettingsPage() {
           <button
             onClick={handleSave}
             className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm shadow-sm transition ${saved
-                ? "bg-green-600 text-white"
-                : "bg-sidebar-bg text-white hover:opacity-90"
+              ? "bg-green-600 text-white"
+              : "bg-sidebar-bg text-white hover:opacity-90"
               }`}
           >
             <Save className="w-4 h-4" />

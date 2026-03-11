@@ -94,7 +94,7 @@ export default function FinancialsPage() {
         </button>
       </OwnerPageHeader>
       <div className="flex-1 overflow-y-auto p-4 lg:p-8 bg-slate-50">
-        <div className="mx-auto max-w-6xl">
+        <div className="w-full">
           {/* Loading state */}
           {loading && (
             <div className="flex items-center justify-center py-12">
@@ -227,18 +227,16 @@ export default function FinancialsPage() {
                             <td className="px-6 py-4 font-medium text-slate-800">{t.land_title}</td>
                             <td className="px-6 py-4 text-slate-600">{t.lessee_name}</td>
                             <td className="px-6 py-4 text-slate-500">{formatDate(t.date)}</td>
-                            <td className={`px-6 py-4 text-right font-bold ${
-                              t.type === "credit" ? "text-emerald-600" :
-                              t.type === "pending" ? "text-amber-600" : "text-blue-600"
-                            }`}>
+                            <td className={`px-6 py-4 text-right font-bold ${t.type === "credit" ? "text-emerald-600" :
+                                t.type === "pending" ? "text-amber-600" : "text-blue-600"
+                              }`}>
                               {formatCurrency(t.amount)}
                             </td>
                             <td className="px-6 py-4">
-                              <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
-                                t.status === "Completed" ? "bg-emerald-100 text-emerald-700" :
-                                t.status === "Pending" ? "bg-amber-100 text-amber-700" :
-                                "bg-blue-100 text-blue-700"
-                              }`}>
+                              <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${t.status === "Completed" ? "bg-emerald-100 text-emerald-700" :
+                                  t.status === "Pending" ? "bg-amber-100 text-amber-700" :
+                                    "bg-blue-100 text-blue-700"
+                                }`}>
                                 {t.status}
                               </span>
                             </td>

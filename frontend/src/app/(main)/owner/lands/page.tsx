@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { landsApi } from "@/lib/services/api";
+import { landsApi, ownerApi } from "@/lib/services/api";
 import OwnerPageHeader from "@/components/owner/OwnerPageHeader";
 
 /* ─── Types ──────────────────────────────────────────── */
@@ -36,6 +36,18 @@ interface LandData {
     rainfall: number;
   };
   images: Array<{ id: number; image: string }>;
+  current_lessee?: number | null;
+}
+
+interface AgreementSummary {
+  id: number;
+  status: string;
+  start_date?: string;
+  end_date?: string;
+  monthly_rent?: number;
+  lessee_name?: string;
+  land?: number;
+  land_id?: number;
 }
 
 /* ─── Status badge config ─────────────────────────────── */
@@ -87,6 +99,24 @@ export default function MyLandsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [soilFilter, setSoilFilter] = useState("");
+
+  // ── Manage modal ───────────────────────────────────────
+  const [manageLand, setManageLand] = useState<LandData | null>(null);
+  const [manageAgreements, setManageAgreements] = useState<AgreementSummary[]>([]);
+  const [manageAgreementsLoading, setManageAgreementsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!manageLand) { setManageAgreements([]); return; }
+    if (manageLand.status === 'Vacant' || manageLand.status === 'Under_Review') return;
+    setManageAgreementsLoading(true);
+    ownerApi.myAgreements()
+      .then((res) => {
+        const all: AgreementSummary[] = Array.isArray(res.data) ? res.data : (res.data?.results ?? []);
+        setManageAgreements(all.filter((a) => a.land === manageLand.id || a.land_id === manageLand.id));
+      })
+      .catch(() => setManageAgreements([]))
+      .finally(() => setManageAgreementsLoading(false));
+  }, [manageLand]);
 
   useEffect(() => {
     const fetchLands = async () => {
@@ -467,7 +497,10 @@ export default function MyLandsPage() {
                             Ksh {land.price_per_month.toLocaleString()}
                           </p>
                         </div>
-                        <button className="rounded-lg bg-slate-50 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-primary transition-colors">
+                        <button
+                          onClick={() => setManageLand(land)}
+                          className="rounded-lg bg-slate-50 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-primary transition-colors"
+                        >
                           Manage
                         </button>
                       </div>
@@ -500,6 +533,201 @@ export default function MyLandsPage() {
           </div>
         </div>
       </div>
+
+      {/* ── Manage Modal ─────────────────────────────────────────────── */}
+      {manageLand && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={() => setManageLand(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-start justify-between p-6 border-b border-slate-100">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">{manageLand.title}</h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Land ID: PL-{manageLand.id} &middot; {manageLand.total_area} ac
+                </p>
+              </div>
+              <button
+                onClick={() => setManageLand(null)}
+                className="p-2 rounded-lg hover:bg-slate-100 transition-colors ml-4 shrink-0"
+              >
+                <span className="material-symbols-outlined text-slate-400">close</span>
+              </button>
+            </div>
+
+            {/* Status badge */}
+            <div className="px-6 py-4 border-b border-slate-100">
+              <div
+                className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold ${
+                  manageLand.status === "Leased"
+                    ? "bg-emerald-50 text-emerald-700"
+                    : manageLand.status === "Pending_Payment"
+                    ? "bg-amber-50 text-amber-700"
+                    : manageLand.status === "Under_Review"
+                    ? "bg-blue-50 text-blue-700"
+                    : "bg-slate-50 text-slate-700"
+                }`}
+              >
+                <span className="material-symbols-outlined text-base">
+                  {manageLand.status === "Leased"
+                    ? "check_circle"
+                    : manageLand.status === "Pending_Payment"
+                    ? "schedule"
+                    : manageLand.status === "Under_Review"
+                    ? "history_edu"
+                    : "crop_free"}
+                </span>
+                {formatStatus(manageLand.status)}
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-4">
+
+              {/* ── Vacant ── */}
+              {manageLand.status === "Vacant" && (
+                <>
+                  <div className="rounded-lg bg-slate-50 p-4">
+                    <p className="text-sm text-slate-600">
+                      This land is currently vacant and listed for lease.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <button
+                      onClick={() => { setManageLand(null); router.push("/owner/lease-requests"); }}
+                      className="w-full flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors text-left"
+                    >
+                      <span className="material-symbols-outlined text-primary">inbox</span>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-800">View Lease Requests</p>
+                        <p className="text-xs text-slate-500">See all incoming requests for your land</p>
+                      </div>
+                      <span className="material-symbols-outlined text-slate-300 ml-auto">chevron_right</span>
+                    </button>
+                    <button
+                      onClick={() => { setManageLand(null); router.push("/owner/lands/add"); }}
+                      className="w-full flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors text-left"
+                    >
+                      <span className="material-symbols-outlined text-blue-500">edit</span>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-800">Add Another Listing</p>
+                        <p className="text-xs text-slate-500">List additional land properties</p>
+                      </div>
+                      <span className="material-symbols-outlined text-slate-300 ml-auto">chevron_right</span>
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* ── Under Review ── */}
+              {manageLand.status === "Under_Review" && (
+                <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
+                  <div className="flex items-start gap-3">
+                    <span className="material-symbols-outlined text-blue-500 text-xl shrink-0 mt-0.5">info</span>
+                    <div>
+                      <p className="text-sm font-semibold text-blue-800">Under Admin Review</p>
+                      <p className="text-sm text-blue-700 mt-1">
+                        Your land listing is being verified by our admin team. Once approved,
+                        it will appear in search results and lessees can send requests.
+                      </p>
+                      <p className="text-xs text-blue-500 mt-2">This typically takes 1–3 business days.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Pending Payment / Leased ── */}
+              {(manageLand.status === "Pending_Payment" || manageLand.status === "Leased") && (
+                <>
+                  {manageAgreementsLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+                    </div>
+                  ) : manageAgreements.length === 0 ? (
+                    <div className="rounded-lg bg-amber-50 p-4">
+                      <p className="text-sm text-amber-700">
+                        No agreement details found. Check the Agreements section below.
+                      </p>
+                    </div>
+                  ) : (
+                    manageAgreements.map((ag) => (
+                      <div key={ag.id} className="rounded-xl border border-slate-200 p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-bold text-slate-800">Agreement #{ag.id}</span>
+                          <span
+                            className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                              ag.status === "active"
+                                ? "bg-emerald-100 text-emerald-700"
+                                : ag.status === "draft"
+                                ? "bg-amber-100 text-amber-700"
+                                : "bg-slate-100 text-slate-700"
+                            }`}
+                          >
+                            {ag.status ?? "In Progress"}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Lessee</p>
+                            <p className="text-sm font-semibold text-slate-800 mt-0.5">
+                              {ag.lessee_name ?? "N/A"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Monthly Rent</p>
+                            <p className="text-sm font-semibold text-primary mt-0.5">
+                              Ksh {Number(ag.monthly_rent ?? 0).toLocaleString()}
+                            </p>
+                          </div>
+                          {ag.start_date && (
+                            <div>
+                              <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Start</p>
+                              <p className="text-sm font-semibold text-slate-800 mt-0.5">
+                                {new Date(ag.start_date).toLocaleDateString()}
+                              </p>
+                            </div>
+                          )}
+                          {ag.end_date && (
+                            <div>
+                              <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">End</p>
+                              <p className="text-sm font-semibold text-slate-800 mt-0.5">
+                                {new Date(ag.end_date).toLocaleDateString()}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => { setManageLand(null); router.push(`/owner/agreements/${ag.id}`); }}
+                          className="w-full rounded-lg bg-primary py-2 text-sm font-semibold text-white hover:bg-emerald-800 transition-colors"
+                        >
+                          View Full Agreement
+                        </button>
+                      </div>
+                    ))
+                  )}
+                  <button
+                    onClick={() => { setManageLand(null); router.push("/owner/agreements"); }}
+                    className="w-full flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors text-left"
+                  >
+                    <span className="material-symbols-outlined text-slate-500">description</span>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-800">All Agreements</p>
+                      <p className="text-xs text-slate-500">View and manage all your lease agreements</p>
+                    </div>
+                    <span className="material-symbols-outlined text-slate-300 ml-auto">chevron_right</span>
+                  </button>
+                </>
+              )}
+
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

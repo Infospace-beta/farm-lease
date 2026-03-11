@@ -32,6 +32,13 @@ class LeaseRequest(models.Model):
         blank=True
     )
     message = models.TextField(blank=True, null=True)
+    requested_area = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Acres requested (for partial lease from a larger plot)"
+    )
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
@@ -87,6 +94,25 @@ class LeaseAgreement(models.Model):
         choices=STATUS_CHOICES,
         default='pending_signature'
     )
+    # Agreement terms (filled by lessee when drafting the contract)
+    intended_use = models.CharField(max_length=300, blank=True, default='')
+    special_conditions = models.TextField(blank=True, default='')
+
+    # Signature data (typed full name used as legally binding signature)
+    lessee_signature = models.TextField(null=True, blank=True)
+    owner_signature = models.TextField(null=True, blank=True)
+
+    # Witness details
+    witness_name = models.CharField(max_length=200, blank=True, default='')
+    witness_id_number = models.CharField(max_length=50, blank=True, default='')
+    witness_phone = models.CharField(max_length=20, blank=True, default='')
+    witness_signature = models.TextField(null=True, blank=True)
+    witness_signed_at = models.DateTimeField(null=True, blank=True)
+
+    # Submission tracking
+    lessee_submitted = models.BooleanField(default=False)
+    lessee_submitted_at = models.DateTimeField(null=True, blank=True)
+
     owner_signed = models.BooleanField(default=False)
     lessee_signed = models.BooleanField(default=False)
     owner_signed_at = models.DateTimeField(null=True, blank=True)

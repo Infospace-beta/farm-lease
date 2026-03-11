@@ -322,6 +322,7 @@ type Listing = {
   id?: number;
   name: string;
   acresNum: number;
+  available_area?: number;
   location: string;
   region: string;
   price: string;
@@ -357,6 +358,7 @@ type ApiLand = {
   id: number;
   title: string;
   total_area: string | number;
+  leased_area?: string | number | null;
   price_per_month: string | number;
   location_name: string;
   has_irrigation: boolean;
@@ -387,9 +389,11 @@ function mapApiToListing(l: ApiLand): Listing {
     const raw = img.image;
     return raw.startsWith("http") ? raw : `${BASE}${raw}`;
   });
-  const photoUrl = photoUrls[0];
+  const leasedArea = l.leased_area ? Number(l.leased_area) : 0;
+  const available_area = Math.max(0, Number(l.total_area) - leasedArea);
   return {
     id: l.id, name: l.title, acresNum: Number(l.total_area),
+    available_area: available_area < Number(l.total_area) ? available_area : undefined,
     location: loc, region, price, soil, water, slope: "Flat",
     badge, badgeColor: BADGE_COLORS[l.id % BADGE_COLORS.length],
     match: null, matchColor: "", status: null,
@@ -420,10 +424,69 @@ const STATIC_SUGGESTIONS = buildSuggestions([]);
 export default function BrowseLandPage() {
   const router = useRouter();
 
+  // ── Request Lease modal ─────────────────────────────────
+  const [requestModal, setRequestModal] = useState<Listing | null>(null);
+  const [reqStartDate, setReqStartDate] = useState("");
+  const [reqEndDate, setReqEndDate] = useState("");
+  const [reqMessage, setReqMessage] = useState("");
+  const [reqAreaStr, setReqAreaStr] = useState("");
+  const [reqSubmitting, setReqSubmitting] = useState(false);
+  const [reqError, setReqError] = useState("");
+  const [reqSuccess, setReqSuccess] = useState(false);
+
+  function openRequestModal(listing: Listing) {
+    setRequestModal(listing);
+    setReqAreaStr(String(listing.acresNum));
+    setReqStartDate("");
+    setReqEndDate("");
+    setReqMessage("");
+    setReqError("");
+    setReqSuccess(false);
+  }
+
+  async function submitLeaseRequest() {
+    if (!requestModal?.id) return;
+    if (!reqStartDate || !reqEndDate) { setReqError("Please select start and end dates."); return; }
+    if (new Date(reqEndDate) <= new Date(reqStartDate)) { setReqError("End date must be after start date."); return; }
+    const reqArea = parseFloat(reqAreaStr);
+    if (isNaN(reqArea) || reqArea <= 0) { setReqError("Please enter a valid area in acres."); return; }
+    if (reqArea > requestModal.acresNum) {
+      setReqError(`Requested area (${reqArea} ac) cannot exceed total land area (${requestModal.acresNum} ac).`);
+      return;
+    }
+    setReqError("");
+    setReqSubmitting(true);
+    try {
+      await lesseeApi.createLeaseRequest({
+        land: requestModal.id,
+        proposed_start_date: reqStartDate,
+        proposed_end_date: reqEndDate,
+        message: reqMessage.trim() || undefined,
+        requested_area: reqArea,
+      });
+      setReqSuccess(true);
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: Record<string, unknown> } };
+      const raw = err.response?.data;
+      const msg = raw
+        ? Object.values(raw).flat().join(" ")
+        : "Request failed. Please try again.";
+      setReqError(String(msg));
+    } finally {
+      setReqSubmitting(false);
+    }
+  }
+
   // ── Listing detail modal ───────────────────────────────────
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const [carouselIndex, setCarouselIndex] = useState(0);
   useEffect(() => { setCarouselIndex(0); }, [selectedListing]);
+
+  // ── Per-card image carousel index ─────────────────────────
+  const [cardImgIdx, setCardImgIdx] = useState<Record<string, number>>({});
+  const getCardIdx = (name: string) => cardImgIdx[name] ?? 0;
+  const setCardIdx = (name: string, idx: number) =>
+    setCardImgIdx(prev => ({ ...prev, [name]: idx }));
 
   // ── Wishlist — persisted to localStorage ─────────────────────
   const [wishlist, setWishlist] = useState<Set<string>>(() => {
@@ -1045,7 +1108,14 @@ export default function BrowseLandPage() {
                     className="bg-white rounded-2xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] overflow-hidden group hover:shadow-xl transition-all duration-300 border border-transparent hover:border-[#047857]/20 flex flex-col"
                   >
                     <div className="relative h-48 bg-gray-200">
-                      {listing.photoUrl ? (
+                      {listing.photoUrls.length > 0 ? (
+                        <img
+                          src={listing.photoUrls[getCardIdx(listing.name)] ?? listing.photoUrl}
+                          alt={listing.name}
+                          className="absolute inset-0 w-full h-full object-cover"
+                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                        />
+                      ) : listing.photoUrl ? (
                         <img
                           src={listing.photoUrl}
                           alt={listing.name}
@@ -1057,11 +1127,38 @@ export default function BrowseLandPage() {
                           <span className="material-icons-round text-[#0f392b]/20 text-[80px]">landscape</span>
                         </div>
                       )}
+                      {/* Prev/next arrows — only when multiple images */}
+                      {listing.photoUrls.length > 1 && (
+                        <>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setCardIdx(listing.name, Math.max(0, getCardIdx(listing.name) - 1)); }}
+                            disabled={getCardIdx(listing.name) === 0}
+                            className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/75 transition-colors disabled:opacity-30"
+                          >
+                            <span className="material-icons-round text-sm">chevron_left</span>
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setCardIdx(listing.name, Math.min(listing.photoUrls.length - 1, getCardIdx(listing.name) + 1)); }}
+                            disabled={getCardIdx(listing.name) === listing.photoUrls.length - 1}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/75 transition-colors disabled:opacity-30"
+                          >
+                            <span className="material-icons-round text-sm">chevron_right</span>
+                          </button>
+                          <span className="absolute bottom-10 right-2 bg-black/50 text-white text-[10px] px-1.5 py-0.5 rounded-full z-10">
+                            {getCardIdx(listing.name) + 1}/{listing.photoUrls.length}
+                          </span>
+                        </>
+                      )}
                       <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-transparent" />
                       <div className="absolute top-0 left-0 right-0 p-3 flex justify-between items-start bg-gradient-to-b from-black/40 to-transparent">
                         <span className="bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-bold text-gray-800">
                           {listing.acresNum} Acres
                         </span>
+                        {listing.available_area !== undefined && (
+                          <span className="bg-amber-500/90 backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-bold text-white">
+                            {listing.available_area} ac free
+                          </span>
+                        )}
                       </div>
                       <span
                         className={`absolute bottom-3 left-3 ${listing.badgeColor} text-white px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide shadow-sm`}
@@ -1139,7 +1236,7 @@ export default function BrowseLandPage() {
                           </button>
                         </div>
                         <button
-                          onClick={() => router.push(`/lessee/leases/new?landId=${listing.id}`)}
+                          onClick={() => openRequestModal(listing)}
                           className="w-full bg-[#047857] hover:bg-emerald-800 text-white text-xs font-bold py-2 rounded-xl transition-colors shadow-sm"
                         >
                           Request Lease
@@ -1324,7 +1421,7 @@ export default function BrowseLandPage() {
                 {/* CTA buttons */}
                 <div className="flex gap-3 pt-2">
                   <button
-                    onClick={() => router.push(`/lessee/leases/new?landId=${selectedListing.id}`)}
+                    onClick={() => openRequestModal(selectedListing)}
                     className="flex-1 bg-[#047857] hover:bg-emerald-800 text-white font-bold py-3 rounded-xl shadow transition-colors text-sm"
                   >
                     Request Lease
@@ -1347,6 +1444,150 @@ export default function BrowseLandPage() {
           </div>
         )
       }
+
+      {/* ── Request Lease Modal ────────────────────────────── */}
+      {requestModal && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={() => { if (!reqSubmitting) setRequestModal(null); }}
+        >
+          <div
+            className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal header */}
+            <div className="bg-[#0f392b] px-6 py-4 flex items-center justify-between">
+              <div>
+                <p className="text-[#13ec80] text-xs font-semibold uppercase tracking-widest">Request a Lease</p>
+                <h2 className="text-white font-bold text-base leading-tight">{requestModal.name}</h2>
+              </div>
+              <button
+                onClick={() => setRequestModal(null)}
+                disabled={reqSubmitting}
+                className="text-white/60 hover:text-white transition-colors"
+              >
+                <span className="material-icons-round text-2xl">close</span>
+              </button>
+            </div>
+
+            <div className="px-6 py-5 space-y-4">
+              {reqSuccess ? (
+                <div className="text-center py-6 space-y-3">
+                  <span className="material-icons-round text-5xl text-[#16a34a]">check_circle</span>
+                  <p className="font-bold text-slate-800 text-lg">Request Sent!</p>
+                  <p className="text-sm text-slate-500">
+                    Your lease request for <strong>{requestModal.name}</strong> has been sent to the landlord.
+                    You&apos;ll be notified once they respond.
+                  </p>
+                  <button
+                    onClick={() => setRequestModal(null)}
+                    className="mt-2 bg-[#16a34a] text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-emerald-700 transition-colors"
+                  >
+                    Done
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {/* Land info */}
+                  <div className="bg-slate-50 rounded-xl px-4 py-3 text-sm space-y-1">
+                    <p><span className="text-slate-500">Location:</span> <strong>{requestModal.location}</strong></p>
+                    <p><span className="text-slate-500">Total area:</span> <strong>{requestModal.acresNum} acres</strong></p>
+                    <p><span className="text-slate-500">Rent:</span> <strong>KES {requestModal.price}/mo</strong></p>
+                  </div>
+
+                  {/* Requested area */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                      Area You Want to Lease (acres)
+                    </label>
+                    <input
+                      type="number"
+                      min="0.1"
+                      max={requestModal.acresNum}
+                      step="0.1"
+                      value={reqAreaStr}
+                      onChange={(e) => setReqAreaStr(e.target.value)}
+                      className="w-full border-2 border-slate-200 focus:border-[#16a34a] rounded-xl px-3 py-2.5 text-sm outline-none"
+                      placeholder={`Max ${requestModal.acresNum} acres`}
+                    />
+                    {parseFloat(reqAreaStr) < requestModal.acresNum && parseFloat(reqAreaStr) > 0 && (
+                      <p className="text-xs text-amber-700 flex items-center gap-1">
+                        <span className="material-icons-round text-sm">info</span>
+                        Partial lease: requesting {reqAreaStr} of {requestModal.acresNum} acres
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Dates */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Start Date</label>
+                      <input
+                        type="date"
+                        value={reqStartDate}
+                        min={new Date().toISOString().split("T")[0]}
+                        onChange={(e) => setReqStartDate(e.target.value)}
+                        className="w-full border-2 border-slate-200 focus:border-[#16a34a] rounded-xl px-3 py-2.5 text-sm outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">End Date</label>
+                      <input
+                        type="date"
+                        value={reqEndDate}
+                        min={reqStartDate || new Date().toISOString().split("T")[0]}
+                        onChange={(e) => setReqEndDate(e.target.value)}
+                        className="w-full border-2 border-slate-200 focus:border-[#16a34a] rounded-xl px-3 py-2.5 text-sm outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Optional message */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                      Message to Landlord <span className="font-normal normal-case">(optional)</span>
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={reqMessage}
+                      onChange={(e) => setReqMessage(e.target.value)}
+                      placeholder="Tell the landlord about your intended use, crops, etc."
+                      className="w-full border-2 border-slate-200 focus:border-[#16a34a] rounded-xl px-3 py-2.5 text-sm outline-none resize-none"
+                    />
+                  </div>
+
+                  {reqError && (
+                    <p className="text-sm text-red-600 flex items-center gap-1.5">
+                      <span className="material-icons-round text-base">error_outline</span>
+                      {reqError}
+                    </p>
+                  )}
+
+                  <div className="flex gap-3 pt-1">
+                    <button
+                      onClick={() => setRequestModal(null)}
+                      className="flex-1 border border-slate-300 text-slate-700 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={submitLeaseRequest}
+                      disabled={reqSubmitting}
+                      className="flex-1 bg-[#0f392b] text-white py-2.5 rounded-xl text-sm font-bold hover:bg-emerald-900 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+                    >
+                      {reqSubmitting ? (
+                        <><span className="material-icons-round text-base animate-spin">progress_activity</span>Sending…</>
+                      ) : (
+                        <><span className="material-icons-round text-base">send</span>Send Request</>
+                      )}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div >
   );
 }
