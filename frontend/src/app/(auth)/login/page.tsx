@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -9,6 +10,7 @@ import { toast } from "react-toastify";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 import { useAuth } from "@/providers";
+import { dashboardPathFor } from "@/lib/auth";
 import type { LoginCredentials } from "@/types";
 
 // ─── Validation schema ─────────────────────────────────────────────────────────
@@ -19,7 +21,8 @@ const schema = yup.object({
 
 // ─── Component ─────────────────────────────────────────────────────────────────
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -27,22 +30,36 @@ export default function LoginPage() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginCredentials>({ resolver: yupResolver(schema) });
+  } = useForm<LoginCredentials>({ 
+    resolver: yupResolver(schema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
 
   const onSubmit = async (data: LoginCredentials) => {
     setLoading(true);
     try {
       await login(data);
-      toast.success("Welcome back!");
+      toast.success("Welcome back!", { autoClose: 1500 });
+      // Keep loading state until redirect completes
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
         "Invalid email or password.";
       toast.error(msg);
-    } finally {
       setLoading(false);
     }
   };
+
+  // Redirect to dashboard if already logged in (instant, no loading screen)
+  useEffect(() => {
+    if (isAuthenticated && user?.role) {
+      const dashboardPath = dashboardPathFor(user.role);
+      window.location.href = dashboardPath;
+    }
+  }, [isAuthenticated, user]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/providers";
 
@@ -10,18 +10,14 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.replace("/login");
+      router.push("/login");
     }
   }, [isAuthenticated, isLoading, router]);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <span className="text-gray-400 text-sm animate-pulse">Loading…</span>
-      </div>
-    );
-  }
+  // Show minimal loading state during auth check
+  if (isLoading) return null;
 
+  // Don't show anything while redirecting to login
   if (!isAuthenticated) return null;
 
   return <>{children}</>;

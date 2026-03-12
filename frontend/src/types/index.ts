@@ -8,6 +8,7 @@ export interface User {
   email: string;
   first_name: string;
   last_name: string;
+  profile_picture?: string | null;
   name: string;
   role: UserRole;
   phone_number: string;
@@ -40,7 +41,7 @@ export interface LoginCredentials {
   password: string;
 }
 
-export interface RegisterData {
+export interface SignupData {
   email: string;
   password: string;
   password2?: string;

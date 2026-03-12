@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -9,7 +10,8 @@ import { toast } from "react-toastify";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 import { useAuth } from "@/providers";
-import type { RegisterData, UserRole } from "@/types";
+import { dashboardPathFor } from "@/lib/auth";
+import type { SignupData, UserRole } from "@/types";
 
 // ─── Validation schema ─────────────────────────────────────────────────────────
 const schema = yup.object({
@@ -34,7 +36,7 @@ const schema = yup.object({
     .required("Please confirm your password"),
 });
 
-type FormData = RegisterData & { password2: string };
+type FormData = SignupData & { password2: string };
 
 const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
   { value: "farmer", label: "Farmer / Lessee" },
@@ -44,7 +46,8 @@ const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
 
 // ─── Component ─────────────────────────────────────────────────────────────────
 export default function SignupPage() {
-  const { register: registerUser } = useAuth();
+  const { signup: signupUser, isAuthenticated, user } = useAuth();
+  const router = useRouter();
   const [showPw, setShowPw] = useState(false);
   const [showPw2, setShowPw2] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -53,23 +56,42 @@ export default function SignupPage() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<FormData>({ resolver: yupResolver(schema) });
+  } = useForm<FormData>({ 
+    resolver: yupResolver(schema) as any,
+    defaultValues: {
+      first_name: "",
+      last_name: "",
+      email: "",
+      phone_number: "",
+      role: "" as any,
+      password: "",
+      password2: "",
+    },
+  });
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
-      await registerUser(data as RegisterData);
-      toast.success("Account created! Redirecting…");
+      await signupUser(data as SignupData);
+      toast.success("Account created! Redirecting…", { autoClose: 1500 });
+      // Keep loading state until redirect completes
     } catch (err: unknown) {
       const errData = (err as { response?: { data?: Record<string, string[]> } })?.response?.data;
       const firstMsg = errData
         ? Object.values(errData).flat()[0]
-        : "Registration failed. Please try again.";
+        : "Signup failed. Please try again.";
       toast.error(firstMsg as string);
-    } finally {
       setLoading(false);
     }
   };
+
+  // Redirect to dashboard if already logged in (instant, no loading screen)
+  useEffect(() => {
+    if (isAuthenticated && user?.role) {
+      const dashboardPath = dashboardPathFor(user.role);
+      window.location.href = dashboardPath;
+    }
+  }, [isAuthenticated, user]);
 
   // Reusable field wrapper
   const Field = ({
@@ -94,7 +116,17 @@ export default function SignupPage() {
     "w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent";
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-10">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-10 relative">
+      {/* Redirect Overlay */}
+      {loading && (
+        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 size={40} className="animate-spin text-green-600" />
+            <p className="text-sm font-medium text-gray-700">Creating account and redirecting...</p>
+          </div>
+        </div>
+      )}
+      
       <div className="w-full max-w-lg bg-white rounded-2xl shadow-md p-8">
         {/* Header */}
         <div className="mb-8 text-center">

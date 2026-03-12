@@ -1,8 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { landsApi } from "@/lib/services/api";
+import OwnerPageHeader from "@/components/owner/OwnerPageHeader";
+
+// Dynamically import LocationPicker to avoid SSR issues with Leaflet
+const LocationPicker = dynamic(
+  () => import("@/components/shared/LocationPicker"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h4 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary text-lg">
+              location_on
+            </span>
+            Location
+          </h4>
+        </div>
+        <p className="text-xs text-slate-500">
+          Pinpoint your land's location. This helps us suggest suitable crops.
+        </p>
+        <div className="relative rounded-xl overflow-hidden border-2 border-slate-200 shadow-sm h-64 bg-slate-100 flex items-center justify-center">
+          <div className="text-center">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-primary border-r-transparent"></div>
+            <p className="text-xs text-slate-500 mt-2">Loading map...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+);
 
 /* ─── Step config ─────────────────────────────────────── */
 const STEPS = ["Basic Info", "Soil & Climate", "Photos & Submit"];
@@ -15,6 +46,7 @@ interface BasicForm {
   price_per_month: string;
   preferred_duration: string;
   title_deed_number: string;
+  location_name: string;
   latitude: string;
   longitude: string;
   has_irrigation: boolean;
@@ -24,6 +56,7 @@ interface BasicForm {
 }
 
 interface SoilForm {
+  soil_type: string;
   ph_level: string;
   nitrogen: string;
   phosphorus: string;
@@ -36,332 +69,1152 @@ interface SoilForm {
 /* ─── Shared input classes ───────────────────────────── */
 const INPUT =
   "w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-700 placeholder-slate-400 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition";
-const LABEL = "block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5";
+const LABEL =
+  "block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5";
+
+const SOIL_TYPES = [
+  "Sandy",
+  "Clay",
+  "Loamy",
+  "Silt",
+  "Peat",
+  "Chalk",
+  "Sandy Loam",
+  "Clay Loam",
+  "Other",
+];
 
 export default function UploadLandPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [error, setError]   = useState<string | null>(null);
-  const [landId, setLandId] = useState<number | null>(null);
-  const [photos, setPhotos] = useState<FileList | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
 
   const [basic, setBasic] = useState<BasicForm>({
-    title: "", description: "", total_area: "", price_per_month: "",
-    preferred_duration: "1 Year", title_deed_number: "",
-    latitude: "", longitude: "",
-    has_irrigation: false, has_electricity: false,
-    has_road_access: false, has_fencing: false,
+    title: "",
+    description: "",
+    total_area: "",
+    price_per_month: "",
+    preferred_duration: "",
+    title_deed_number: "",
+    location_name: "",
+    latitude: "",
+    longitude: "",
+    has_irrigation: false,
+    has_electricity: false,
+    has_road_access: false,
+    has_fencing: false,
   });
 
   const [soil, setSoil] = useState<SoilForm>({
-    ph_level: "", nitrogen: "", phosphorus: "", potassium: "",
-    moisture: "", temperature: "", rainfall: "",
+    soil_type: "",
+    ph_level: "",
+    nitrogen: "",
+    phosphorus: "",
+    potassium: "",
+    moisture: "",
+    temperature: "",
+    rainfall: "",
   });
 
+  // ── Persist form across page refreshes ──────────────────
+  // hasHydrated guards the save effect from overwriting storage with
+  // default state before the restore effect has run.
+  const [hasHydrated, setHasHydrated] = useState(false);
+
+  useEffect(() => {
+    const savedBasic = sessionStorage.getItem("fl_add_basic");
+    const savedSoil = sessionStorage.getItem("fl_add_soil");
+    const savedStep = sessionStorage.getItem("fl_add_step");
+    if (savedBasic) {
+      try {
+        // Restore all fields including location so a page refresh preserves everything
+        setBasic((prev) => ({ ...prev, ...JSON.parse(savedBasic) }));
+      } catch { /* ignore */ }
+    }
+    if (savedSoil) {
+      try { setSoil(JSON.parse(savedSoil)); } catch { /* ignore */ }
+    }
+    if (savedStep) {
+      try { setStep(parseInt(savedStep, 10)); } catch { /* ignore */ }
+    }
+    setHasHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+    sessionStorage.setItem("fl_add_basic", JSON.stringify(basic));
+  }, [basic, hasHydrated]);
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+    sessionStorage.setItem("fl_add_soil", JSON.stringify(soil));
+  }, [soil, hasHydrated]);
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+    sessionStorage.setItem("fl_add_step", String(step));
+  }, [step, hasHydrated]);
+
+  /* ── Helpers ────────────────────────────────────────── */
+  /** Returns null for empty string so the backend gets null not "" */
+  const numOrNull = (v: string): number | null =>
+    v.trim() === "" ? null : parseFloat(v);
+
+  const strOrNull = (v: string): string | null =>
+    v.trim() === "" ? null : v.trim();
+
   /* ── Handlers ───────────────────────────────────────── */
-  const handleBasicSubmit = async () => {
-    setLoading(true); setError(null);
-    try {
-      const { data } = await landsApi.createBasic(basic);
-      setLandId(data.id);
-      setStep(1);
-    } catch (e: unknown) {
-      const msg = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      setError(msg ?? "Failed to save basic info. Check your inputs.");
-    } finally { setLoading(false); }
+  // Step 0 → 1: validate locally only, no API call
+  const handleBasicSubmit = () => {
+    const errs: Record<string, string> = {};
+    if (!basic.title.trim()) errs.title = "Plot title is required.";
+    if (!basic.description.trim()) errs.description = "Description is required.";
+    if (!basic.total_area) errs.total_area = "Total area is required.";
+    const rawPrice = basic.price_per_month.replace(/,/g, "");
+    if (!rawPrice) errs.price_per_month = "Monthly price is required.";
+    if (!basic.title_deed_number.trim()) errs.title_deed_number = "Title Deed Number is required for verification.";
+    if (!basic.preferred_duration) errs.preferred_duration = "Preferred duration is required.";
+    if (!basic.latitude || !basic.longitude) errs.location = "Please pick a location on the map or use current location.";
+    if (!basic.location_name.trim()) errs.location_name = "Location name is required.";
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      return;
+    }
+    setFieldErrors({});
+    setError(null);
+    setStep(1);
   };
 
-  const handleSoilSubmit = async () => {
-    if (!landId) return;
-    setLoading(true); setError(null);
-    try {
-      await landsApi.addSoil(landId, soil);
-      setStep(2);
-    } catch (e: unknown) {
-      const msg = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      setError(msg ?? "Failed to save soil data.");
-    } finally { setLoading(false); }
+  // Step 1 → 2: pure UI transition, no API call
+  const handleSoilSubmit = () => {
+    setStep(2);
   };
 
+  // Step 2: final submit — all API calls consolidated here
   const handlePhotosSubmit = async () => {
-    if (!landId) return;
-    setLoading(true); setError(null);
+    if (photos.length < 3) {
+      setError("Please upload at least 3 photos before submitting.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    setFieldErrors({});
     try {
-      if (photos && photos.length > 0) {
-        const fd = new FormData();
-        Array.from(photos).forEach((f) => fd.append("image", f));
-        await landsApi.uploadPhotos(landId, fd);
+      // 1) Create the basic listing
+      const rawPrice = basic.price_per_month.replace(/,/g, "");
+      const { data: basicData } = await landsApi.createBasic({
+        ...basic,
+        price_per_month: rawPrice,
+      });
+      const newLandId: number = basicData.land_id;
+
+      // 2) Add soil/climate data only if any field was filled in
+      const hasAnySoil = Object.values(soil).some((v) => v !== "");
+      if (hasAnySoil) {
+        const soilPayload = {
+          soil_type: strOrNull(soil.soil_type),
+          ph_level: numOrNull(soil.ph_level),
+          nitrogen: numOrNull(soil.nitrogen),
+          phosphorus: numOrNull(soil.phosphorus),
+          potassium: numOrNull(soil.potassium),
+          moisture: numOrNull(soil.moisture),
+          temperature: numOrNull(soil.temperature),
+          rainfall: numOrNull(soil.rainfall),
+        };
+        await landsApi.addSoil(newLandId, soilPayload);
       }
-      router.push("/owner/lands");
+
+      // 3) Upload photos
+      const fd = new FormData();
+      photos.forEach((f) => fd.append("images", f));
+      await landsApi.uploadPhotos(newLandId, fd);
+
+      // Clear persisted form data and redirect
+      sessionStorage.removeItem("fl_add_basic");
+      sessionStorage.removeItem("fl_add_soil");
+      sessionStorage.removeItem("fl_add_step");
+      setPhotos([]);
+      router.push(`/owner/lands?success=true&newId=${newLandId}`);
     } catch (e: unknown) {
-      const msg = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      setError(msg ?? "Failed to upload photos.");
-    } finally { setLoading(false); }
+      const errData = (
+        e as { response?: { data?: Record<string, unknown> } }
+      )?.response?.data;
+      if (errData && typeof errData === "object") {
+        const fieldMap: Record<string, string> = {};
+        let generalMsg = "";
+        for (const [k, v] of Object.entries(errData)) {
+          const msg = Array.isArray(v) ? v.join(", ") : String(v);
+          if (k === "detail" || k === "non_field_errors") {
+            generalMsg += msg + " ";
+          } else {
+            fieldMap[k] = msg;
+          }
+        }
+        const basicFields = [
+          "title", "description", "total_area", "price_per_month",
+          "preferred_duration", "title_deed_number", "location_name",
+          "latitude", "longitude",
+        ];
+        const soilFields = [
+          "soil_type", "ph_level", "nitrogen", "phosphorus",
+          "potassium", "moisture", "temperature", "rainfall",
+        ];
+        if (basicFields.some((f) => f in fieldMap)) {
+          setFieldErrors(fieldMap);
+          setStep(0);
+          setError("Please fix the highlighted errors and resubmit.");
+        } else if (soilFields.some((f) => f in fieldMap)) {
+          setFieldErrors(fieldMap);
+          setStep(1);
+          setError("Please fix the highlighted soil errors and resubmit.");
+        } else {
+          setError(generalMsg.trim() || "Submission failed. Please try again.");
+        }
+      } else {
+        setError("Submission failed. Check your connection and try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* ── Clear all form fields ──────────────────────── */
+  const handleClearForm = () => {
+    setBasic({
+      title: "", description: "", total_area: "", price_per_month: "",
+      preferred_duration: "", title_deed_number: "", location_name: "",
+      latitude: "", longitude: "",
+      has_irrigation: false, has_electricity: false,
+      has_road_access: false, has_fencing: false,
+    });
+    setSoil({
+      soil_type: "", ph_level: "", nitrogen: "", phosphorus: "",
+      potassium: "", moisture: "", temperature: "", rainfall: "",
+    });
+    setPhotos([]);
+    setFieldErrors({});
+    setError(null);
+    sessionStorage.removeItem("fl_add_basic");
+    sessionStorage.removeItem("fl_add_soil");
+    sessionStorage.removeItem("fl_add_step");
   };
 
   /* ── UI ─────────────────────────────────────────────── */
   return (
-    <div className="p-6 lg:p-10">
-      <div className="mx-auto max-w-3xl">
-
-        {/* Header */}
-        <div className="mb-8">
-          <h2
-            className="text-3xl font-bold tracking-tight text-earth"
-            style={{ fontFamily: "'Playfair Display', serif" }}
-          >
-            List New Land
-          </h2>
-          <p className="mt-2 text-slate-500">
-            Upload your land details, soil data and photos to start receiving lease requests.
-          </p>
-        </div>
-
-        {/* Step indicator */}
-        <div className="mb-10 flex items-center gap-0">
-          {STEPS.map((s, i) => (
-            <div key={s} className="flex flex-1 items-center">
-              <div className="flex flex-col items-center">
-                <div
-                  className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold transition-colors ${
-                    i < step
-                      ? "bg-primary text-white"
-                      : i === step
-                      ? "bg-primary text-white ring-4 ring-primary/20"
-                      : "bg-slate-100 text-slate-400"
-                  }`}
-                >
-                  {i < step ? (
-                    <span className="material-symbols-outlined text-lg">check</span>
-                  ) : (
-                    i + 1
-                  )}
-                </div>
-                <span className={`mt-1.5 text-xs font-medium ${i <= step ? "text-primary" : "text-slate-400"}`}>
-                  {s}
-                </span>
-              </div>
-              {i < STEPS.length - 1 && (
-                <div className={`mx-2 h-0.5 flex-1 mb-5 ${i < step ? "bg-primary" : "bg-slate-200"}`} />
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Error */}
-        {error && (
-          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
-          </div>
-        )}
-
-        {/* ── STEP 0: Basic Info ─────────────────────── */}
-        {step === 0 && (
-          <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-8 space-y-6">
-            <h3 className="text-lg font-bold text-slate-800">Basic Information</h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="sm:col-span-2">
-                <label className={LABEL}>Plot Title *</label>
-                <input className={INPUT} placeholder="e.g. Highland North Plot" value={basic.title}
-                  onChange={(e) => setBasic({ ...basic, title: e.target.value })} />
-              </div>
-              <div className="sm:col-span-2">
-                <label className={LABEL}>Description *</label>
-                <textarea rows={3} className={INPUT + " resize-none"} placeholder="Describe the land..." value={basic.description}
-                  onChange={(e) => setBasic({ ...basic, description: e.target.value })} />
-              </div>
-              <div>
-                <label className={LABEL}>Total Area (Acres) *</label>
-                <input type="number" min="0" step="0.1" className={INPUT} placeholder="e.g. 3.5" value={basic.total_area}
-                  onChange={(e) => setBasic({ ...basic, total_area: e.target.value })} />
-              </div>
-              <div>
-                <label className={LABEL}>Price / Month (Ksh) *</label>
-                <input type="number" min="0" className={INPUT} placeholder="e.g. 50000" value={basic.price_per_month}
-                  onChange={(e) => setBasic({ ...basic, price_per_month: e.target.value })} />
-              </div>
-              <div>
-                <label className={LABEL}>Preferred Lease Duration *</label>
-                <select className={INPUT} value={basic.preferred_duration}
-                  onChange={(e) => setBasic({ ...basic, preferred_duration: e.target.value })}>
-                  {["6 Months","1 Year","2 Years","3 Years","5 Years","Flexible"].map((d) => (
-                    <option key={d}>{d}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className={LABEL}>Title Deed Number</label>
-                <input className={INPUT} placeholder="For admin verification" value={basic.title_deed_number}
-                  onChange={(e) => setBasic({ ...basic, title_deed_number: e.target.value })} />
-              </div>
-              <div>
-                <label className={LABEL}>Latitude *</label>
-                <input type="number" step="0.000001" className={INPUT} placeholder="-1.286389" value={basic.latitude}
-                  onChange={(e) => setBasic({ ...basic, latitude: e.target.value })} />
-              </div>
-              <div>
-                <label className={LABEL}>Longitude *</label>
-                <input type="number" step="0.000001" className={INPUT} placeholder="36.817223" value={basic.longitude}
-                  onChange={(e) => setBasic({ ...basic, longitude: e.target.value })} />
-              </div>
-            </div>
-
-            {/* Amenities */}
-            <div>
-              <label className={LABEL}>Amenities</label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {(
-                  [
-                    { key: "has_irrigation",  label: "Irrigation",   icon: "water_drop" },
-                    { key: "has_electricity", label: "Electricity",  icon: "bolt" },
-                    { key: "has_road_access", label: "Road Access",  icon: "road" },
-                    { key: "has_fencing",     label: "Fencing",      icon: "fence" },
-                  ] as { key: keyof BasicForm; label: string; icon: string }[]
-                ).map(({ key, label, icon }) => {
-                  const val = basic[key] as boolean;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => setBasic({ ...basic, [key]: !val })}
-                      className={`flex flex-col items-center gap-1 rounded-xl border-2 p-3 text-xs font-semibold transition-all ${
-                        val
-                          ? "border-primary bg-primary/5 text-primary"
-                          : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
+    <div className="flex-1 flex flex-col h-full overflow-hidden">
+      <OwnerPageHeader
+        title="List New Land"
+        subtitle="Upload your land details, soil data and photos to start receiving lease requests."
+      />
+      <div className="flex-1 overflow-y-auto p-3 md:p-4 lg:p-6 bg-slate-50">
+        <div className="mx-auto max-w-5xl">
+          {/* Step indicator */}
+          <div className="mb-4 md:mb-6 flex items-center gap-0">
+            {STEPS.map((s, i) => (
+              <div key={s} className="flex flex-1 items-center">
+                <div className="flex flex-col items-center">
+                  <div
+                    className={`flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-full text-xs md:text-sm font-bold transition-colors ${i === step
+                      ? "bg-green-600 text-white ring-4 ring-green-600/20"
+                      : "bg-white text-slate-600 border-2 border-slate-300"
                       }`}
+                  >
+                    {i + 1}
+                  </div>
+                  <span
+                    className={`mt-1 md:mt-1.5 text-[10px] md:text-xs font-medium hidden sm:block ${i === step ? "text-green-600 font-bold" : "text-slate-500"
+                      }`}
+                  >
+                    {s}
+                  </span>
+                </div>
+                {i < STEPS.length - 1 && (
+                  <div
+                    className={`mx-1 md:mx-2 h-0.5 flex-1 mb-0 sm:mb-5 ${i < step ? "bg-green-600" : "bg-slate-200"
+                      }`}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Error */}
+          {error && (
+            <div className="mb-4 md:mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-xs md:text-sm text-red-700 flex items-start gap-3">
+              <span className="material-symbols-outlined text-red-500 shrink-0">error</span>
+              <div className="flex-1">{error}</div>
+            </div>
+          )}
+
+          {/* ── STEP 0: Basic Info ─────────────────────── */}
+          {step === 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+              {/* Left: Property Details */}
+              <div className="lg:col-span-2 rounded-xl md:rounded-2xl bg-white border border-slate-200 shadow-sm p-5 md:p-8 space-y-5 md:space-y-6">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-2xl">
+                    info
+                  </span>
+                  <h3 className="text-base md:text-lg font-bold text-slate-800">
+                    Property Details
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                  <div className="sm:col-span-2">
+                    <label className={LABEL}>
+                      Plot Title / Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      className={INPUT + (fieldErrors.title ? " border-red-400 focus:border-red-500 focus:ring-red-400" : "")}
+                      placeholder="e.g. North Valley Acreage"
+                      value={basic.title}
+                      onChange={(e) =>
+                        setBasic({ ...basic, title: e.target.value })
+                      }
+                    />
+                    {fieldErrors.title && <p className="mt-1 text-xs text-red-500">{fieldErrors.title}</p>}
+                  </div>
+                  <div>
+                    <label className={LABEL}>
+                      Total Area (Acres) <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        className={INPUT + " pr-16" + (fieldErrors.total_area ? " border-red-400 focus:border-red-500 focus:ring-red-400" : "")}
+                        placeholder="0.0"
+                        value={basic.total_area}
+                        onKeyDown={(e) => {
+                          if (["e", "E", "+", "-"].includes(e.key)) e.preventDefault();
+                        }}
+                        onChange={(e) =>
+                          setBasic({ ...basic, total_area: e.target.value })
+                        }
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-primary font-semibold">
+                        Acres
+                      </span>
+                    </div>
+                    {fieldErrors.total_area && <p className="mt-1 text-xs text-red-500">{fieldErrors.total_area}</p>}
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className={LABEL}>Description</label>
+                    <textarea
+                      rows={4}
+                      className={INPUT + " resize-none" + (fieldErrors.description ? " border-red-400 focus:border-red-500 focus:ring-red-400" : "")}
+                      placeholder="Describe the terrain, access to water, previous crops grown, etc."
+                      value={basic.description}
+                      onChange={(e) =>
+                        setBasic({ ...basic, description: e.target.value })
+                      }
+                    />
+                    <div className="mt-1 flex items-center justify-between">
+                      {fieldErrors.description
+                        ? <p className="text-xs text-red-500">{fieldErrors.description}</p>
+                        : <span />}
+                      <span className="text-xs text-slate-400">
+                        {basic.description.length}/500 characters
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className={LABEL}>
+                      Desired Lease Price (Monthly){" "}
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-500 font-medium">
+                        Ksh
+                      </span>
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        className={INPUT + " pl-12" + (fieldErrors.price_per_month ? " border-red-400 focus:border-red-500 focus:ring-red-400" : "")}
+                        placeholder="0"
+                        value={basic.price_per_month}
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/[^0-9.]/g, "");
+                          setBasic({ ...basic, price_per_month: raw });
+                        }}
+                        onBlur={() => {
+                          const num = parseFloat(basic.price_per_month.replace(/,/g, ""));
+                          if (!isNaN(num)) {
+                            setBasic({ ...basic, price_per_month: num.toLocaleString() });
+                          }
+                        }}
+                        onFocus={() => {
+                          setBasic({ ...basic, price_per_month: basic.price_per_month.replace(/,/g, "") });
+                        }}
+                      />
+                    </div>
+                    {fieldErrors.price_per_month && <p className="mt-1 text-xs text-red-500">{fieldErrors.price_per_month}</p>}
+                  </div>
+                  <div>
+                    <label className={LABEL}>
+                      Preferred Duration
+                    </label>
+                    <select
+                      className={INPUT}
+                      value={basic.preferred_duration}
+                      onChange={(e) =>
+                        setBasic({ ...basic, preferred_duration: e.target.value })
+                      }
                     >
-                      <span className="material-symbols-outlined text-xl">{icon}</span>
-                      {label}
-                    </button>
-                  );
-                })}
+                      <option value="">Select duration</option>
+                      {[
+                        "6 Months",
+                        "1 Year",
+                        "2 Years",
+                        "3 Years",
+                        "5 Years",
+                        "Flexible",
+                      ].map((d) => (
+                        <option key={d}>{d}</option>
+                      ))}
+                    </select>
+                    {fieldErrors.preferred_duration && (
+                      <p className="mt-1 text-xs text-red-500">{fieldErrors.preferred_duration}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Amenities & Features */}
+                <div>
+                  <label className={LABEL}>Amenities & Features</label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 md:gap-3">
+                    {(
+                      [
+                        {
+                          key: "has_irrigation",
+                          label: "Irrigation System",
+                          icon: "water_drop",
+                        },
+                        {
+                          key: "has_electricity",
+                          label: "Electricity",
+                          icon: "bolt",
+                        },
+                        {
+                          key: "has_road_access",
+                          label: "Road Access",
+                          icon: "add_road",
+                        },
+                        {
+                          key: "has_fencing",
+                          label: "Fencing",
+                          icon: "fence"
+                        },
+                      ] as { key: keyof BasicForm; label: string; icon: string }[]
+                    ).map(({ key, label, icon }) => {
+                      const val = basic[key] as boolean;
+                      return (
+                        <label
+                          key={key}
+                          className={`flex items-center gap-2 rounded-lg border-2 px-3 py-2.5 text-xs font-semibold cursor-pointer transition-all ${val
+                            ? "border-primary bg-primary/5 text-primary"
+                            : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                            }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={val}
+                            onChange={(e) =>
+                              setBasic({ ...basic, [key]: e.target.checked })
+                            }
+                            className="sr-only"
+                          />
+                          <span className="material-symbols-outlined text-base">
+                            {val ? "check_box" : "check_box_outline_blank"}
+                          </span>
+                          <span className="hidden sm:inline">{label}</span>
+                          <span className="sm:hidden">{label.split(" ")[0]}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Title Deed - placed here but styled prominently */}
+                <div className="rounded-lg border-2 border-amber-200 bg-amber-50/50 p-4">
+                  <label className={LABEL + " text-amber-700"}>
+                    Title Deed Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    className={
+                      INPUT +
+                      " border-amber-300 focus:border-amber-500 focus:ring-amber-500" +
+                      (fieldErrors.title_deed_number ? " border-red-400 focus:border-red-500 focus:ring-red-400" : "")
+                    }
+                    placeholder="e.g. KJI-9928-XX"
+                    value={basic.title_deed_number}
+                    onChange={(e) =>
+                      setBasic({ ...basic, title_deed_number: e.target.value })
+                    }
+                  />
+                  {fieldErrors.title_deed_number && <p className="mt-1 text-xs text-red-500">{fieldErrors.title_deed_number}</p>}
+                  <p className="mt-1.5 text-xs text-amber-700 flex items-start gap-1.5">
+                    <span className="material-symbols-outlined text-sm mt-0.5">
+                      lock
+                    </span>
+                    <span>
+                      Required for admin verification only. Never shown to lessees.
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Right: Location */}
+              <div className="lg:col-span-1 rounded-xl md:rounded-2xl bg-white border border-slate-200 shadow-sm p-5 md:p-8 space-y-4 lg:self-start">
+                <LocationPicker
+                  latitude={basic.latitude}
+                  longitude={basic.longitude}
+                  locationName={basic.location_name}
+                  onLocationNameChange={(name) =>
+                    setBasic((prev) => ({ ...prev, location_name: name }))
+                  }
+                  onLocationChange={(lat, lng) =>
+                    setBasic((prev) => ({ ...prev, latitude: lat, longitude: lng }))
+                  }
+                  errorMessage={fieldErrors.location_name}
+                />
+                {fieldErrors.location && (
+                  <p className="mt-2 text-xs text-red-500">{fieldErrors.location}</p>
+                )}
+              </div>
+
+              {/* Navigation - full width at bottom */}
+              <div className="lg:col-span-3 rounded-xl md:rounded-2xl bg-white border border-slate-200 shadow-sm px-5 md:px-8 py-4">
+                <div className="flex items-center justify-between gap-3">
+                  <button
+                    onClick={handleClearForm}
+                    type="button"
+                    className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-red-600 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-lg">delete_sweep</span>
+                    <span>Clear All</span>
+                  </button>
+                  <button
+                    onClick={handleBasicSubmit}
+                    disabled={loading}
+                    type="button"
+                    className="inline-flex items-center justify-center gap-2 md:gap-3 rounded-lg bg-green-600 px-6 md:px-8 py-3 md:py-3.5 text-sm md:text-base font-bold text-white hover:bg-green-700 disabled:opacity-60 transition-all shadow-lg hover:shadow-xl min-w-35 md:min-w-40"
+                  >
+                    {loading ? (
+                      <>
+                        <span className="inline-block h-4 w-4 md:h-5 md:w-5 animate-spin rounded-full border-2 border-white border-r-transparent" />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Next Step</span>
+                        <span className="material-symbols-outlined text-xl md:text-2xl">
+                          arrow_forward
+                        </span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
+          )}
 
-            <div className="flex justify-end pt-2">
-              <button
-                onClick={handleBasicSubmit}
-                disabled={loading}
-                className="flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60 transition-all"
-              >
-                {loading ? "Saving..." : "Continue"}
-                <span className="material-symbols-outlined text-lg">arrow_forward</span>
-              </button>
-            </div>
-          </div>
-        )}
+          {/* ── STEP 1: Soil & Climate ─────────────────── */}
+          {step === 1 && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+              {/* Left: Soil Properties */}
+              <div className="lg:col-span-2 rounded-xl md:rounded-2xl bg-white border border-slate-200 shadow-sm p-5 md:p-8 space-y-5 md:space-y-6">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-2xl">
+                    compost
+                  </span>
+                  <div>
+                    <h3 className="text-base md:text-lg font-bold text-slate-800">
+                      Soil Properties
+                    </h3>
+                    <p className="text-xs text-slate-500">Optional</p>
+                  </div>
+                </div>
 
-        {/* ── STEP 1: Soil & Climate ─────────────────── */}
-        {step === 1 && (
-          <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-8 space-y-6">
-            <h3 className="text-lg font-bold text-slate-800">Soil & Climate Data</h3>
-            <p className="text-sm text-slate-500">
-              Fill in available soil test data. This helps lessees assess the land's suitability.
-            </p>
+                {/* Soil Type */}
+                <div>
+                  <label className={LABEL}>Type of Soil</label>
+                  <select
+                    className={INPUT}
+                    value={soil.soil_type}
+                    onChange={(e) =>
+                      setSoil({ ...soil, soil_type: e.target.value })
+                    }
+                  >
+                    <option value="">— Select soil type (optional) —</option>
+                    {SOIL_TYPES.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {(
-                [
-                  { key: "ph_level",    label: "Soil pH Level",      placeholder: "6.5",   unit: "pH" },
-                  { key: "nitrogen",    label: "Nitrogen (N)",         placeholder: "200",   unit: "ppm" },
-                  { key: "phosphorus",  label: "Phosphorus (P)",       placeholder: "50",    unit: "ppm" },
-                  { key: "potassium",   label: "Potassium (K)",        placeholder: "150",   unit: "ppm" },
-                  { key: "moisture",    label: "Soil Moisture",        placeholder: "45",    unit: "%" },
-                  { key: "temperature", label: "Avg Temperature",      placeholder: "24",    unit: "°C" },
-                  { key: "rainfall",    label: "Annual Rainfall",      placeholder: "800",   unit: "mm" },
-                ] as { key: keyof SoilForm; label: string; placeholder: string; unit: string }[]
-              ).map(({ key, label, placeholder, unit }) => (
-                <div key={key}>
-                  <label className={LABEL}>{label}</label>
-                  <div className="relative">
-                    <input
-                      type="number" step="0.1" min="0"
-                      className={INPUT + " pr-12"}
-                      placeholder={placeholder}
-                      value={soil[key]}
-                      onChange={(e) => setSoil({ ...soil, [key]: e.target.value })}
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium">
-                      {unit}
+                {/* pH Level Slider */}
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <label className="text-sm font-medium text-slate-700">
+                      Soil pH Level
+                    </label>
+                    <span className="text-sm font-bold text-primary">
+                      {soil.ph_level || "—"}
                     </span>
                   </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex justify-between pt-2">
-              <button onClick={() => setStep(0)}
-                className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all">
-                <span className="material-symbols-outlined text-lg">arrow_back</span>
-                Back
-              </button>
-              <button onClick={handleSoilSubmit} disabled={loading}
-                className="flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60 transition-all">
-                {loading ? "Saving..." : "Continue"}
-                <span className="material-symbols-outlined text-lg">arrow_forward</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ── STEP 2: Photos ────────────────────────── */}
-        {step === 2 && (
-          <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-8 space-y-6">
-            <h3 className="text-lg font-bold text-slate-800">Upload Photos</h3>
-            <p className="text-sm text-slate-500">
-              Add up to 10 photos of your land. High-quality images attract more lessees.
-            </p>
-
-            <label className="group flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/50 p-10 cursor-pointer hover:border-primary hover:bg-primary/5 transition-all">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-sm group-hover:scale-110 transition-transform">
-                <span className="material-symbols-outlined text-primary text-3xl">cloud_upload</span>
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-semibold text-slate-700">Click to upload or drag & drop</p>
-                <p className="text-xs text-slate-500 mt-1">PNG, JPG, WEBP up to 10 MB each</p>
-              </div>
-              <input type="file" multiple accept="image/*" className="hidden"
-                onChange={(e) => setPhotos(e.target.files)} />
-            </label>
-
-            {photos && photos.length > 0 && (
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                {Array.from(photos).map((f, i) => (
-                  <div key={i} className="relative aspect-square rounded-lg overflow-hidden bg-slate-100">
-                    <img src={URL.createObjectURL(f)} alt="" className="object-cover w-full h-full" />
+                  <input
+                    type="range"
+                    min="0"
+                    max="14"
+                    step="0.1"
+                    value={soil.ph_level || "0"}
+                    onChange={(e) =>
+                      setSoil({ ...soil, ph_level: e.target.value })
+                    }
+                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                  />
+                  <div className="flex justify-between text-xs text-slate-400 mt-1">
+                    <span>Acidic (0)</span>
+                    <span>Neutral (7)</span>
+                    <span>Alkaline (14)</span>
                   </div>
-                ))}
-              </div>
-            )}
+                </div>
 
-            {/* Confirmation card */}
-            <div className="rounded-xl bg-primary/5 border border-primary/20 p-4 flex items-center gap-4">
-              <span className="material-symbols-outlined text-primary text-3xl">task_alt</span>
-              <div>
-                <p className="text-sm font-semibold text-slate-800">Ready to submit</p>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Your listing will be reviewed by the FarmLease team before going live.
+                {/* NPK Fields */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {(
+                    [
+                      {
+                        key: "nitrogen",
+                        label: "Nitrogen (N)",
+                        placeholder: "0",
+                        unit: "mg/kg",
+                      },
+                      {
+                        key: "phosphorus",
+                        label: "Phosphorus (P)",
+                        placeholder: "0",
+                        unit: "mg/kg",
+                      },
+                      {
+                        key: "potassium",
+                        label: "Potassium (K)",
+                        placeholder: "0",
+                        unit: "mg/kg",
+                      },
+                    ] as {
+                      key: keyof SoilForm;
+                      label: string;
+                      placeholder: string;
+                      unit: string;
+                    }[]
+                  ).map(({ key, label, placeholder, unit }) => (
+                    <div key={key}>
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                        {label}
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          className={INPUT + " pr-16"}
+                          placeholder={placeholder}
+                          value={soil[key]}
+                          onChange={(e) =>
+                            setSoil({ ...soil, [key]: e.target.value })
+                          }
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-medium">
+                          {unit}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-slate-400 italic">
+                        Optional
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Moisture Slider */}
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <label className="text-sm font-medium text-slate-700">
+                      Soil Moisture Content
+                    </label>
+                    <span className="text-sm font-bold text-primary">
+                      {soil.moisture ? `${soil.moisture}%` : "—"}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={soil.moisture || "0"}
+                    onChange={(e) =>
+                      setSoil({ ...soil, moisture: e.target.value })
+                    }
+                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                  />
+                  <div className="flex justify-between text-xs text-slate-400 mt-1">
+                    <span>Dry (0%)</span>
+                    <span>Saturated (100%)</span>
+                  </div>
+                </div>
+
+                {/* Climate Data */}
+                <div className="pt-4 border-t border-slate-200">
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="material-symbols-outlined text-primary text-xl">
+                      cloud
+                    </span>
+                    <h4 className="text-sm font-bold text-slate-800">
+                      Climate Data
+                    </h4>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                        Avg. Annual Temperature
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 material-symbols-outlined text-lg">
+                          device_thermostat
+                        </span>
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          className={INPUT + " pl-10 pr-12"}
+                          placeholder="24"
+                          value={soil.temperature}
+                          onChange={(e) =>
+                            setSoil({ ...soil, temperature: e.target.value })
+                          }
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-medium">
+                          °C
+                        </span>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                        Avg. Annual Rainfall
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 material-symbols-outlined text-lg">
+                          rainy
+                        </span>
+                        <input
+                          type="number"
+                          step="1"
+                          min="0"
+                          className={INPUT + " pl-10 pr-12"}
+                          placeholder="800"
+                          value={soil.rainfall}
+                          onChange={(e) =>
+                            setSoil({ ...soil, rainfall: e.target.value })
+                          }
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-medium">
+                          mm
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: AI Crop Prediction Info */}
+              <div className="lg:col-span-1 rounded-xl md:rounded-2xl bg-white border border-slate-200 shadow-sm p-5 md:p-6 space-y-4">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-2xl">
+                    analytics
+                  </span>
+                  <h4 className="text-sm font-bold text-slate-800">
+                    AI Crop Prediction
+                  </h4>
+                </div>
+
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  This data is crucial for <span className="font-semibold text-primary">Gemini</span> to
+                  analyze and predict the most viable crops for your land.
+                  Accurate soil and climate data can increase lease value by up
+                  to <span className="font-bold text-green-600">25%</span>.
                 </p>
+
+                <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
+                  <div className="flex items-start gap-2">
+                    <span className="material-symbols-outlined text-amber-600 text-lg mt-0.5">
+                      lightbulb
+                    </span>
+                    <div>
+                      <p className="text-xs font-semibold text-amber-800">
+                        No soil data? No problem.
+                      </p>
+                      <p className="text-xs text-amber-700 mt-1">
+                        The AI can provide general recommendations based solely
+                        on regional climate data, though less precise than with
+                        full soil analysis.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="material-symbols-outlined text-green-500 text-sm">
+                      check_circle
+                    </span>
+                    <span className="text-slate-600">Soil pH Impact</span>
+                  </div>
+                  <p className="text-xs text-slate-500 pl-6">
+                    Determines nutrient availability.
+                  </p>
+
+                  <div className="flex items-center gap-2 text-xs mt-3">
+                    <span className="material-symbols-outlined text-green-500 text-sm">
+                      check_circle
+                    </span>
+                    <span className="text-slate-600">NPK Balance</span>
+                  </div>
+                  <p className="text-xs text-slate-500 pl-6">
+                    Key for fertilizer recommendations.
+                  </p>
+                </div>
+
+                <div className="pt-3 border-t border-slate-100 text-xs text-slate-400 italic">
+                  Powered by Gemini AI
+                </div>
+              </div>
+
+              {/* Navigation - full width at bottom */}
+              <div className="lg:col-span-3 rounded-xl md:rounded-2xl bg-white border border-slate-200 shadow-sm px-5 md:px-8 py-4">
+                <div className="flex items-center justify-between gap-3">
+                  <button
+                    onClick={() => setStep(0)}
+                    type="button"
+                    className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-lg">
+                      arrow_back
+                    </span>
+                    <span>Back</span>
+                  </button>
+                  <button
+                    onClick={handleSoilSubmit}
+                    disabled={loading}
+                    type="button"
+                    className="inline-flex items-center justify-center gap-2 md:gap-3 rounded-lg bg-green-600 px-6 md:px-8 py-3 md:py-3.5 text-sm md:text-base font-bold text-white hover:bg-green-700 disabled:opacity-60 transition-all shadow-lg hover:shadow-xl min-w-35 md:min-w-40"
+                  >
+                    {loading ? (
+                      <>
+                        <span className="inline-block h-4 w-4 md:h-5 md:w-5 animate-spin rounded-full border-2 border-white border-r-transparent" />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Next: Photos</span>
+                        <span className="material-symbols-outlined text-xl md:text-2xl">
+                          arrow_forward
+                        </span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
+          )}
 
-            <div className="flex justify-between pt-2">
-              <button onClick={() => setStep(1)}
-                className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all">
-                <span className="material-symbols-outlined text-lg">arrow_back</span>
-                Back
-              </button>
-              <button onClick={handlePhotosSubmit} disabled={loading}
-                className="flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60 transition-all shadow-lg shadow-primary/30">
-                {loading ? "Submitting..." : "Submit Listing"}
-                <span className="material-symbols-outlined text-lg">check_circle</span>
-              </button>
+          {/* ── STEP 2: Photos ────────────────────────── */}
+          {step === 2 && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+              {/* Left: Photo Gallery */}
+              <div className="lg:col-span-2 rounded-xl md:rounded-2xl bg-white border border-slate-200 shadow-sm p-5 md:p-8 space-y-5 md:space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary text-2xl">
+                      add_photo_alternate
+                    </span>
+                    <h3 className="text-base md:text-lg font-bold text-slate-800">
+                      Photo Gallery
+                    </h3>
+                  </div>
+                  <span className="px-2 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full">
+                    Required
+                  </span>
+                </div>
+
+                {/* Upload Area */}
+                <label className="border-2 border-dashed border-slate-300 rounded-xl p-10 text-center hover:border-primary hover:bg-slate-50 transition-all cursor-pointer group block">
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    className="sr-only"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        const newFiles = Array.from(e.target.files);
+                        e.target.value = "";
+                        setPhotos((prev) => [...prev, ...newFiles]);
+                      }
+                    }}
+                  />
+                  <div className="flex flex-col items-center justify-center space-y-4">
+                    <div className="p-4 rounded-full bg-slate-100 text-slate-400 group-hover:text-primary group-hover:bg-primary/10 transition-colors">
+                      <span className="material-symbols-outlined text-4xl">
+                        cloud_upload
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-base font-medium text-slate-700">
+                        Click to upload or drag and drop
+                      </p>
+                      <p className="text-sm text-slate-500 mt-1">
+                        SVG, PNG, JPG or GIF (max. 800×400px)
+                      </p>
+                    </div>
+                  </div>
+                </label>
+
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <span className="material-symbols-outlined text-sm">info</span>
+                  <span>Upload photos of your land (optional).</span>
+                </div>
+
+                {photos.length > 0 && photos.length < 3 && (
+                  <p className="text-xs text-amber-600 font-medium flex items-center gap-1">
+                    <span className="material-symbols-outlined text-sm">warning</span>
+                    {3 - photos.length} more photo{3 - photos.length !== 1 ? "s" : ""} required (minimum 3)
+                  </p>
+                )}
+
+                {/* Uploaded Photos Preview */}
+                {photos.length > 0 && (
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-semibold text-slate-700">
+                      Uploaded Photos ({photos.length})
+                    </h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                      {photos.map((f, i) => (
+                        <div
+                          key={i}
+                          className="group relative rounded-lg overflow-hidden bg-slate-100 border border-slate-200"
+                          style={{ aspectRatio: '4/3' }}
+                        >
+                          <img
+                            src={URL.createObjectURL(f)}
+                            alt={`Upload ${i + 1}`}
+                            className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setPreviewIndex(i)}
+                              className="p-1.5 bg-white/20 hover:bg-white/40 backdrop-blur-sm rounded text-white transition-colors"
+                              title="View"
+                            >
+                              <span className="material-symbols-outlined text-lg">
+                                visibility
+                              </span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPhotos((prev) => prev.filter((_, idx) => idx !== i))}
+                              className="p-1.5 bg-red-500/80 hover:bg-red-500 backdrop-blur-sm rounded text-white transition-colors"
+                              title="Remove"
+                            >
+                              <span className="material-symbols-outlined text-lg">
+                                delete
+                              </span>
+                            </button>
+                          </div>
+                          {i === 0 && (
+                            <div className="absolute bottom-2 right-2 px-1.5 py-0.5 bg-black/50 backdrop-blur-sm rounded text-[10px] text-white font-medium">
+                              Cover
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Fullscreen preview overlay */}
+                {previewIndex !== null && photos[previewIndex] && (
+                  <div
+                    className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+                    onClick={() => setPreviewIndex(null)}
+                  >
+                    <div className="relative max-w-3xl w-full" onClick={(e) => e.stopPropagation()}>
+                      <img
+                        src={URL.createObjectURL(photos[previewIndex])}
+                        alt="Preview"
+                        className="w-full max-h-[80vh] object-contain rounded-xl"
+                      />
+                      <p className="text-center text-white/70 text-xs mt-2">
+                        Photo {previewIndex + 1} of {photos.length} — {photos[previewIndex].name}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewIndex(null)}
+                        className="absolute -top-3 -right-3 bg-white rounded-full p-1 shadow-lg text-slate-700 hover:text-red-600"
+                      >
+                        <span className="material-symbols-outlined text-xl">close</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Right: Photo Guidelines */}
+              <div className="lg:col-span-1 rounded-xl md:rounded-2xl bg-white border border-slate-200 shadow-sm p-5 md:p-6 space-y-4">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-2xl">
+                    photo_camera
+                  </span>
+                  <h4 className="text-sm font-bold text-slate-800">
+                    Photo Guidelines
+                  </h4>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-start gap-2">
+                    <span className="material-symbols-outlined text-green-500 text-lg mt-0.5">
+                      check_circle
+                    </span>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-700">
+                        Wide Angles:
+                      </p>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Capture the full extent of the plot including boundaries.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2">
+                    <span className="material-symbols-outlined text-green-500 text-lg mt-0.5">
+                      check_circle
+                    </span>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-700">
+                        Soil Quality:
+                      </p>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Include close-ups of the soil to show texture and color.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2">
+                    <span className="material-symbols-outlined text-green-500 text-lg mt-0.5">
+                      check_circle
+                    </span>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-700">
+                        Water Sources:
+                      </p>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Show any nearby rivers, wells, or irrigation
+                        infrastructure.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2">
+                    <span className="material-symbols-outlined text-red-500 text-lg mt-0.5">
+                      cancel
+                    </span>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-700">
+                        Avoid blurry or dark photos
+                      </p>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        taken at night.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-slate-200">
+                  <p className="text-xs font-semibold text-slate-700 mb-2">
+                    WHY PHOTOS MATTER
+                  </p>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Listings with at least 5 high-quality photos get{" "}
+                    <span className="font-bold text-primary">3x more inquiries</span>{" "}
+                    from serious tenants.
+                  </p>
+                </div>
+              </div>
+
+              {/* Verification Notice - full width */}
+              <div className="lg:col-span-3 rounded-xl bg-amber-50 border border-amber-200 p-4 flex items-start gap-4">
+                <span className="material-symbols-outlined text-amber-500 text-3xl mt-0.5">
+                  info
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">
+                    Listing hidden until verified
+                  </p>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Your listing will be{" "}
+                    <span className="font-bold">hidden from lessees</span> until
+                    the admin verifies your Title Deed Number. You will be
+                    notified once approved.
+                  </p>
+                </div>
+              </div>
+
+              {/* Navigation - full width at bottom */}
+              <div className="lg:col-span-3 rounded-xl md:rounded-2xl bg-white border border-slate-200 shadow-sm px-5 md:px-8 py-4">
+                <div className="flex items-center justify-between gap-3">
+                  <button
+                    onClick={() => setStep(1)}
+                    type="button"
+                    className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-lg">
+                      arrow_back
+                    </span>
+                    <span>Back</span>
+                  </button>
+                  <button
+                    onClick={handlePhotosSubmit}
+                    disabled={loading || photos.length < 3}
+                    type="button"
+                    className="inline-flex items-center justify-center gap-2 md:gap-3 rounded-lg bg-green-600 px-6 md:px-8 py-3 md:py-3.5 text-sm md:text-base font-bold text-white hover:bg-green-700 disabled:opacity-60 transition-all shadow-lg hover:shadow-xl min-w-35 md:min-w-40"
+                  >
+                    {loading ? (
+                      <>
+                        <span className="inline-block h-4 w-4 md:h-5 md:w-5 animate-spin rounded-full border-2 border-white border-r-transparent" />
+                        <span>Submitting...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Submit Listing</span>
+                        <span className="material-symbols-outlined text-xl md:text-2xl">
+                          check_circle
+                        </span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
-
+          )}
+        </div>
       </div>
     </div>
   );

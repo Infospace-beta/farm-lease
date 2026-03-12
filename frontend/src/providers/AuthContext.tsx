@@ -5,6 +5,7 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
@@ -14,16 +15,15 @@ import {
   dashboardPathFor,
   getAccessToken,
   getRefreshToken,
-  isAuthenticated as checkAuth,
   setTokens,
 } from "@/lib/auth";
 import { accountsApi } from "@/lib/services/api";
-import type { AuthState, LoginCredentials, RegisterData, User } from "@/types";
+import type { AuthState, LoginCredentials, SignupData, User } from "@/types";
 
 // ─── Context shape ─────────────────────────────────────────────────────────────
 interface AuthContextValue extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
+  signup: (data: SignupData) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -41,9 +41,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isLoading: true,
   });
 
-  // Fetch logged-in user from /auth/me/ on mount
+  // Fetch logged-in user from /auth/me/ on mount.
+  // We intentionally skip the local clock-based token check here so that
+  // an expired access token still reaches the 401 interceptor, which will
+  // use the refresh token to obtain a new access token automatically.
+  // We only bail early when there are NO tokens whatsoever.
   const refreshUser = useCallback(async () => {
-    if (!checkAuth()) {
+    const access = getAccessToken();
+    const refresh = getRefreshToken();
+    if (!access && !refresh) {
       setState({ user: null, tokens: null, isAuthenticated: false, isLoading: false });
       return;
     }
@@ -75,6 +81,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setTokens({ access: data.access, refresh: data.refresh });
 
       const { data: user } = await accountsApi.me();
+      const dashboardPath = dashboardPathFor(user.role);
+      
       setState({
         user,
         tokens: { access: data.access, refresh: data.refresh },
@@ -82,16 +90,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading: false,
       });
 
-      router.replace(dashboardPathFor(user.role));
+      // Instant redirect without loading screen
+      window.location.href = dashboardPath;
     },
     [router]
   );
 
-  // ── Register ────────────────────────────────────────────────────────────────
-  const register = useCallback(
-    async (formData: RegisterData) => {
-      await accountsApi.register(formData);
-      // Auto-login after successful registration
+  // ── Signup ──────────────────────────────────────────────────────────────────
+  const signup = useCallback(
+    async (formData: SignupData) => {
+      await accountsApi.signup(formData);
+      // Auto-login after successful signup
       await login({ email: formData.email, password: formData.password });
     },
     [login]
@@ -112,8 +121,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.replace("/login");
   }, [router]);
 
+  const value = useMemo(
+    () => ({ ...state, login, signup, logout, refreshUser }),
+    [state, login, signup, logout, refreshUser]
+  );
+
   return (
-    <AuthContext.Provider value={{ ...state, login, register, logout, refreshUser }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
