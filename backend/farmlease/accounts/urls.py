@@ -2,7 +2,12 @@ from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from .views import (
+    AdminAnalyticsView,
     AdminDashboardStatsView,
+    AdminDealerOversightView,
+    AdminPaymentsView,
+    AdminUserListView,
+    AdminUserSuspendView,
     ChangePasswordView,
     LesseeDashboardView,
     LesseeNotificationListView,
@@ -28,6 +33,11 @@ urlpatterns = [
     path('me/', get_user_profile, name='get_user_profile'),
     path('change-password/', ChangePasswordView.as_view(), name='change_password'),
     path('admin/', AdminDashboardStatsView.as_view(), name='admin'),
+    path('admin/users/', AdminUserListView.as_view(), name='admin_users'),
+    path('admin/users/<int:user_id>/suspend/', AdminUserSuspendView.as_view(), name='admin_user_suspend'),
+    path('admin/dealers/', AdminDealerOversightView.as_view(), name='admin_dealers'),
+    path('admin/payments/', AdminPaymentsView.as_view(), name='admin_payments'),
+    path('admin/analytics/', AdminAnalyticsView.as_view(), name='admin_analytics'),
     # Notifications
     path('notifications/', MyNotificationListView.as_view(), name='notifications'),
     path('notifications/unread-count/', notification_unread_count, name='notification_unread_count'),

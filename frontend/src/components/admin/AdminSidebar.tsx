@@ -47,8 +47,8 @@ function AdminSidebar() {
           <span className="material-icons-round text-2xl">menu</span>
         </button>
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-md bg-[#047857] flex items-center justify-center">
-            <span className="material-icons-round text-white text-base">admin_panel_settings</span>
+          <div className="w-7 h-7 rounded-md bg-[#13ec80] flex items-center justify-center">
+            <span className="material-icons-round text-[#0f392b] text-base">agriculture</span>
           </div>
           <span
             className="text-white font-bold text-base"
@@ -83,8 +83,8 @@ function AdminSidebar() {
           {/* Logo */}
           <div className="flex items-center justify-between mb-10 px-2 mt-2">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#047857] flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(4,120,87,0.2)]">
-                <span className="material-icons-round text-white text-2xl">admin_panel_settings</span>
+              <div className="w-10 h-10 rounded-lg bg-[#13ec80] flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(19,236,128,0.2)]">
+                <span className="material-icons-round text-[#0f392b] text-2xl">agriculture</span>
               </div>
               <div>
                 <h1

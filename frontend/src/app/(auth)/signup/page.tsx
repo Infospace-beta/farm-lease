@@ -124,7 +124,7 @@ export default function SignupPage() {
       )}
 
       {/* ── Left panel: Brand ───────────────────────────────────── */}
-      <div className="hidden lg:flex lg:w-[42%] bg-[#0f392b] flex-col justify-between p-12 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-[55%] bg-[#0f392b] flex-col justify-between p-12 pt-10 relative overflow-hidden">
         <div
           className="absolute inset-0"
           style={{
@@ -136,23 +136,22 @@ export default function SignupPage() {
         <div className="absolute top-20 right-20 w-64 h-64 bg-[#13ec80]/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-20 left-20 w-48 h-48 bg-[#16a34a]/10 rounded-full blur-3xl pointer-events-none" />
 
-        {/* Logo */}
-        <div className="relative z-10">
+        {/* Logo + Main copy grouped */}
+        <div className="relative z-10 flex flex-col gap-16">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 bg-[#13ec80]/15 border border-[#13ec80]/20 rounded-xl flex items-center justify-center">
-              <span className="material-symbols-outlined text-[#13ec80] text-2xl">grid_view</span>
+            <div className="w-10 h-10 rounded-lg bg-[#13ec80] flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(19,236,128,0.2)]">
+              <span className="material-icons-round text-[#0f392b] text-2xl">agriculture</span>
             </div>
-            <span
-              className="text-white text-2xl font-bold tracking-tight"
-              style={{ fontFamily: "var(--font-playfair)" }}
-            >
-              FarmLease
-            </span>
+            <div>
+              <h1 className="text-xl font-bold text-white tracking-tight leading-none" style={{ fontFamily: "Playfair Display, serif" }}>
+                Farm<span className="text-gray-300 font-normal" style={{ fontFamily: "Space Grotesk, sans-serif" }}>Lease</span>
+              </h1>
+              <p className="text-[10px] uppercase tracking-widest text-gray-400 mt-0.5">Land Management</p>
+            </div>
           </div>
-        </div>
 
-        {/* Main copy */}
-        <div className="relative z-10 space-y-5">
+          {/* Main copy */}
+          <div className="space-y-5">
           <h2
             className="text-4xl font-bold text-white leading-tight"
             style={{ fontFamily: "var(--font-playfair)" }}
@@ -184,7 +183,8 @@ export default function SignupPage() {
               </div>
             ))}
           </div>
-        </div>
+          </div>
+        </div>{/* end Logo + Main copy group */}
 
         {/* Bottom verification badge */}
         <div className="relative z-10 flex items-center gap-3 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-4">
@@ -199,7 +199,7 @@ export default function SignupPage() {
       </div>
 
       {/* ── Right panel: Form ────────────────────────────────────── */}
-      <div className="flex-1 flex items-start justify-center px-6 py-10 bg-white overflow-y-auto">
+      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-white overflow-y-auto">
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-2 mb-8">

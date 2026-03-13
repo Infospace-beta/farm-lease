@@ -78,4 +78,11 @@ urlpatterns = [
         views.sign_agreement_witness,
         name='sign-agreement-witness'
     ),
+
+    # Admin endpoints
+    path(
+        'admin/agreements/',
+        views.AdminAgreementsView.as_view(),
+        name='admin-agreements'
+    ),
 ]

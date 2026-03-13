@@ -35,10 +35,12 @@ class User(AbstractUser):
 
     def save(self, *args, **kwargs):
         """
-        Ensure only users with role='admin' can have is_staff=True.
-        Owners, farmers, and dealers should never be staff/superuser.
+        Sync is_staff with role='admin'.
+        Admin users always get is_staff=True; all others are stripped of staff/superuser.
         """
-        if self.role != 'admin':
+        if self.role == 'admin':
+            self.is_staff = True
+        else:
             self.is_staff = False
             self.is_superuser = False
         super().save(*args, **kwargs)

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Landmark,
   ArrowUpRight,
@@ -14,113 +14,61 @@ import {
   FileText,
   History,
   CheckCircle,
+  Loader2,
 } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import { adminApi } from "@/lib/services/api";
 
-const transactions = [
-  {
-    id: "TXN-8829-LE",
-    date: "Oct 24, 2023, 10:42 AM",
-    partyInitials: "JD",
-    partyBg: "bg-[#0f392b]",
-    beneficiary: "John Doe (Lessor)",
-    from: "Alice W. (Lessee)",
-    typeBg: "bg-blue-50 text-blue-700",
-    typeIcon: "landscape",
-    typeLabel: "Lease Escrow",
-    detail: "Land Lease - Plot LR-4521/11 (5 Acres)",
-    amount: "450,000.00",
-    fee: "45,000.00",
-    feeRate: "10%",
-    statusBg: "bg-orange-100 text-orange-700",
-    statusLabel: "Held in Escrow",
-    statusNote: "Pending: Lessee confirmation of soil report.",
-    pulse: true,
-    actionIcon: "more",
-  },
-  {
-    id: "SUB-9921-AD",
-    date: "Oct 23, 2023, 09:00 AM",
-    partyInitials: "AI",
-    partyBg: "bg-purple-700",
-    beneficiary: "Agro-Input Ltd",
-    from: "Agro-Dealer",
-    typeBg: "bg-purple-50 text-purple-700",
-    typeIcon: "subscription",
-    typeLabel: "Monthly Subscription",
-    detail: "Premium Dealer Tier - Oct 2023",
-    amount: "5,000.00",
-    fee: "Included",
-    feeRate: "",
-    statusBg: "bg-emerald-100 text-emerald-800",
-    statusLabel: "Active",
-    statusNote: "Auto-renew enabled.",
-    pulse: false,
-    actionIcon: "file",
-  },
-  {
-    id: "TXN-6610-LE",
-    date: "Oct 22, 2023, 09:00 AM",
-    partyInitials: "MK",
-    partyBg: "bg-[#5D4037]",
-    beneficiary: "Michael Kimani",
-    from: "GreenHarvest Co.",
-    typeBg: "bg-blue-50 text-blue-700",
-    typeIcon: "landscape",
-    typeLabel: "Lease Escrow",
-    detail: "Land Lease - Plot LR-1029/99",
-    amount: "120,000.00",
-    fee: "12,000.00",
-    feeRate: "10%",
-    statusBg: "bg-orange-100 text-orange-700",
-    statusLabel: "Held in Escrow",
-    statusNote: "Awaiting inspection confirmation.",
-    pulse: true,
-    actionIcon: "more",
-  },
-  {
-    id: "SUB-8832-KS",
-    date: "Oct 22, 2023, 08:30 AM",
-    partyInitials: "KS",
-    partyBg: "bg-teal-700",
-    beneficiary: "Kenya Seeds Co",
-    from: "Agro-Dealer",
-    typeBg: "bg-purple-50 text-purple-700",
-    typeIcon: "subscription",
-    typeLabel: "Monthly Subscription",
-    detail: "Standard Dealer Tier - Oct 2023",
-    amount: "5,000.00",
-    fee: "Included",
-    feeRate: "",
-    statusBg: "bg-emerald-100 text-emerald-800",
-    statusLabel: "Active",
-    statusNote: "Next billing: Nov 22, 2023",
-    pulse: false,
-    actionIcon: "history",
-  },
-  {
-    id: "TXN-4412-LE",
-    date: "Oct 21, 2023, 04:10 PM",
-    partyInitials: "AW",
-    partyBg: "bg-emerald-700",
-    beneficiary: "Alice Wanjiku",
-    from: "AgriCorp Ltd",
-    typeBg: "bg-blue-50 text-blue-700",
-    typeIcon: "landscape",
-    typeLabel: "Lease Escrow",
-    detail: "Land Lease - Plot LR-3310/12 (10 Acres)",
-    amount: "850,000.00",
-    fee: "85,000.00",
-    feeRate: "10%",
-    statusBg: "bg-green-100 text-green-700",
-    statusLabel: "Funds Released",
-    statusNote: "Contract signed & verified.",
-    pulse: false,
-    actionIcon: "file",
-  },
-];
+// ── Types ──────────────────────────────────────────────────────────────────────
 
-const actionIcon = (type: string) => {
+interface PaymentStats {
+  escrow_total: number;
+  released_funds: number;
+  platform_revenue: number;
+  total_transactions: number;
+}
+
+interface TxRow {
+  id: string;
+  date: string;
+  partyInitials: string;
+  partyBgHex: string;
+  beneficiary: string;
+  from: string;
+  typeLabel: string;
+  isLeaseType: boolean;
+  detail: string;
+  amount: string;
+  fee: string;
+  feeRate: string;
+  statusLabel: string;
+  statusBg: string;
+  statusNote: string;
+  pulse: boolean;
+}
+
+interface Pagination {
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}
+
+interface PaymentsData {
+  stats: PaymentStats;
+  transactions: TxRow[];
+  pagination: Pagination;
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+function formatKsh(value: number): string {
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(2)}M`;
+  if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
+  return value.toLocaleString();
+}
+
+const actionIconEl = (type: string) => {
   switch (type) {
     case "file":
       return <FileText className="w-4 h-4" />;
@@ -131,24 +79,85 @@ const actionIcon = (type: string) => {
   }
 };
 
+// ── Page ───────────────────────────────────────────────────────────────────────
+
 export default function PaymentsPage() {
+  const [data, setData] = useState<PaymentsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
+  const [page, setPage] = useState(1);
 
-  const filtered = transactions.filter((tx) => {
-    const matchSearch =
-      !search ||
-      tx.id.toLowerCase().includes(search.toLowerCase()) ||
-      tx.beneficiary.toLowerCase().includes(search.toLowerCase()) ||
-      tx.from.toLowerCase().includes(search.toLowerCase()) ||
-      tx.detail.toLowerCase().includes(search.toLowerCase());
-    const matchType =
-      !typeFilter ||
-      (typeFilter === "Lease Escrow" && tx.typeLabel === "Lease Escrow") ||
-      (typeFilter === "Subscriptions" &&
-        tx.typeLabel === "Monthly Subscription");
-    return matchSearch && matchType;
-  });
+  const fetchData = useCallback(
+    async (searchVal: string, typeVal: string, pageVal: number) => {
+      try {
+        setLoading(true);
+        setError(null);
+        const params: Record<string, string | number> = { page: pageVal, page_size: 20 };
+        if (searchVal) params.search = searchVal;
+        if (typeVal) params.type = typeVal;
+        const { data: resp } = await adminApi.adminPayments(params);
+        setData(resp);
+      } catch (err: unknown) {
+        const e = err as { response?: { status?: number } };
+        if (e?.response?.status === 403) {
+          setError("Access denied. Admin privileges required.");
+        } else {
+          setError("Failed to load payments data. Please try again.");
+        }
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    fetchData(search, typeFilter, page);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleSearch = (val: string) => {
+    setSearch(val);
+    setPage(1);
+    fetchData(val, typeFilter, 1);
+  };
+
+  const handleTypeFilter = (val: string) => {
+    setTypeFilter(val);
+    setPage(1);
+    fetchData(search, val, 1);
+  };
+
+  const handleReset = () => {
+    setSearch("");
+    setTypeFilter("");
+    setPage(1);
+    fetchData("", "", 1);
+  };
+
+  const handlePrev = () => {
+    if (page > 1) {
+      const next = page - 1;
+      setPage(next);
+      fetchData(search, typeFilter, next);
+    }
+  };
+
+  const handleNext = () => {
+    const totalPages = data?.pagination.total_pages ?? 1;
+    if (page < totalPages) {
+      const next = page + 1;
+      setPage(next);
+      fetchData(search, typeFilter, next);
+    }
+  };
+
+  const stats = data?.stats;
+  const transactions = data?.transactions ?? [];
+  const pagination = data?.pagination;
+
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       {/* Header */}
@@ -165,13 +174,21 @@ export default function PaymentsPage() {
           <input
             type="text"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => handleSearch(e.target.value)}
             placeholder="Search transactions..."
             className="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-bg/20 w-52 shadow-sm"
           />
         </div>
       </AdminPageHeader>
+
       <div className="flex-1 overflow-y-auto p-4 lg:p-8 bg-[#f8fafc]">
+        {/* Error state */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+            {error}
+          </div>
+        )}
+
         {/* Stat Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
           {/* Escrow */}
@@ -193,15 +210,18 @@ export default function PaymentsPage() {
                 </span>
               </div>
               <div className="mt-4">
-                <span className="text-2xl font-bold tracking-tight">
-                  Ksh 24,580,200
-                </span>
+                {loading ? (
+                  <Loader2 className="w-6 h-6 animate-spin text-white/60" />
+                ) : (
+                  <span className="text-2xl font-bold tracking-tight">
+                    Ksh {stats ? formatKsh(stats.escrow_total) : "0"}
+                  </span>
+                )}
                 <div className="flex items-center gap-1.5 mt-1.5 text-xs text-white/60">
                   <span className="flex items-center text-[#13ec80]">
                     <TrendingUp className="w-3.5 h-3.5 mr-0.5" />
-                    +3.2%
+                    Active accounts
                   </span>
-                  vs last month
                 </div>
               </div>
             </div>
@@ -220,15 +240,18 @@ export default function PaymentsPage() {
                 </span>
               </div>
               <div className="mt-4">
-                <span className="text-2xl font-bold text-gray-800 tracking-tight">
-                  Ksh 12,405,000
-                </span>
+                {loading ? (
+                  <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+                ) : (
+                  <span className="text-2xl font-bold text-gray-800 tracking-tight">
+                    Ksh {stats ? formatKsh(stats.released_funds) : "0"}
+                  </span>
+                )}
                 <div className="flex items-center gap-1.5 mt-1.5 text-xs text-gray-500">
                   <span className="flex items-center text-sidebar-bg font-semibold">
                     <CheckCircle className="w-3.5 h-3.5 mr-0.5" />
-                    85%
+                    Released escrow
                   </span>
-                  release rate
                 </div>
               </div>
             </div>
@@ -247,15 +270,18 @@ export default function PaymentsPage() {
                 </span>
               </div>
               <div className="mt-4">
-                <span className="text-2xl font-bold text-gray-800 tracking-tight">
-                  Ksh 2,350,400
-                </span>
+                {loading ? (
+                  <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+                ) : (
+                  <span className="text-2xl font-bold text-gray-800 tracking-tight">
+                    Ksh {stats ? formatKsh(stats.platform_revenue) : "0"}
+                  </span>
+                )}
                 <div className="flex items-center gap-1.5 mt-1.5 text-xs text-gray-500">
                   <span className="flex items-center text-emerald-700 font-semibold">
                     <TrendingUp className="w-3.5 h-3.5 mr-0.5" />
-                    +15%
+                    Completed transactions
                   </span>
-                  Subscription + Fees
                 </div>
               </div>
             </div>
@@ -311,18 +337,17 @@ export default function PaymentsPage() {
             <div className="flex items-center gap-2">
               <select
                 value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
+                onChange={(e) => handleTypeFilter(e.target.value)}
                 className="text-sm border border-gray-200 rounded-lg py-2 pl-3 pr-8 text-gray-600 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-sidebar-bg/20"
               >
                 <option value="">All Transactions</option>
-                <option value="Lease Escrow">Lease Escrow</option>
-                <option value="Subscriptions">Subscriptions</option>
+                <option value="rent_payment">Lease Escrow</option>
+                <option value="escrow_release">Escrow Release</option>
+                <option value="withdrawal">Withdrawals</option>
+                <option value="deposit">Deposits</option>
               </select>
               <button
-                onClick={() => {
-                  setSearch("");
-                  setTypeFilter("");
-                }}
+                onClick={handleReset}
                 className="p-2 text-gray-400 hover:text-sidebar-bg border border-gray-200 rounded-lg hover:bg-gray-50 transition"
                 title="Reset Filters"
               >
@@ -332,121 +357,150 @@ export default function PaymentsPage() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-gray-50/50 border-b border-gray-100 text-[10px] uppercase tracking-wider text-gray-500 font-semibold">
-                  {[
-                    "Transaction ID / Date",
-                    "Beneficiary / Payer",
-                    "Type & Details",
-                    "Amount (Ksh)",
-                    "Platform Fee",
-                    "Status & Conditions",
-                    "Action",
-                  ].map((h) => (
-                    <th
-                      key={h}
-                      className={`px-5 py-4 ${h === "Amount (Ksh)" ? "text-right" : h === "Platform Fee" ? "text-center" : h === "Action" ? "text-right" : ""}`}
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="text-sm divide-y divide-gray-50">
-                {filtered.map((tx) => (
-                  <tr
-                    key={tx.id}
-                    className="hover:bg-green-50/30 transition-colors group"
-                  >
-                    <td className="px-5 py-4 align-top">
-                      <span className="block font-mono text-gray-800 font-bold text-xs">
-                        {tx.id}
-                      </span>
-                      <span className="block text-xs text-gray-400 mt-1">
-                        {tx.date}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4 align-top">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-8 h-8 rounded-full ${tx.partyBg} text-white flex items-center justify-center font-bold text-xs`}
-                        >
-                          {tx.partyInitials}
-                        </div>
-                        <div>
-                          <p className="font-bold text-gray-800">
-                            {tx.beneficiary}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            From: {tx.from}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4 align-top">
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold mb-1 ${tx.typeBg}`}
+            {loading ? (
+              <div className="flex items-center justify-center py-24">
+                <Loader2 className="w-8 h-8 animate-spin text-sidebar-bg" />
+              </div>
+            ) : transactions.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-24 text-gray-400">
+                <DollarSign className="w-12 h-12 mb-3 opacity-30" />
+                <p className="text-sm font-medium">No transactions found</p>
+                <p className="text-xs mt-1">
+                  {search || typeFilter ? "Try adjusting your filters." : "No payment records exist yet."}
+                </p>
+              </div>
+            ) : (
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-gray-50/50 border-b border-gray-100 text-[10px] uppercase tracking-wider text-gray-500 font-semibold">
+                    {[
+                      "Transaction ID / Date",
+                      "Beneficiary / Payer",
+                      "Type & Details",
+                      "Amount (Ksh)",
+                      "Platform Fee",
+                      "Status & Conditions",
+                      "Action",
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        className={`px-5 py-4 ${h === "Amount (Ksh)" ? "text-right" : h === "Platform Fee" ? "text-center" : h === "Action" ? "text-right" : ""}`}
                       >
-                        {tx.typeLabel}
-                      </span>
-                      <p className="text-xs text-gray-600">{tx.detail}</p>
-                    </td>
-                    <td className="px-5 py-4 align-top text-right font-bold text-gray-800">
-                      {tx.amount}
-                    </td>
-                    <td className="px-5 py-4 align-top text-center text-xs text-gray-500">
-                      {tx.feeRate ? (
-                        <>
-                          <span className="font-semibold text-green-600">
-                            {tx.fee}
-                          </span>{" "}
-                          ({tx.feeRate})
-                        </>
-                      ) : (
-                        <span className="font-semibold text-gray-400">
-                          {tx.fee}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-5 py-4 align-top">
-                      <div className="flex flex-col gap-1">
-                        <span
-                          className={`inline-flex w-fit items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${tx.statusBg}`}
-                        >
-                          {tx.pulse && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
-                          )}
-                          {tx.statusLabel}
-                        </span>
-                        <p className="text-[10px] text-gray-400 mt-0.5">
-                          {tx.statusNote}
-                        </p>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4 align-top text-right">
-                      <button className="text-gray-400 hover:text-earth transition p-1 rounded hover:bg-gray-100">
-                        {actionIcon(tx.actionIcon)}
-                      </button>
-                    </td>
+                        {h}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="text-sm divide-y divide-gray-50">
+                  {transactions.map((tx) => (
+                    <tr
+                      key={tx.id}
+                      className="hover:bg-green-50/30 transition-colors group"
+                    >
+                      <td className="px-5 py-4 align-top">
+                        <span className="block font-mono text-gray-800 font-bold text-xs">
+                          {tx.id}
+                        </span>
+                        <span className="block text-xs text-gray-400 mt-1">
+                          {tx.date}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 align-top">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-8 h-8 rounded-full text-white flex items-center justify-center font-bold text-xs"
+                            style={{ backgroundColor: tx.partyBgHex }}
+                          >
+                            {tx.partyInitials}
+                          </div>
+                          <div>
+                            <p className="font-bold text-gray-800">
+                              {tx.beneficiary}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              From: {tx.from}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 align-top">
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold mb-1 ${
+                            tx.isLeaseType
+                              ? "bg-blue-50 text-blue-700"
+                              : "bg-purple-50 text-purple-700"
+                          }`}
+                        >
+                          {tx.typeLabel}
+                        </span>
+                        <p className="text-xs text-gray-600">{tx.detail}</p>
+                      </td>
+                      <td className="px-5 py-4 align-top text-right font-bold text-gray-800">
+                        {tx.amount}
+                      </td>
+                      <td className="px-5 py-4 align-top text-center text-xs text-gray-500">
+                        {tx.feeRate ? (
+                          <>
+                            <span className="font-semibold text-green-600">
+                              {tx.fee}
+                            </span>{" "}
+                            ({tx.feeRate})
+                          </>
+                        ) : (
+                          <span className="font-semibold text-gray-400">
+                            {tx.fee}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-5 py-4 align-top">
+                        <div className="flex flex-col gap-1">
+                          <span
+                            className={`inline-flex w-fit items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${tx.statusBg}`}
+                          >
+                            {tx.pulse && (
+                              <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+                            )}
+                            {tx.statusLabel}
+                          </span>
+                          <p className="text-[10px] text-gray-400 mt-0.5">
+                            {tx.statusNote}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 align-top text-right">
+                        <button className="text-gray-400 hover:text-earth transition p-1 rounded hover:bg-gray-100">
+                          {actionIconEl("more")}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
 
           <div className="p-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
             <p className="text-xs text-gray-500">
-              Showing {filtered.length} of 128 transactions
+              {pagination
+                ? `Showing ${(pagination.page - 1) * pagination.page_size + 1}–${Math.min(
+                    pagination.page * pagination.page_size,
+                    pagination.total
+                  )} of ${pagination.total} transactions`
+                : "Loading…"}
             </p>
             <div className="flex gap-2">
               <button
-                disabled
-                className="px-3 py-1 bg-white border border-gray-200 text-gray-300 rounded text-xs font-medium cursor-not-allowed"
+                onClick={handlePrev}
+                disabled={page <= 1 || loading}
+                className="px-3 py-1 bg-white border border-gray-200 text-gray-500 rounded text-xs font-medium hover:bg-gray-50 transition disabled:text-gray-300 disabled:cursor-not-allowed"
               >
                 Previous
               </button>
-              <button className="px-3 py-1 bg-sidebar-bg text-white rounded text-xs font-medium hover:opacity-90 transition">
+              <button
+                onClick={handleNext}
+                disabled={!pagination || page >= pagination.total_pages || loading}
+                className="px-3 py-1 bg-sidebar-bg text-white rounded text-xs font-medium hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 Next
               </button>
             </div>
