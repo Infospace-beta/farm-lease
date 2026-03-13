@@ -35,10 +35,12 @@ class User(AbstractUser):
 
     def save(self, *args, **kwargs):
         """
-        Ensure only users with role='admin' can have is_staff=True.
-        Owners, farmers, and dealers should never be staff/superuser.
+        Sync is_staff with role='admin'.
+        Admin users always get is_staff=True; all others are stripped of staff/superuser.
         """
-        if self.role != 'admin':
+        if self.role == 'admin':
+            self.is_staff = True
+        else:
             self.is_staff = False
             self.is_superuser = False
         super().save(*args, **kwargs)
@@ -49,3 +51,44 @@ class User(AbstractUser):
     @property
     def name(self):
         return f"{self.first_name} {self.last_name}".strip() or self.username
+
+
+class Notification(models.Model):
+    """Persistent in-app notification for any user."""
+    TYPE_CHOICES = (
+        ('info', 'Info'),
+        ('success', 'Success'),
+        ('warning', 'Warning'),
+        ('error', 'Error'),
+    )
+
+    user = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.CASCADE,
+        related_name='notifications',
+    )
+    title = models.CharField(max_length=200)
+    body = models.TextField(blank=True)
+    notif_type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='info')
+    icon = models.CharField(max_length=60, default='notifications')
+    related_id = models.IntegerField(null=True, blank=True)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"[{self.notif_type}] {self.title} → {self.user.email}"
+
+
+def create_notification(user, title, body='', notif_type='info', icon='notifications', related_id=None):
+    """Helper: create a Notification for a user. Safe to call from any view."""
+    Notification.objects.create(
+        user=user,
+        title=title,
+        body=body,
+        notif_type=notif_type,
+        icon=icon,
+        related_id=related_id,
+    )

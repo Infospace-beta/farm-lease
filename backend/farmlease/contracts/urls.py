@@ -40,7 +40,7 @@ urlpatterns = [
         name='sign-agreement-owner'
     ),
 
-    # Lessee endpoints
+    # Lessee lease-request endpoints
     path(
         'lease-requests/',
         views.LesseeLeaseRequestListCreateView.as_view(),
@@ -55,5 +55,34 @@ urlpatterns = [
         'lease-requests/<int:pk>/cancel/',
         views.cancel_lease_request,
         name='cancel-lease-request'
+    ),
+
+    # Lessee agreement endpoints
+    path(
+        'agreements/',
+        views.LesseeAgreementListView.as_view(),
+        name='lessee-agreements'
+    ),
+    path(
+        'agreements/<int:pk>/',
+        views.LesseeAgreementDetailView.as_view(),
+        name='lessee-agreement-detail'
+    ),
+    path(
+        'agreements/<int:pk>/submit/',
+        views.submit_agreement_lessee,
+        name='submit-agreement-lessee'
+    ),
+    path(
+        'agreements/<int:pk>/witness-sign/',
+        views.sign_agreement_witness,
+        name='sign-agreement-witness'
+    ),
+
+    # Admin endpoints
+    path(
+        'admin/agreements/',
+        views.AdminAgreementsView.as_view(),
+        name='admin-agreements'
     ),
 ]

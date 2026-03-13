@@ -11,184 +11,232 @@ import {
   ArrowRight,
   Star,
   Search,
+  Loader2,
 } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { adminApi } from "@/lib/services/api";
 
-const statCards = [
-  {
-    label: "Total Users",
-    value: "12,450",
-    trend: "+8.5%",
-    up: true,
-    icon: Users,
-    iconBg: "bg-green-50",
-    iconColor: "text-emerald-700",
-  },
-  {
-    label: "Pending Land Docs",
-    value: "48",
-    trend: "+12 new",
-    up: true,
-    icon: FileWarning,
-    iconBg: "bg-orange-50",
-    iconColor: "text-orange-600",
-  },
-  {
-    label: "Escrow Total (Ksh)",
-    value: "24.5M",
-    trend: "+3.2%",
-    up: true,
-    icon: Lock,
-    iconBg: "bg-blue-50",
-    iconColor: "text-blue-600",
-  },
-  {
-    label: "Revenue (Ksh)",
-    value: "1.8M",
-    trend: "+15%",
-    up: true,
-    icon: Wallet,
-    iconBg: "bg-purple-50",
-    iconColor: "text-purple-600",
-  },
-  {
-    label: "Active Disputes",
-    value: "3",
-    trend: "-2",
-    up: false,
-    icon: Gavel,
-    iconBg: "bg-red-50",
-    iconColor: "text-red-600",
-  },
-];
+// ── Types ──────────────────────────────────────────────────────────────────────
 
-const verificationQueue = [
-  {
-    name: "John Doe",
-    initials: "JD",
-    plotId: "LR-4521/11",
-    submitted: "2 hrs ago",
-    status: "Validated",
-    statusStyle: "bg-green-100 text-green-700",
-    action: "Review Title",
-    actionStyle: "bg-[#0f392b] text-white hover:opacity-90",
-  },
-  {
-    name: "Jane Smith",
-    initials: "JS",
-    plotId: "LR-8829/04",
-    submitted: "5 hrs ago",
-    status: "Pending Check",
-    statusStyle: "bg-yellow-100 text-yellow-700",
-    action: "Review Title",
-    actionStyle: "bg-[#0f392b] text-white hover:opacity-90",
-  },
-  {
-    name: "Michael Kimani",
-    initials: "MK",
-    plotId: "LR-1029/99",
-    submitted: "1 day ago",
-    status: "Discrepancy",
-    statusStyle: "bg-red-100 text-red-700",
-    action: "Investigate",
-    actionStyle:
-      "bg-white border border-gray-300 text-gray-600 hover:bg-gray-50",
-  },
-  {
-    name: "Alice Wanjiku",
-    initials: "AW",
-    plotId: "LR-3310/12",
-    submitted: "1 day ago",
-    status: "Validated",
-    statusStyle: "bg-green-100 text-green-700",
-    action: "Review Title",
-    actionStyle: "bg-[#0f392b] text-white hover:opacity-90",
-  },
-];
+interface VerificationItem {
+  id: number;
+  name: string;
+  initials: string;
+  plotId: string;
+  submitted: string;
+  status: string;
+  land_title: string;
+}
 
-const dealers = [
-  {
-    initials: "A",
-    name: "Agro-Input Ltd",
-    rating: 4.2,
-    stars: 4,
-    flagged: 0,
-    flaggedColor: "text-gray-300",
-  },
-  {
-    initials: "K",
-    name: "Kenya Seeds Co",
-    rating: 4.9,
-    stars: 5,
-    flagged: 0,
-    flaggedColor: "text-gray-300",
-  },
-  {
-    initials: "G",
-    name: "GreenHarvest",
-    rating: 2.8,
-    stars: 3,
-    flagged: 2,
-    flaggedColor: "text-red-500",
-  },
-];
+interface DealerItem {
+  id: number;
+  name: string;
+  initials: string;
+  email: string;
+  product_count: number;
+  is_verified: boolean;
+  flagged: number;
+}
 
-const activityPulse = [
-  {
-    time: "Just now",
-    title: "New User Registration",
-    body: "Samuel K. registered as a Lessee. Awaiting email verification.",
-    dotColor: "bg-emerald-600",
+interface ActivityItem {
+  time: string;
+  title: string;
+  body: string;
+  type: string;
+  amount?: number;
+}
+
+interface DisputeItem {
+  id: number;
+  label: string;
+  note: string;
+  priority: "High" | "Medium" | "Low";
+}
+
+interface DashboardStats {
+  total_users: number;
+  total_farmers: number;
+  total_landowners: number;
+  total_dealers: number;
+  pending_land_docs: number;
+  escrow_total: number;
+  platform_revenue: number;
+  active_disputes: number;
+  active_leases: number;
+  verified_lands: number;
+  flagged_lands: number;
+  verification_queue: VerificationItem[];
+  dealers: DealerItem[];
+  activity_pulse: ActivityItem[];
+  disputes: DisputeItem[];
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+function formatKsh(value: number): string {
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
+  return value.toLocaleString();
+}
+
+const ACTIVITY_DOT: Record<string, string> = {
+  registration: "bg-emerald-600",
+  payment: "bg-[#5D4037]",
+  lease: "bg-blue-400",
+  default: "bg-gray-400",
+};
+
+const DISPUTE_STYLES: Record<string, { wrapper: string; badge: string }> = {
+  High: {
+    wrapper: "bg-red-50 border-red-100",
+    badge: "bg-red-200 text-red-800",
   },
-  {
-    time: "15 mins ago",
-    title: "Escrow Payout Released",
-    body: "Released Ksh 120,000 to Agro-Input Ltd for Order #9921.",
-    dotColor: "bg-[#5D4037]",
-    highlight: "Ksh 120,000",
+  Medium: {
+    wrapper: "bg-yellow-50 border-yellow-100",
+    badge: "bg-yellow-200 text-yellow-800",
   },
-  {
-    time: "1 hour ago",
-    title: "Dispute Flagged",
-    body: "Dispute raised on Lease ID #5529 by Tenant regarding soil quality.",
-    dotColor: "bg-red-400",
-    link: "View Details",
+  Low: {
+    wrapper: "bg-gray-50 border-gray-100",
+    badge: "bg-gray-200 text-gray-700",
   },
-  {
-    time: "3 hours ago",
-    title: "System Backup",
-    body: "Daily database backup completed successfully (4.2GB).",
-    dotColor: "bg-blue-400",
-  },
-  {
-    time: "5 hours ago",
-    title: "Land Listing Approved",
-    body: "Plot B12 (5 Acres) approved for listing after successful verification.",
-    dotColor: "bg-gray-400",
-  },
-];
+};
+
+
+// ── Page Component ─────────────────────────────────────────────────────────────
 
 export default function AdminDashboardPage() {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const { data } = await adminApi.dashboardStats();
+        setStats(data);
+      } catch (err: unknown) {
+        const e = err as { response?: { status?: number } };
+        if (e?.response?.status === 403) {
+          setError("Access denied. Admin privileges required.");
+        } else {
+          setError("Failed to load dashboard data. Please try again.");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   useEffect(() => {
     const fetchUnreadCount = async () => {
       try {
         const { data } = await adminApi.unreadCount();
         setUnreadCount(data.unread_count);
-      } catch (error) {
-        console.error("Failed to fetch unread count:", error);
+      } catch {
+        // silent
       }
     };
-
     fetchUnreadCount();
-    // Poll every 30 seconds for new notifications
     const interval = setInterval(fetchUnreadCount, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // unreadCount consumed externally via AdminPageHeader context
+  void unreadCount;
+
+  const statCards = stats
+    ? [
+        {
+          label: "Total Users",
+          value: stats.total_users.toLocaleString(),
+          sub: `${stats.total_farmers} farmers · ${stats.total_landowners} owners`,
+          up: true,
+          icon: Users,
+          iconBg: "bg-green-50",
+          iconColor: "text-emerald-700",
+        },
+        {
+          label: "Pending Land Docs",
+          value: stats.pending_land_docs.toString(),
+          sub: `${stats.verified_lands} verified · ${stats.flagged_lands} flagged`,
+          up: stats.pending_land_docs > 0,
+          icon: FileWarning,
+          iconBg: "bg-orange-50",
+          iconColor: "text-orange-600",
+        },
+        {
+          label: "Escrow Total (Ksh)",
+          value: formatKsh(stats.escrow_total),
+          sub: "Active escrow accounts",
+          up: true,
+          icon: Lock,
+          iconBg: "bg-blue-50",
+          iconColor: "text-blue-600",
+        },
+        {
+          label: "Revenue (Ksh)",
+          value: formatKsh(stats.platform_revenue),
+          sub: "Completed transactions",
+          up: true,
+          icon: Wallet,
+          iconBg: "bg-purple-50",
+          iconColor: "text-purple-600",
+        },
+        {
+          label: "Active Disputes",
+          value: stats.active_disputes.toString(),
+          sub: `${stats.active_leases} active leases`,
+          up: stats.active_disputes === 0,
+          icon: Gavel,
+          iconBg: "bg-red-50",
+          iconColor: "text-red-600",
+        },
+      ]
+    : [];
+
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center h-full bg-slate-50">
+        <div className="flex flex-col items-center gap-3 text-gray-500">
+          <Loader2 className="w-8 h-8 animate-spin text-sidebar-bg" />
+          <p className="text-sm font-medium">Loading dashboard…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex-1 flex items-center justify-center h-full bg-slate-50">
+        <div className="bg-white border border-red-100 rounded-2xl p-8 text-center max-w-sm shadow-sm">
+          <p className="text-red-600 font-bold text-base mb-2">⚠ {error}</p>
+          <p className="text-xs text-gray-400 mt-1">
+            Make sure you are logged in as an admin account.
+          </p>
+          <div className="flex flex-col gap-2 mt-4">
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-sidebar-bg text-white text-sm font-bold rounded-lg hover:opacity-90 transition"
+            >
+              Retry
+            </button>
+            <a
+              href="/login"
+              className="px-4 py-2 border border-gray-200 text-gray-600 text-sm font-bold rounded-lg hover:bg-gray-50 transition"
+            >
+              Log in as Admin
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
@@ -232,15 +280,16 @@ export default function AdminDashboardPage() {
                     {card.value}
                   </span>
                   <div
-                    className={`flex items-center gap-1 mt-1 text-xs font-medium ${card.up ? "text-emerald-700" : "text-green-600"
-                      }`}
+                    className={`flex items-center gap-1 mt-1 text-xs font-medium ${
+                      card.up ? "text-emerald-700" : "text-red-500"
+                    }`}
                   >
                     {card.up ? (
                       <TrendingUp className="w-3 h-3" />
                     ) : (
                       <TrendingDown className="w-3 h-3" />
                     )}
-                    <span>{card.trend}</span>
+                    <span className="truncate">{card.sub}</span>
                   </div>
                 </div>
               </div>
@@ -252,6 +301,7 @@ export default function AdminDashboardPage() {
         <div className="grid grid-cols-12 gap-4 md:gap-6">
           {/* Left Column */}
           <div className="col-span-12 lg:col-span-8 space-y-4 md:space-y-6">
+
             {/* Verification Queue */}
             <div className="bg-white rounded-2xl p-4 md:p-5 border border-gray-100 shadow-sm">
               <div className="flex justify-between items-center mb-4 md:mb-5">
@@ -265,71 +315,76 @@ export default function AdminDashboardPage() {
                   View All Pending <ArrowRight className="w-3 h-3" />
                 </Link>
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="border-b border-gray-100">
-                      {[
-                        "Owner",
-                        "Plot ID",
-                        "Submitted",
-                        "Ardhisasa Status",
-                        "Action",
-                      ].map((h) => (
-                        <th
-                          key={h}
-                          className={`pb-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest ${h === "Action" ? "text-right" : ""}`}
-                        >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="text-sm">
-                    {verificationQueue.map((row) => (
-                      <tr
-                        key={row.plotId}
-                        className="hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0"
-                      >
-                        <td className="py-3 pr-4">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs border border-emerald-200">
-                              {row.initials}
-                            </div>
-                            <span className="font-semibold text-gray-700">
-                              {row.name}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="py-3 pr-4 text-gray-600 font-mono text-xs">
-                          {row.plotId}
-                        </td>
-                        <td className="py-3 pr-4 text-gray-500 text-xs">
-                          {row.submitted}
-                        </td>
-                        <td className="py-3 pr-4">
-                          <span
-                            className={`px-2 py-1 text-xs font-bold rounded-full ${row.statusStyle}`}
-                          >
-                            {row.status}
-                          </span>
-                        </td>
-                        <td className="py-3 text-right">
-                          <button
-                            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition shadow-sm ${row.actionStyle}`}
-                          >
-                            {row.action}
-                          </button>
-                        </td>
+
+              {stats?.verification_queue.length === 0 ? (
+                <p className="text-sm text-gray-400 py-4 text-center">
+                  No pending land verifications.
+                </p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="border-b border-gray-100">
+                        {["Owner", "Plot ID", "Submitted", "Status", "Action"].map(
+                          (h) => (
+                            <th
+                              key={h}
+                              className={`pb-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest ${
+                                h === "Action" ? "text-right" : ""
+                              }`}
+                            >
+                              {h}
+                            </th>
+                          )
+                        )}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="text-sm">
+                      {stats?.verification_queue.map((row) => (
+                        <tr
+                          key={row.id}
+                          className="hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0"
+                        >
+                          <td className="py-3 pr-4">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs border border-emerald-200">
+                                {row.initials}
+                              </div>
+                              <span className="font-semibold text-gray-700">
+                                {row.name}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3 pr-4 text-gray-600 font-mono text-xs">
+                            {row.plotId}
+                          </td>
+                          <td className="py-3 pr-4 text-gray-500 text-xs">
+                            {row.submitted}
+                          </td>
+                          <td className="py-3 pr-4">
+                            <span className="px-2 py-1 text-xs font-bold rounded-full bg-yellow-100 text-yellow-700">
+                              {row.status}
+                            </span>
+                          </td>
+                          <td className="py-3 text-right">
+                            <Link
+                              href="/admin/land-verifications"
+                              className="px-3 py-1.5 text-xs font-bold rounded-lg transition shadow-sm bg-sidebar-bg text-white hover:opacity-90"
+                            >
+                              Review
+                            </Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
 
             {/* Bottom two cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
               {/* Agro-Dealer Compliance */}
               <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
                 <div className="flex justify-between items-center mb-4">
@@ -343,46 +398,58 @@ export default function AdminDashboardPage() {
                     View All
                   </Link>
                 </div>
-                <div className="space-y-3">
-                  {dealers.map((d) => (
-                    <div
-                      key={d.name}
-                      className="flex items-center justify-between border-b border-gray-50 pb-3 last:border-0 last:pb-0"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded bg-gray-100 flex items-center justify-center text-gray-600 font-bold text-xs">
-                          {d.initials}
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-gray-800">
-                            {d.name}
-                          </p>
-                          <div className="flex items-center gap-0.5 mt-0.5">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`w-3 h-3 ${i < d.stars ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}`}
-                              />
-                            ))}
-                            <span className="text-[10px] text-gray-400 ml-1">
-                              {d.rating}
-                            </span>
+                {stats?.dealers.length === 0 ? (
+                  <p className="text-sm text-gray-400 text-center py-4">
+                    No dealers registered yet.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {stats?.dealers.map((d) => (
+                      <div
+                        key={d.id}
+                        className="flex items-center justify-between border-b border-gray-50 pb-3 last:border-0 last:pb-0"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded bg-gray-100 flex items-center justify-center text-gray-600 font-bold text-xs">
+                            {d.initials}
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-gray-800">
+                              {d.name}
+                            </p>
+                            <div className="flex items-center gap-0.5 mt-0.5">
+                              {Array.from({ length: 5 }).map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`w-3 h-3 ${
+                                    i < 4
+                                      ? "text-yellow-400 fill-yellow-400"
+                                      : "text-gray-300"
+                                  }`}
+                                />
+                              ))}
+                              <span className="text-[10px] text-gray-400 ml-1">
+                                {d.product_count} products
+                              </span>
+                            </div>
                           </div>
                         </div>
+                        <div className="text-right">
+                          <span className="block text-[10px] text-gray-400 uppercase font-bold">
+                            Flagged
+                          </span>
+                          <span
+                            className={`block text-sm font-bold ${
+                              d.flagged > 0 ? "text-red-500" : "text-gray-300"
+                            }`}
+                          >
+                            {d.flagged}
+                          </span>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <span className="block text-[10px] text-gray-400 uppercase font-bold">
-                          Flagged
-                        </span>
-                        <span
-                          className={`block text-sm font-bold ${d.flaggedColor}`}
-                        >
-                          {d.flagged}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Dispute Resolution */}
@@ -396,32 +463,33 @@ export default function AdminDashboardPage() {
                   </p>
                 </div>
                 <div className="space-y-2 mb-4 flex-1">
-                  <div className="bg-red-50 border border-red-100 p-3 rounded-lg flex justify-between items-center">
-                    <div>
-                      <p className="text-xs font-bold text-red-800">
-                        Lease #5529
-                      </p>
-                      <p className="text-[10px] text-red-600">
-                        Soil Quality Dispute
-                      </p>
-                    </div>
-                    <span className="px-2 py-1 bg-red-200 text-red-800 text-[10px] font-bold rounded uppercase">
-                      High
-                    </span>
-                  </div>
-                  <div className="bg-yellow-50 border border-yellow-100 p-3 rounded-lg flex justify-between items-center">
-                    <div>
-                      <p className="text-xs font-bold text-yellow-800">
-                        Lease #9921
-                      </p>
-                      <p className="text-[10px] text-yellow-600">
-                        Delayed Payment
-                      </p>
-                    </div>
-                    <span className="px-2 py-1 bg-yellow-200 text-yellow-800 text-[10px] font-bold rounded uppercase">
-                      Medium
-                    </span>
-                  </div>
+                  {stats?.disputes.length === 0 ? (
+                    <p className="text-sm text-gray-400 text-center py-4">
+                      No active disputes.
+                    </p>
+                  ) : (
+                    stats?.disputes.map((d) => {
+                      const s = DISPUTE_STYLES[d.priority] ?? DISPUTE_STYLES.Low;
+                      return (
+                        <div
+                          key={d.id}
+                          className={`border ${s.wrapper} p-3 rounded-lg flex justify-between items-center`}
+                        >
+                          <div>
+                            <p className="text-xs font-bold text-gray-800">
+                              {d.label}
+                            </p>
+                            <p className="text-[10px] text-gray-500">{d.note}</p>
+                          </div>
+                          <span
+                            className={`px-2 py-1 ${s.badge} text-[10px] font-bold rounded uppercase`}
+                          >
+                            {d.priority}
+                          </span>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
                 <Link
                   href="/admin/agreements"
@@ -445,32 +513,33 @@ export default function AdminDashboardPage() {
                   Activity Pulse
                 </h3>
               </div>
-              <div className="relative border-l border-gray-200 ml-1.5 space-y-7 pb-2">
-                {activityPulse.map((item, i) => (
-                  <div key={i} className="ml-6 relative">
-                    <span
-                      className={`absolute -left-7.75 top-1 h-2.5 w-2.5 rounded-full ${item.dotColor} ring-4 ring-white`}
-                    />
-                    <span className="text-xs text-gray-400 block mb-0.5">
-                      {item.time}
-                    </span>
-                    <h4 className="text-sm font-bold text-gray-800">
-                      {item.title}
-                    </h4>
-                    <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-                      {item.body}
-                    </p>
-                    {item.link && (
-                      <Link
-                        href="/admin/land-verifications"
-                        className="text-xs font-bold text-red-600 mt-1 inline-block hover:underline"
-                      >
-                        {item.link}
-                      </Link>
-                    )}
-                  </div>
-                ))}
-              </div>
+
+              {stats?.activity_pulse.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-8">
+                  No recent activity yet.
+                </p>
+              ) : (
+                <div className="relative border-l border-gray-200 ml-1.5 space-y-7 pb-2">
+                  {stats?.activity_pulse.map((item, i) => (
+                    <div key={i} className="ml-6 relative">
+                      <span
+                        className={`absolute -left-7.75 top-1 h-2.5 w-2.5 rounded-full ${
+                          ACTIVITY_DOT[item.type] ?? ACTIVITY_DOT.default
+                        } ring-4 ring-white`}
+                      />
+                      <span className="text-xs text-gray-400 block mb-0.5">
+                        {item.time}
+                      </span>
+                      <h4 className="text-sm font-bold text-gray-800">
+                        {item.title}
+                      </h4>
+                      <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                        {item.body}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -478,3 +547,4 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+

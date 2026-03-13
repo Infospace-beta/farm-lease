@@ -45,14 +45,14 @@ export default function DealerLayout({
           <span className="material-icons-round text-2xl">menu</span>
         </button>
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-md bg-[#047857] flex items-center justify-center">
-            <span className="material-icons-round text-white text-base">storefront</span>
+          <div className="w-7 h-7 rounded-md bg-[#13ec80] flex items-center justify-center">
+            <span className="material-icons-round text-[#0f392b] text-base">agriculture</span>
           </div>
           <span
             className="text-white font-bold text-base"
             style={{ fontFamily: "Playfair Display, serif" }}
           >
-            Farm<span className="text-gray-300 font-normal" style={{ fontFamily: "Inter, sans-serif" }}>Lease</span>
+            Farm<span className="text-gray-300 font-normal" style={{ fontFamily: "Space Grotesk, sans-serif" }}>Lease</span>
           </span>
           <span className="text-[10px] text-gray-400 uppercase tracking-widest ml-1">Dealer</span>
         </div>
@@ -81,15 +81,15 @@ export default function DealerLayout({
           {/* Logo */}
           <div className="flex items-center justify-between mb-8 px-2 mt-2">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#047857] flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(4,120,87,0.2)]">
-                <span className="material-icons-round text-white text-2xl">storefront</span>
+              <div className="w-10 h-10 rounded-lg bg-[#13ec80] flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(19,236,128,0.2)]">
+                <span className="material-icons-round text-[#0f392b] text-2xl">agriculture</span>
               </div>
               <div>
                 <h1
                   className="text-xl font-bold text-white tracking-tight leading-none"
                   style={{ fontFamily: "Playfair Display, serif" }}
                 >
-                  Farm<span className="text-gray-300 font-normal" style={{ fontFamily: "Inter, sans-serif" }}>Lease</span>
+                  Farm<span className="text-gray-300 font-normal" style={{ fontFamily: "Space Grotesk, sans-serif" }}>Lease</span>
                 </h1>
                 <p className="text-[10px] uppercase tracking-widest text-gray-400 mt-0.5">Dealer Hub</p>
               </div>

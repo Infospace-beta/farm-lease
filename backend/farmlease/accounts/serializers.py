@@ -27,11 +27,12 @@ class UserSerializer(serializers.ModelSerializer):
             'id_number',
             'is_verified',
             'is_staff',
+            'last_login',
             'created_at',
             'updated_at',
         ]
         read_only_fields = [
-            'id', 'created_at', 'updated_at', 'is_verified', 'is_staff',
+            'id', 'last_login', 'created_at', 'updated_at', 'is_verified', 'is_staff',
         ]
 
 
