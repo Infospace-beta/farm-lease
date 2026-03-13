@@ -26,6 +26,11 @@ db.sqlite3-journal
 .env
 *.pot
 
+# Project-specific runtime artifacts (keep local; never commit)
+backend/.env
+backend/farmlease/db.sqlite3
+backend/farmlease/media/
+
 # IDE
 .vscode/
 .idea/
