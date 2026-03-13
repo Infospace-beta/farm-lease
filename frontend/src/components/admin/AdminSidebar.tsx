@@ -7,11 +7,9 @@ import { useAuth } from "@/providers";
 
 const navLinks = [
   { href: "/admin/dashboard", label: "Dashboard", icon: "dashboard", badge: "" },
-  { href: "/admin/users", label: "User Management", icon: "group", badge: "" },
   { href: "/admin/land-verifications", label: "Land Verifications", icon: "verified", badge: "" },
-  { href: "/admin/dealer-oversight", label: "Agro-Dealer Oversight", icon: "store", badge: "" },
-  { href: "/admin/payments", label: "Payments & Escrow", icon: "payments", badge: "" },
-  { href: "/admin/agreements", label: "Agreements & Contracts", icon: "description", badge: "" },
+  { href: "/admin/users", label: "Users", icon: "group", badge: "" },
+  { href: "/admin/finance-contracts", label: "Finance & Contracts", icon: "payments", badge: "" },
   { href: "/admin/analytics", label: "Reports", icon: "bar_chart", badge: "" },
 ];
 
@@ -115,8 +113,8 @@ function AdminSidebar() {
                   href={href}
                   onClick={() => setMobileSidebarOpen(false)}
                   className={`flex items-center gap-4 px-4 py-3 rounded-lg transition-all group ${active
-                      ? "bg-[#047857] text-white shadow-sm"
-                      : "text-gray-400 hover:text-white hover:bg-white/5"
+                    ? "bg-[#047857] text-white shadow-sm"
+                    : "text-gray-400 hover:text-white hover:bg-white/5"
                     }`}
                 >
                   <span

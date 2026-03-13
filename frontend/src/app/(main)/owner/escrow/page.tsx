@@ -82,7 +82,7 @@ export default function EscrowStatusPage() {
         subtitle="Track escrow deposits and release timelines for all active leases."
       />
       <div className="flex-1 overflow-y-auto p-4 lg:p-8 bg-slate-50">
-        <div className="mx-auto max-w-4xl">
+        <div className="w-full">
           {/* Loading state */}
           {loading && (
             <div className="flex items-center justify-center py-12">
@@ -195,21 +195,19 @@ export default function EscrowStatusPage() {
                             <div className="flex w-full items-center">
                               {i > 0 && (
                                 <div
-                                  className={`h-0.5 flex-1 ${
-                                    e.stages[i - 1].done && stage.done
+                                  className={`h-0.5 flex-1 ${e.stages[i - 1].done && stage.done
                                       ? "bg-primary"
                                       : e.stages[i - 1].done
                                         ? "bg-primary/30"
                                         : "bg-slate-200"
-                                  }`}
+                                    }`}
                                 />
                               )}
                               <div
-                                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 ${
-                                  stage.done
+                                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 ${stage.done
                                     ? "border-primary bg-primary text-white"
                                     : "border-slate-300 bg-white text-slate-400"
-                                }`}
+                                  }`}
                               >
                                 {stage.done ? (
                                   <span className="material-symbols-outlined text-sm">check</span>
@@ -219,21 +217,19 @@ export default function EscrowStatusPage() {
                               </div>
                               {i < e.stages.length - 1 && (
                                 <div
-                                  className={`h-0.5 flex-1 ${
-                                    stage.done && e.stages[i + 1]?.done
+                                  className={`h-0.5 flex-1 ${stage.done && e.stages[i + 1]?.done
                                       ? "bg-primary"
                                       : stage.done
                                         ? "bg-primary/30"
                                         : "bg-slate-200"
-                                  }`}
+                                    }`}
                                 />
                               )}
                             </div>
                             <div className="mt-2 text-center px-1">
                               <p
-                                className={`text-xs font-semibold ${
-                                  stage.done ? "text-primary" : "text-slate-400"
-                                }`}
+                                className={`text-xs font-semibold ${stage.done ? "text-primary" : "text-slate-400"
+                                  }`}
                               >
                                 {stage.label}
                               </p>

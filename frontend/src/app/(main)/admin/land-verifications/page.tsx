@@ -1,880 +1,482 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import {
-  ShieldCheck,
-  AlertTriangle,
-  Clock,
-  Search,
-  RefreshCw,
-  Copy,
-  AlertCircle,
-  ChevronRight,
-  Download,
-  CheckCircle2,
-  Eye,
-  X,
-  MapPin,
-} from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { landsApi } from "@/lib/services/api";
-import { useAuth } from "@/providers/AuthContext";
+import {
+  Search,
+  RefreshCw,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  MapPin,
+  Calendar,
+  User,
+  FileText,
+  Filter,
+  Loader2,
+} from "lucide-react";
 
-/* ─── Types ───────────────────────────────────────────── */
 interface LandListing {
   id: number;
   title: string;
+  description: string;
+  total_area: number;
+  price_per_month: number;
   title_deed_number: string;
-  owner: number;
-  owner_username?: string;
-  owner_email?: string;
+  location_name: string;
+  latitude: number;
+  longitude: number;
   status: string;
   is_verified: boolean;
   is_flagged: boolean;
-  flag_reason?: string;
+  flag_reason: string | null;
+  owner: number;
+  owner_username: string;
+  owner_email: string;
   created_at: string;
-  total_area: number;
-  price_per_month?: number;
-  preferred_duration?: string;
-  description?: string;
-  location_name?: string;
-  latitude?: number;
-  longitude?: number;
-  has_irrigation?: boolean;
-  has_electricity?: boolean;
-  has_road_access?: boolean;
-  has_fencing?: boolean;
-  images: Array<{ id: number; image: string }>;
-  soil_data?: {
-    soil_type?: string;
-    ph_level?: number;
-    nitrogen?: number;
-    phosphorus?: number;
-    potassium?: number;
-    moisture?: number;
-    temperature?: number;
-    rainfall?: number;
-  } | null;
+  images: { id: number; image: string }[];
+  has_irrigation: boolean;
+  has_electricity: boolean;
+  has_road_access: boolean;
+  has_fencing: boolean;
 }
 
-interface AdminStats {
+interface Stats {
   total_lands: number;
   pending_verification: number;
   verified: number;
   flagged: number;
 }
 
-/* ─── Helpers ─────────────────────────────────────────── */
-function timeAgo(dateStr: string): string {
-  const now = Date.now();
-  const then = new Date(dateStr).getTime();
-  const diff = Math.floor((now - then) / 1000);
-  if (diff < 60) return `${diff}s ago`;
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  return `${Math.floor(diff / 86400)}d ago`;
-}
-
-const AVATAR_COLORS = [
-  { bg: "bg-emerald-100", text: "text-emerald-700" },
-  { bg: "bg-blue-100", text: "text-blue-700" },
-  { bg: "bg-purple-100", text: "text-purple-700" },
-  { bg: "bg-amber-100", text: "text-amber-700" },
-  { bg: "bg-rose-100", text: "text-rose-700" },
+const filterOptions = [
+  { value: "pending", label: "Pending Verification", icon: AlertTriangle, color: "text-amber-600" },
+  { value: "verified", label: "Verified", icon: CheckCircle, color: "text-emerald-600" },
+  { value: "flagged", label: "Flagged", icon: XCircle, color: "text-red-600" },
+  { value: "all", label: "All Lands", icon: Filter, color: "text-slate-600" },
 ];
-const avatarColor = (id: number) => AVATAR_COLORS[id % AVATAR_COLORS.length];
 
-function initials(id: number): string {
-  return `O${id}`;
-}
-
-/* ─── Page ────────────────────────────────────────────── */
 export default function LandVerificationsPage() {
-  const { user } = useAuth();
   const [lands, setLands] = useState<LandListing[]>([]);
-  const [stats, setStats] = useState<AdminStats>({
-    total_lands: 0,
-    pending_verification: 0,
-    verified: 0,
-    flagged: 0,
-  });
+  const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState<Record<number, boolean>>(
-    {},
-  );
-  const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<
-    "all" | "pending" | "verified" | "flagged"
-  >("all");
-  const [flagModalId, setFlagModalId] = useState<number | null>(null);
+  const [filter, setFilter] = useState<"all" | "pending" | "verified" | "flagged">("pending");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [selectedLand, setSelectedLand] = useState<LandListing | null>(null);
   const [flagReason, setFlagReason] = useState("");
-  const [detailLand, setDetailLand] = useState<LandListing | null>(null);
-  const [toast, setToast] = useState<{
-    msg: string;
-    type: "success" | "error";
-  } | null>(null);
-  const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [showFlagModal, setShowFlagModal] = useState(false);
 
-  // Debug: Log user authentication
-  useEffect(() => {
-    console.log("=== USER AUTH DEBUG ===");
-    console.log("User:", user);
-    console.log("Is Authenticated:", !!user);
-    console.log("User Role:", user?.role);
-  }, [user]);
-
-  /* ── Fetch data ─────────────────────────────────────── */
-  const fetchData = useCallback(async () => {
+  const fetchLands = useCallback(async () => {
     setLoading(true);
     try {
-      console.log("=== ADMIN DATA FETCH ===");
       const [landsRes, statsRes] = await Promise.all([
-        landsApi.adminAllLands(),
+        landsApi.adminAllLands(filter),
         landsApi.adminStats(),
       ]);
-      console.log("Lands response:", landsRes.data);
-      console.log("Stats response:", statsRes.data);
       setLands(landsRes.data);
       setStats(statsRes.data);
-    } catch (err: any) {
-      console.error("=== ADMIN DATA FETCH ERROR ===");
-      console.error("Error:", err);
-      console.error("Response:", err?.response);
-      console.error("Status:", err?.response?.status);
-      console.error("Data:", err?.response?.data);
-      setToast({
-        msg: `Failed to load data: ${err?.response?.data?.detail || err.message}`,
-        type: "error",
-      });
+    } catch (error) {
+      console.error("Failed to fetch lands:", error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [filter]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchLands();
+  }, [fetchLands]);
 
-  /* ── Toast helper ───────────────────────────────────── */
-  const showToast = (msg: string, type: "success" | "error" = "success") => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3500);
-  };
-
-  /* ── Verify ─────────────────────────────────────────── */
-  const handleVerify = async (id: number) => {
-    setActionLoading((p) => ({ ...p, [id]: true }));
+  const handleVerify = async (landId: number) => {
+    setActionLoading(landId);
     try {
-      await landsApi.verifyLand(id);
-      setLands((prev) =>
-        prev.map((l) =>
-          l.id === id
-            ? {
-              ...l,
-              is_verified: true,
-              is_flagged: false,
-              flag_reason: undefined,
-              status: 'Vacant', // Update status to Vacant
-            }
-            : l,
-        ),
-      );
-      setStats((s) => ({
-        ...s,
-        pending_verification: Math.max(0, s.pending_verification - 1),
-        verified: s.verified + 1,
-      }));
-      showToast("Land verified successfully ✓ — Status updated to Vacant");
-    } catch {
-      showToast("Failed to verify land.", "error");
+      await landsApi.verifyLand(landId);
+      await fetchLands();
+    } catch (error) {
+      console.error("Failed to verify land:", error);
+      alert("Failed to verify land. Please try again.");
     } finally {
-      setActionLoading((p) => ({ ...p, [id]: false }));
+      setActionLoading(null);
     }
   };
 
-  /* ── Flag ───────────────────────────────────────────── */
-  const handleFlag = async (id: number, reason: string) => {
-    setActionLoading((p) => ({ ...p, [id]: true }));
-    setFlagModalId(null);
+  const handleFlag = async () => {
+    if (!selectedLand || !flagReason.trim()) return;
+    setActionLoading(selectedLand.id);
     try {
-      await landsApi.flagLand(id, reason);
-      setLands((prev) =>
-        prev.map((l) =>
-          l.id === id
-            ? {
-              ...l,
-              is_verified: false,
-              is_flagged: true,
-              flag_reason: reason,
-            }
-            : l,
-        ),
-      );
-      setStats((s) => ({
-        ...s,
-        pending_verification: Math.max(0, s.pending_verification - 1),
-        flagged: s.flagged + 1,
-      }));
-      showToast("Land flagged for correction.");
-    } catch {
-      showToast("Failed to flag land.", "error");
-    } finally {
-      setActionLoading((p) => ({ ...p, [id]: false }));
+      await landsApi.flagLand(selectedLand.id, flagReason);
+      setShowFlagModal(false);
       setFlagReason("");
+      setSelectedLand(null);
+      await fetchLands();
+    } catch (error) {
+      console.error("Failed to flag land:", error);
+      alert("Failed to flag land. Please try again.");
+    } finally {
+      setActionLoading(null);
     }
   };
 
-  /* ── Copy title deed ────────────────────────────────── */
-  const copyDeed = (id: number, deed: string) => {
-    navigator.clipboard.writeText(deed);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 1500);
+  const openFlagModal = (land: LandListing) => {
+    setSelectedLand(land);
+    setFlagReason(land.flag_reason || "");
+    setShowFlagModal(true);
   };
 
-  /* ── Filter ─────────────────────────────────────────── */
-  const filtered = lands.filter((l) => {
-    const q = search.toLowerCase();
-    const matchSearch =
-      !q ||
-      l.title.toLowerCase().includes(q) ||
-      (l.title_deed_number ?? "").toLowerCase().includes(q) ||
-      String(l.id).includes(q);
-    const matchFilter =
-      filter === "all" ||
-      (filter === "pending" && !l.is_verified && !l.is_flagged) ||
-      (filter === "verified" && l.is_verified) ||
-      (filter === "flagged" && l.is_flagged);
-    return matchSearch && matchFilter;
-  });
+  const filteredLands = lands.filter(
+    (land) =>
+      land.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      land.owner_username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      land.title_deed_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      land.location_name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-  const statCards = [
-    {
-      label: "Pending Verification",
-      value: stats.pending_verification,
-      sub: "Requires manual check",
-      icon: Clock,
-      iconBg: "bg-orange-50",
-      iconColor: "text-orange-600",
-    },
-    {
-      label: "Verified",
-      value: stats.verified,
-      sub: "Approved manually",
-      icon: ShieldCheck,
-      iconBg: "bg-emerald-50",
-      iconColor: "text-emerald-600",
-    },
-    {
-      label: "Flagged",
-      value: stats.flagged,
-      sub: "Issues requiring correction",
-      icon: AlertTriangle,
-      iconBg: "bg-red-50",
-      iconColor: "text-red-600",
-    },
-  ];
-
-  const getRowStatus = (l: LandListing) => {
-    if (l.is_flagged)
-      return {
-        label: "Flagged",
-        style: "bg-red-100 text-red-800 border-red-200",
-        dot: "bg-red-500",
-      };
-    if (l.is_verified)
-      return {
-        label: "Verified",
-        style: "bg-green-100 text-green-800 border-green-200",
-        dot: "bg-green-500",
-      };
-    return {
-      label: "Pending",
-      style: "bg-yellow-100 text-yellow-800 border-yellow-200",
-      dot: "bg-yellow-500",
-    };
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-KE", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
   };
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
-      {/* Toast */}
-      {toast && (
-        <div
-          className={`fixed top-5 right-5 z-50 flex items-center gap-3 rounded-xl px-5 py-3 shadow-lg text-sm font-semibold text-white transition-all ${toast.type === "success" ? "bg-emerald-600" : "bg-red-600"
-            }`}
+      <AdminPageHeader
+        title="Land Verifications"
+        subtitle="Review and verify land listings before they appear to farmers/lessees"
+      >
+        <button
+          onClick={fetchLands}
+          disabled={loading}
+          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition disabled:opacity-50"
         >
-          {toast.type === "success" ? (
-            <CheckCircle2 className="w-4 h-4" />
-          ) : (
-            <AlertCircle className="w-4 h-4" />
-          )}
-          {toast.msg}
-        </div>
-      )}
+          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+          Refresh
+        </button>
+      </AdminPageHeader>
 
-      {/* Land Detail Modal */}
-      {detailLand !== null && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-auto max-h-[90vh] overflow-y-auto">
-            {/* Modal header */}
-            <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
-              <div>
-                <h4 className="font-bold text-lg text-gray-900 font-serif truncate max-w-sm">{detailLand.title}</h4>
-                <p className="text-xs text-gray-400 mt-0.5">Plot ID: PL-{detailLand.id}</p>
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-slate-50">
+        {/* Stats Cards */}
+        {stats && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
+            <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
+                  <FileText className="w-5 h-5 text-slate-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-slate-800">{stats.total_lands}</p>
+                  <p className="text-xs text-slate-500 uppercase tracking-wide">Total Lands</p>
+                </div>
               </div>
-              <button
-                onClick={() => setDetailLand(null)}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 transition"
-              >
-                <X className="w-4 h-4" />
-              </button>
             </div>
-
-            <div className="p-6 space-y-6">
-              {/* Photos */}
-              {detailLand.images && detailLand.images.length > 0 && (
-                <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Photos</p>
-                  <div className="flex gap-2 overflow-x-auto pb-1">
-                    {detailLand.images.map((img) => (
-                      <img
-                        key={img.id}
-                        src={img.image}
-                        alt="land"
-                        className="w-32 h-24 object-cover rounded-lg flex-shrink-0 border border-gray-100"
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Key details grid */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Owner</p>
-                  <p className="text-sm font-semibold text-gray-800">{detailLand.owner_username ?? `ID: ${detailLand.owner}`}</p>
-                  {detailLand.owner_email && <p className="text-xs text-gray-500">{detailLand.owner_email}</p>}
+            <div className="bg-white p-4 rounded-xl border border-amber-100 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5 text-amber-600" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Status</p>
-                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border w-fit ${getRowStatus(detailLand).style
-                    }`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${getRowStatus(detailLand).dot}`} />
-                    {getRowStatus(detailLand).label}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Area</p>
-                  <p className="text-sm font-semibold text-gray-800">{detailLand.total_area} Acres</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Price / Month</p>
-                  <p className="text-sm font-semibold text-gray-800">
-                    {detailLand.price_per_month ? `KES ${Number(detailLand.price_per_month).toLocaleString()}` : "—"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Preferred Duration</p>
-                  <p className="text-sm text-gray-700">{detailLand.preferred_duration || "—"}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Submitted</p>
-                  <p className="text-sm text-gray-700">{timeAgo(detailLand.created_at)}</p>
+                  <p className="text-2xl font-bold text-amber-700">{stats.pending_verification}</p>
+                  <p className="text-xs text-slate-500 uppercase tracking-wide">Pending</p>
                 </div>
               </div>
-
-              {/* Description */}
-              {detailLand.description && (
+            </div>
+            <div className="bg-white p-4 rounded-xl border border-emerald-100 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center">
+                  <CheckCircle className="w-5 h-5 text-emerald-600" />
+                </div>
                 <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Description</p>
-                  <p className="text-sm text-gray-700 leading-relaxed">{detailLand.description}</p>
-                </div>
-              )}
-
-              {/* Location */}
-              <div>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Location</p>
-                <div className="flex items-center gap-2 text-sm text-gray-700">
-                  <MapPin className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                  <span>{detailLand.location_name || "Not specified"}</span>
-                </div>
-                {detailLand.latitude && detailLand.longitude && (
-                  <p className="text-xs text-gray-400 mt-1 ml-6">
-                    {Number(detailLand.latitude).toFixed(6)}, {Number(detailLand.longitude).toFixed(6)}
-                  </p>
-                )}
-              </div>
-
-              {/* Amenities */}
-              <div>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Amenities</p>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    { label: "Irrigation", val: detailLand.has_irrigation },
-                    { label: "Electricity", val: detailLand.has_electricity },
-                    { label: "Road Access", val: detailLand.has_road_access },
-                    { label: "Fencing", val: detailLand.has_fencing },
-                  ].map(({ label, val }) => (
-                    <span
-                      key={label}
-                      className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${val
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                          : "bg-gray-50 text-gray-400 border-gray-200 line-through"
-                        }`}
-                    >
-                      {label}
-                    </span>
-                  ))}
+                  <p className="text-2xl font-bold text-emerald-700">{stats.verified}</p>
+                  <p className="text-xs text-slate-500 uppercase tracking-wide">Verified</p>
                 </div>
               </div>
-
-              {/* Soil & Climate */}
-              {detailLand.soil_data && (
+            </div>
+            <div className="bg-white p-4 rounded-xl border border-red-100 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center">
+                  <XCircle className="w-5 h-5 text-red-600" />
+                </div>
                 <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Soil & Climate Data</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {([
-                      { label: "Soil Type", val: detailLand.soil_data.soil_type },
-                      { label: "pH Level", val: detailLand.soil_data.ph_level },
-                      { label: "Nitrogen", val: detailLand.soil_data.nitrogen != null ? `${detailLand.soil_data.nitrogen} mg/kg` : null },
-                      { label: "Phosphorus", val: detailLand.soil_data.phosphorus != null ? `${detailLand.soil_data.phosphorus} mg/kg` : null },
-                      { label: "Potassium", val: detailLand.soil_data.potassium != null ? `${detailLand.soil_data.potassium} mg/kg` : null },
-                      { label: "Moisture", val: detailLand.soil_data.moisture != null ? `${detailLand.soil_data.moisture}%` : null },
-                      { label: "Temperature", val: detailLand.soil_data.temperature != null ? `${detailLand.soil_data.temperature}°C` : null },
-                      { label: "Rainfall", val: detailLand.soil_data.rainfall != null ? `${detailLand.soil_data.rainfall} mm` : null },
-                    ] as { label: string; val: string | number | null | undefined }[]).map(({ label, val }) =>
-                      val != null ? (
-                        <div key={label} className="bg-gray-50 rounded-lg p-3 border border-gray-100">
-                          <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{label}</p>
-                          <p className="text-sm font-semibold text-gray-800 mt-0.5">{val}</p>
-                        </div>
-                      ) : null
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Title Deed */}
-              <div>
-                <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest mb-1">Title Deed Number</p>
-                <div
-                  className="flex items-center gap-2 cursor-pointer group/deed"
-                  onClick={() => copyDeed(detailLand.id, detailLand.title_deed_number ?? "")}
-                  title="Click to copy"
-                >
-                  <span className="font-bold text-lg text-sidebar-bg tracking-wide">
-                    {detailLand.title_deed_number || "—"}
-                  </span>
-                  {copiedId === detailLand.id ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  ) : (
-                    <Copy className="w-4 h-4 text-emerald-600 opacity-40 group-hover/deed:opacity-100 transition-opacity" />
-                  )}
+                  <p className="text-2xl font-bold text-red-700">{stats.flagged}</p>
+                  <p className="text-xs text-slate-500 uppercase tracking-wide">Flagged</p>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
 
-              {/* Flag reason if flagged */}
-              {detailLand.is_flagged && detailLand.flag_reason && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <p className="text-[10px] font-bold text-red-600 uppercase tracking-widest mb-1">Flag Reason</p>
-                  <p className="text-sm text-red-700">{detailLand.flag_reason}</p>
-                </div>
-              )}
-
-              {/* Action buttons */}
-              {!detailLand.is_verified && (
-                <div className="flex gap-3 pt-2">
+        {/* Filter & Search */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm mb-6 p-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            {/* Filter Tabs */}
+            <div className="flex gap-2 flex-wrap">
+              {filterOptions.map((opt) => {
+                const Icon = opt.icon;
+                const isActive = filter === opt.value;
+                return (
                   <button
-                    onClick={() => {
-                      setDetailLand(null);
-                      setFlagModalId(detailLand.id);
-                      setFlagReason("");
-                    }}
-                    disabled={!!actionLoading[detailLand.id]}
-                    className="flex-1 py-2.5 text-sm font-bold rounded-xl border border-earth text-earth hover:bg-earth hover:text-white transition disabled:opacity-50"
+                    key={opt.value}
+                    onClick={() => setFilter(opt.value as typeof filter)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
+                      isActive
+                        ? "bg-[#0f392b] text-white"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
                   >
-                    Flag
+                    <Icon className={`w-4 h-4 ${isActive ? "text-white" : opt.color}`} />
+                    {opt.label}
                   </button>
-                  <button
-                    onClick={() => {
-                      handleVerify(detailLand.id);
-                      setDetailLand(null);
-                    }}
-                    disabled={!!actionLoading[detailLand.id]}
-                    className="flex-1 py-2.5 text-sm font-bold rounded-xl bg-emerald-700 text-white hover:bg-sidebar-bg transition disabled:opacity-50"
-                  >
-                    Verify Property
-                  </button>
-                </div>
-              )}
+                );
+              })}
+            </div>
+            {/* Search */}
+            <div className="relative flex-1 md:max-w-xs ml-auto">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by title, owner, deed..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0f392b]/20"
+              />
             </div>
           </div>
         </div>
-      )}
 
-      {/* Flag Reason Modal */}
-      {flagModalId !== null && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4">
-            <h4 className="font-bold text-lg text-earth mb-2">
-              Flag this Listing
-            </h4>
-            <p className="text-sm text-gray-500 mb-4">
-              Provide a reason. The owner will see this message.
+        {/* Lands List */}
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-[#0f392b]" />
+          </div>
+        ) : filteredLands.length === 0 ? (
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-12 text-center">
+            <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+              <FileText className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">No lands found</h3>
+            <p className="text-gray-500 text-sm">
+              {filter === "pending"
+                ? "There are no lands pending verification at the moment."
+                : "No lands match your current filter criteria."}
             </p>
-            <textarea
-              rows={3}
-              className="w-full rounded-lg border border-gray-200 p-3 text-sm focus:ring-2 focus:ring-red-200 outline-none resize-none mb-4"
-              placeholder="e.g. Title deed number does not match land registry…"
-              value={flagReason}
-              onChange={(e) => setFlagReason(e.target.value)}
-            />
-            <div className="flex gap-3 justify-end">
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredLands.map((land) => (
+              <div
+                key={land.id}
+                className={`bg-white rounded-xl border shadow-sm overflow-hidden transition hover:shadow-md ${
+                  land.is_flagged
+                    ? "border-red-200"
+                    : land.is_verified
+                    ? "border-emerald-200"
+                    : "border-amber-200"
+                }`}
+              >
+                <div className="flex flex-col lg:flex-row">
+                  {/* Image */}
+                  <div className="lg:w-48 h-40 lg:h-auto bg-gradient-to-br from-slate-100 to-slate-50 flex-shrink-0">
+                    {land.images?.[0]?.image ? (
+                      <img
+                        src={land.images[0].image}
+                        alt={land.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-slate-300">
+                        <MapPin className="w-12 h-12" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 p-5">
+                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                      {/* Left Content */}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="text-lg font-bold text-slate-800">{land.title}</h3>
+                          {land.is_verified && (
+                            <span className="flex items-center gap-1 bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-0.5 rounded-full">
+                              <CheckCircle className="w-3 h-3" /> Verified
+                            </span>
+                          )}
+                          {land.is_flagged && (
+                            <span className="flex items-center gap-1 bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full">
+                              <XCircle className="w-3 h-3" /> Flagged
+                            </span>
+                          )}
+                          {!land.is_verified && !land.is_flagged && (
+                            <span className="flex items-center gap-1 bg-amber-100 text-amber-700 text-xs font-bold px-2 py-0.5 rounded-full">
+                              <AlertTriangle className="w-3 h-3" /> Pending
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500 mb-3">
+                          <span className="flex items-center gap-1">
+                            <MapPin className="w-4 h-4" />
+                            {land.location_name}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <User className="w-4 h-4" />
+                            {land.owner_username}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-4 h-4" />
+                            {formatDate(land.created_at)}
+                          </span>
+                        </div>
+
+                        {/* Title Deed - ADMIN ONLY */}
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
+                          <p className="text-xs font-bold text-amber-800 uppercase tracking-wide mb-1">
+                            Title Deed Number (Admin Only)
+                          </p>
+                          <p className="text-sm font-mono font-bold text-amber-900">
+                            {land.title_deed_number}
+                          </p>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2 text-xs">
+                          <span className="bg-slate-100 text-slate-700 px-2 py-1 rounded-full">
+                            {land.total_area} acres
+                          </span>
+                          <span className="bg-emerald-50 text-emerald-700 px-2 py-1 rounded-full">
+                            Ksh {land.price_per_month.toLocaleString()}/month
+                          </span>
+                          {land.has_irrigation && (
+                            <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded-full">
+                              Irrigation
+                            </span>
+                          )}
+                          {land.has_electricity && (
+                            <span className="bg-yellow-50 text-yellow-700 px-2 py-1 rounded-full">
+                              Electricity
+                            </span>
+                          )}
+                          {land.has_road_access && (
+                            <span className="bg-purple-50 text-purple-700 px-2 py-1 rounded-full">
+                              Road Access
+                            </span>
+                          )}
+                          {land.has_fencing && (
+                            <span className="bg-orange-50 text-orange-700 px-2 py-1 rounded-full">
+                              Fencing
+                            </span>
+                          )}
+                        </div>
+
+                        {land.is_flagged && land.flag_reason && (
+                          <div className="mt-3 bg-red-50 border border-red-200 rounded-lg p-3">
+                            <p className="text-xs font-bold text-red-800 uppercase tracking-wide mb-1">
+                              Flag Reason
+                            </p>
+                            <p className="text-sm text-red-700">{land.flag_reason}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex flex-row lg:flex-col gap-2 mt-2 lg:mt-0 flex-shrink-0">
+                        {!land.is_verified && (
+                          <button
+                            onClick={() => handleVerify(land.id)}
+                            disabled={actionLoading === land.id}
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 transition disabled:opacity-50"
+                          >
+                            {actionLoading === land.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <CheckCircle className="w-4 h-4" />
+                            )}
+                            Verify
+                          </button>
+                        )}
+                        {!land.is_flagged && (
+                          <button
+                            onClick={() => openFlagModal(land)}
+                            disabled={actionLoading === land.id}
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-red-100 text-red-700 text-sm font-semibold rounded-lg hover:bg-red-200 transition disabled:opacity-50"
+                          >
+                            <XCircle className="w-4 h-4" />
+                            Flag
+                          </button>
+                        )}
+                        {land.is_flagged && (
+                          <button
+                            onClick={() => handleVerify(land.id)}
+                            disabled={actionLoading === land.id}
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 transition disabled:opacity-50"
+                          >
+                            {actionLoading === land.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <CheckCircle className="w-4 h-4" />
+                            )}
+                            Unflag & Verify
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Flag Modal */}
+      {showFlagModal && selectedLand && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
+            <div className="p-6 border-b border-gray-100">
+              <h3 className="text-lg font-bold text-slate-800">Flag Land Listing</h3>
+              <p className="text-sm text-slate-500 mt-1">
+                Provide a reason for flagging &ldquo;{selectedLand.title}&rdquo;
+              </p>
+            </div>
+            <div className="p-6">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Reason for Flagging
+              </label>
+              <textarea
+                value={flagReason}
+                onChange={(e) => setFlagReason(e.target.value)}
+                placeholder="e.g., Invalid title deed number, suspicious listing details..."
+                rows={4}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-200 resize-none"
+              />
+            </div>
+            <div className="p-6 border-t border-gray-100 flex gap-3 justify-end">
               <button
                 onClick={() => {
-                  setFlagModalId(null);
+                  setShowFlagModal(false);
+                  setSelectedLand(null);
                   setFlagReason("");
                 }}
-                className="px-4 py-2 text-sm rounded-lg border border-gray-200 hover:bg-gray-50 transition"
+                className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition"
               >
                 Cancel
               </button>
               <button
-                onClick={() => handleFlag(flagModalId, flagReason)}
-                className="px-4 py-2 text-sm rounded-lg bg-red-600 text-white font-bold hover:bg-red-700 transition"
+                onClick={handleFlag}
+                disabled={!flagReason.trim() || actionLoading === selectedLand.id}
+                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition disabled:opacity-50"
               >
-                Confirm Flag
+                {actionLoading === selectedLand.id ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <XCircle className="w-4 h-4" />
+                )}
+                Flag Land
               </button>
             </div>
           </div>
         </div>
       )}
-
-      {/* Page Header */}
-      <header className="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between shrink-0">
-        <div>
-          <h2
-            className="text-2xl font-bold tracking-tight text-gray-900"
-            style={{ fontFamily: "'Playfair Display', serif" }}
-          >
-            Land Verifications
-          </h2>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Manually cross-reference Title Deed Numbers with the national land
-            registry to approve or flag listings.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search title or deed…"
-              className="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-bg/20 w-56 shadow-sm"
-            />
-          </div>
-          <button
-            onClick={fetchData}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition shadow-sm text-sm disabled:opacity-50"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-            Refresh
-          </button>
-        </div>
-      </header>
-      <div className="flex-1 overflow-y-auto p-4 lg:p-8 bg-[#f8fafc]">
-        {/* Stat Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
-          {statCards.map((card) => {
-            const Icon = card.icon;
-            return (
-              <div
-                key={card.label}
-                className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between"
-              >
-                <div>
-                  <h3 className="text-earth text-[10px] font-bold uppercase tracking-widest mb-1">
-                    {card.label}
-                  </h3>
-                  <span className="text-3xl font-bold text-gray-800">
-                    {loading ? (
-                      <span className="inline-block w-10 h-8 bg-gray-200 rounded animate-pulse" />
-                    ) : (
-                      card.value
-                    )}
-                  </span>
-                  <p className="text-xs text-gray-400 mt-1">{card.sub}</p>
-                </div>
-                <span
-                  className={`w-12 h-12 rounded-full ${card.iconBg} flex items-center justify-center`}
-                >
-                  <Icon className={`w-6 h-6 ${card.iconColor}`} />
-                </span>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Filter tabs */}
-        <div className="flex gap-2 mb-4 flex-wrap">
-          {(["all", "pending", "verified", "flagged"] as const).map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition ${filter === f
-                ? "bg-sidebar-bg text-white border-sidebar-bg"
-                : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
-                }`}
-            >
-              {f.charAt(0).toUpperCase() + f.slice(1)}
-            </button>
-          ))}
-        </div>
-
-        {/* Table */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/30">
-            <h3 className="text-base font-bold text-earth font-serif">
-              Title Deed Verification Queue
-            </h3>
-            <button className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-sidebar-bg bg-white border border-gray-200 rounded-md shadow-sm transition-colors flex items-center gap-1">
-              <Download className="w-3 h-3" /> Export
-            </button>
-          </div>
-
-          <div className="overflow-x-auto">
-            {loading ? (
-              <div className="flex items-center justify-center py-16">
-                <div className="flex flex-col items-center gap-3">
-                  <div className="w-8 h-8 border-4 border-sidebar-bg border-r-transparent rounded-full animate-spin" />
-                  <p className="text-sm text-gray-400">Loading land queue…</p>
-                </div>
-              </div>
-            ) : filtered.length === 0 ? (
-              <div className="text-center py-16 text-gray-400 text-sm">
-                No land listings match your search or filter.
-              </div>
-            ) : (
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-100">
-                    <th className="py-4 px-5 text-[10px] font-bold text-earth uppercase tracking-widest">
-                      Land / Owner
-                    </th>
-                    <th className="py-4 px-5 text-[10px] font-bold text-earth uppercase tracking-widest">
-                      Plot ID
-                    </th>
-                    <th className="py-4 px-5 text-[10px] font-bold text-emerald-700 uppercase tracking-widest bg-emerald-50/30 border-x border-gray-100">
-                      Title Deed Number
-                    </th>
-                    <th className="py-4 px-5 text-[10px] font-bold text-earth uppercase tracking-widest">
-                      Submitted
-                    </th>
-                    <th className="py-4 px-5 text-[10px] font-bold text-earth uppercase tracking-widest">
-                      Status
-                    </th>
-                    <th className="py-4 px-5 text-[10px] font-bold text-earth uppercase tracking-widest text-right">
-                      Action
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="text-sm divide-y divide-gray-50">
-                  {filtered.map((land) => {
-                    const rowStatus = getRowStatus(land);
-                    const color = avatarColor(land.owner);
-                    const isActing = actionLoading[land.id];
-
-                    return (
-                      <tr
-                        key={land.id}
-                        className="group hover:bg-gray-50/50 transition-colors"
-                      >
-                        {/* Land title + owner */}
-                        <td className="py-4 px-5">
-                          <div className="flex items-center gap-3">
-                            <div
-                              className={`w-9 h-9 rounded-full ${color.bg} ${color.text} flex items-center justify-center font-bold text-xs border border-gray-200`}
-                            >
-                              {initials(land.owner)}
-                            </div>
-                            <div>
-                              <span className="block font-bold text-gray-800 max-w-40 truncate">
-                                {land.title}
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                {land.total_area} Acres
-                              </span>
-                            </div>
-                          </div>
-                        </td>
-
-                        {/* Plot ID */}
-                        <td className="py-4 px-5">
-                          <span className="font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded text-xs">
-                            PL-{land.id}
-                          </span>
-                        </td>
-
-                        {/* Title Deed — click to copy */}
-                        <td className="py-4 px-5 bg-emerald-50/10 border-x border-gray-50 group-hover:bg-emerald-50/20">
-                          <div
-                            className="flex items-center gap-2 cursor-pointer group/deed"
-                            onClick={() =>
-                              copyDeed(land.id, land.title_deed_number ?? "")
-                            }
-                            title="Click to copy"
-                          >
-                            <span className="font-bold text-base text-sidebar-bg tracking-wide">
-                              {land.title_deed_number || "—"}
-                            </span>
-                            {copiedId === land.id ? (
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                            ) : (
-                              <Copy className="w-3.5 h-3.5 text-emerald-600 opacity-40 group-hover/deed:opacity-100 transition-opacity" />
-                            )}
-                          </div>
-                        </td>
-
-                        {/* Submitted */}
-                        <td className="py-4 px-5 text-gray-500 text-xs whitespace-nowrap">
-                          {timeAgo(land.created_at)}
-                        </td>
-
-                        {/* Status */}
-                        <td className="py-4 px-5">
-                          <div className="flex flex-col gap-1">
-                            <span
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${rowStatus.style} w-fit`}
-                            >
-                              <span
-                                className={`w-1.5 h-1.5 rounded-full ${rowStatus.dot}`}
-                              />
-                              {rowStatus.label}
-                            </span>
-                            {land.is_flagged && land.flag_reason && (
-                              <span
-                                className="text-[10px] text-red-500 max-w-40 truncate"
-                                title={land.flag_reason}
-                              >
-                                {land.flag_reason}
-                              </span>
-                            )}
-                          </div>
-                        </td>
-
-                        {/* Actions */}
-                        <td className="py-4 px-5 text-right">
-                          <div className="flex justify-end gap-2 mb-2">
-                            <button
-                              onClick={() => setDetailLand(land)}
-                              className="inline-flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-bold rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 transition shadow-sm"
-                            >
-                              <Eye className="w-3.5 h-3.5" />
-                              Details
-                            </button>
-                          </div>
-                          {!land.is_verified ? (
-                            <div className="flex justify-end gap-2">
-                              <button
-                                onClick={() => {
-                                  setFlagModalId(land.id);
-                                  setFlagReason("");
-                                }}
-                                disabled={isActing}
-                                className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-bold rounded-lg border border-earth text-earth hover:bg-earth hover:text-white transition shadow-sm w-32 disabled:opacity-50"
-                              >
-                                {isActing ? (
-                                  <span className="w-3 h-3 border-2 border-earth border-r-transparent rounded-full animate-spin" />
-                                ) : (
-                                  "Flag"
-                                )}
-                              </button>
-                              <button
-                                onClick={() => handleVerify(land.id)}
-                                disabled={isActing}
-                                className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-700 text-white hover:bg-sidebar-bg transition shadow-sm w-32 disabled:opacity-50"
-                              >
-                                {isActing ? (
-                                  <span className="w-3 h-3 border-2 border-white border-r-transparent rounded-full animate-spin" />
-                                ) : (
-                                  "Verify Property"
-                                )}
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="flex items-center justify-end gap-1 text-emerald-600 text-xs font-semibold">
-                              <ShieldCheck className="w-4 h-4" />
-                              Verified
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            )}
-          </div>
-
-          <div className="bg-gray-50 px-5 py-4 border-t border-gray-100 flex items-center justify-between">
-            <p className="text-xs text-gray-500">
-              Showing{" "}
-              <span className="font-bold text-gray-700">{filtered.length}</span>{" "}
-              of <span className="font-bold text-gray-700">{lands.length}</span>{" "}
-              listings
-            </p>
-            <div className="flex gap-2">
-              <button
-                disabled
-                className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-300 cursor-not-allowed"
-              >
-                <ChevronRight className="w-4 h-4 rotate-180" />
-              </button>
-              <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 hover:text-earth transition">
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Info Bar */}
-        <div className="mt-7 grid grid-cols-1 lg:grid-cols-3 gap-5">
-          <div className="lg:col-span-2 bg-sidebar-bg rounded-xl p-6 text-white relative overflow-hidden shadow-lg">
-            <div className="absolute right-0 top-0 opacity-10 transform translate-x-1/4 -translate-y-1/4">
-              <ShieldCheck className="w-40 h-40" />
-            </div>
-            <div className="relative z-10">
-              <h4 className="font-serif text-lg font-bold mb-2">
-                Manual Verification Protocol
-              </h4>
-              <div className="flex items-center gap-2 mb-4">
-                <span className="w-2 h-2 rounded-full bg-yellow-400" />
-                <span className="text-xs font-medium text-yellow-200 uppercase tracking-wider">
-                  Review Required
-                </span>
-              </div>
-              <ul className="text-sm text-green-100/80 mb-4 space-y-2 list-disc pl-4 max-w-lg">
-                <li>
-                  Cross-check the <strong>Title Deed Number</strong> with the
-                  physical land registry or government portal.
-                </li>
-                <li>
-                  Verify the <strong>Owner</strong> matches the deed holder
-                  exactly.
-                </li>
-                <li>
-                  Confirm the <strong>Plot ID</strong> corresponds to the
-                  correct region.
-                </li>
-              </ul>
-            </div>
-          </div>
-
-
-        </div>
-      </div>
     </div>
   );
 }

@@ -18,6 +18,32 @@ type Order = {
 
 type TimelineStep = { label: string; done: boolean; current: boolean };
 
+type DealerQuery = {
+  id: number;
+  customer_name: string;
+  product_name: string;
+  message: string;
+  reply?: string;
+  created_at?: string;
+  is_resolved: boolean;
+};
+
+type DealerTransaction = {
+  id: number;
+  order_id?: number;
+  customer_name?: string;
+  product_name?: string;
+  amount: number;
+  date: string;
+  status: string;
+};
+
+type EarningsSummary = {
+  total_earnings: number;
+  this_month: number;
+  pending_payout: number;
+};
+
 const tabs = ["All Orders", "Delivery", "Pick-up", "Pending", "Completed"];
 
 function getStatusClass(status: string): string {
@@ -150,10 +176,26 @@ const ORDER_DETAILS: Record<
 };
 
 export default function OrdersPage() {
+  const [mainTab, setMainTab] = useState<"orders" | "queries" | "transactions">("orders");
+
+  // Orders tab state
   const [allOrders, setAllOrders] = useState<Order[]>(orders);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("All Orders");
   const [selectedId, setSelectedId] = useState<string>("");
+
+  // Queries tab state
+  const [queries, setQueries] = useState<DealerQuery[]>([]);
+  const [queriesLoading, setQueriesLoading] = useState(false);
+  const [queriesError, setQueriesError] = useState<string | null>(null);
+  const [replyDraft, setReplyDraft] = useState<Record<number, string>>({});
+  const [replyingId, setReplyingId] = useState<number | null>(null);
+
+  // Transactions tab state
+  const [transactions, setTransactions] = useState<DealerTransaction[]>([]);
+  const [earnings, setEarnings] = useState<EarningsSummary | null>(null);
+  const [txLoading, setTxLoading] = useState(false);
+  const [txError, setTxError] = useState<string | null>(null);
 
   useEffect(() => {
     dealerApi.orders()
@@ -166,6 +208,61 @@ export default function OrdersPage() {
       .catch(() => { })
       .finally(() => setLoading(false));
   }, []);
+
+  const loadQueries = () => {
+    setQueriesLoading(true);
+    setQueriesError(null);
+    dealerApi.queries()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .then((res) => {
+        const raw = Array.isArray(res.data) ? res.data : (res.data?.results ?? []);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setQueries(raw.map((q: any) => ({
+          id: q.id,
+          customer_name: q.customer_name ?? q.buyer_name ?? "Customer",
+          product_name: q.product_name ?? q.product ?? "Product",
+          message: q.message ?? q.question ?? "",
+          reply: q.reply ?? q.dealer_reply ?? undefined,
+          created_at: q.created_at,
+          is_resolved: q.is_resolved ?? !!q.reply,
+        })));
+      })
+      .catch(() => setQueriesError("Could not load queries."))
+      .finally(() => setQueriesLoading(false));
+  };
+
+  const loadTransactions = () => {
+    setTxLoading(true);
+    setTxError(null);
+    Promise.all([dealerApi.transactions(), dealerApi.earningsSummary()])
+      .then(([txRes, earnRes]) => {
+        const raw = Array.isArray(txRes.data) ? txRes.data : (txRes.data?.results ?? []);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setTransactions(raw.map((t: any) => ({
+          id: t.id,
+          order_id: t.order_id ?? t.order,
+          customer_name: t.customer_name ?? t.buyer_name,
+          product_name: t.product_name ?? t.product,
+          amount: Number(t.amount ?? 0),
+          date: t.date ?? t.created_at ?? "",
+          status: t.status ?? "Completed",
+        })));
+        const e = earnRes.data;
+        setEarnings({
+          total_earnings: Number(e?.total_earnings ?? e?.total ?? 0),
+          this_month: Number(e?.this_month ?? e?.monthly ?? 0),
+          pending_payout: Number(e?.pending_payout ?? e?.pending ?? 0),
+        });
+      })
+      .catch(() => setTxError("Could not load transaction data."))
+      .finally(() => setTxLoading(false));
+  };
+
+  useEffect(() => {
+    if (mainTab === "queries" && queries.length === 0 && !queriesLoading) loadQueries();
+    if (mainTab === "transactions" && transactions.length === 0 && !txLoading) loadTransactions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mainTab]);
 
   const [search, setSearch] = useState("");
   const [toast, setToast] = useState<string | null>(null);
@@ -183,6 +280,23 @@ export default function OrdersPage() {
           : o,
       ),
     );
+  };
+
+  const handleReply = async (queryId: number) => {
+    const msg = replyDraft[queryId]?.trim();
+    if (!msg) return;
+    setReplyingId(queryId);
+    try {
+      await dealerApi.replyToQuery(queryId, msg);
+      setQueries((prev) =>
+        prev.map((q) => q.id === queryId ? { ...q, reply: msg, is_resolved: true } : q)
+      );
+      setReplyDraft((prev) => { const n = { ...prev }; delete n[queryId]; return n; });
+    } catch {
+      showToast("Failed to send reply.");
+    } finally {
+      setReplyingId(null);
+    }
   };
 
   const markReady = () => {
@@ -221,7 +335,7 @@ export default function OrdersPage() {
   const selDetail = ORDER_DETAILS[selectedId] ?? ORDER_DETAILS["#ORD-2489"];
   const timeline = selected ? TIMELINE[selected.status] ?? TIMELINE["Pending"] : TIMELINE["Pending"];
 
-  const canAct = selected && 
+  const canAct = selected &&
     selected.status !== "Cancelled" &&
     selected.status !== "Collected" &&
     selected.status !== "Delivered";
@@ -237,20 +351,22 @@ export default function OrdersPage() {
       )}
       {/* Header */}
       <DealerPageHeader
-        title="Incoming Orders"
-        subtitle="Review, process and track customer orders."
+        title="Orders & Queries"
+        subtitle="Manage incoming orders, customer queries and payment transactions."
       >
-        <div className="relative">
-          <span className="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-base">
-            search
-          </span>
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search orders..."
-            className="pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm w-52 focus:outline-none focus:ring-2 focus:ring-[#047857]/20 focus:border-[#047857]"
-          />
-        </div>
+        {mainTab === "orders" && (
+          <div className="relative">
+            <span className="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 text-base">
+              search
+            </span>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search orders..."
+              className="pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm w-52 focus:outline-none focus:ring-2 focus:ring-[#047857]/20 focus:border-[#047857]"
+            />
+          </div>
+        )}
         <button className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-500">
           <span className="material-icons-round text-base">tune</span>
         </button>
@@ -260,289 +376,418 @@ export default function OrdersPage() {
         </button>
       </DealerPageHeader>
 
-      {loading ? (
-        <div className="flex-1 flex items-center justify-center bg-[#f8fafc]">
-          <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#047857]"></div>
-            <p className="mt-4 text-sm text-gray-500">Loading orders...</p>
-          </div>
-        </div>
-      ) : !selected ? (
-        <div className="flex-1 flex items-center justify-center bg-[#f8fafc]">
-          <div className="text-center">
-            <span className="material-icons-round text-6xl text-gray-300">shopping_bag</span>
-            <p className="mt-4 text-sm text-gray-500">No orders found</p>
-          </div>
-        </div>
-      ) : (
-      <div className="flex gap-6 flex-1 min-h-0 p-4 lg:p-8 bg-[#f8fafc]">
-        {/* Left — Orders Table */}
-        <div className="flex-1 flex flex-col min-w-0 bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-          {/* Tabs */}
-          <div className="flex gap-1 border-b border-gray-100 px-6 overflow-x-auto">
-            {tabs.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`py-4 px-3 text-sm font-semibold whitespace-nowrap transition border-b-2 -mb-px ${activeTab === tab ? "border-[#047857] text-[#047857]" : "border-transparent text-gray-400 hover:text-gray-600"}`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-
-          {/* Table */}
-          <div className="flex-1 overflow-y-auto">
-            <table className="w-full">
-              <thead className="sticky top-0 bg-gray-50/80 backdrop-blur-sm">
-                <tr>
-                  <th className="text-left py-3 px-6 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                    Order ID
-                  </th>
-                  <th className="text-left py-3 px-6 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                    Customer
-                  </th>
-                  <th className="text-left py-3 px-6 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                    Type
-                  </th>
-                  <th className="text-right py-3 px-6 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                    Amount
-                  </th>
-                  <th className="text-center py-3 px-6 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {filtered.map((order) => (
-                  <tr
-                    key={order.id}
-                    onClick={() => setSelectedId(order.id)}
-                    className={`cursor-pointer transition ${selectedId === order.id ? "bg-emerald-50/50" : "hover:bg-gray-50/50"}`}
-                  >
-                    <td className="py-4 px-6">
-                      <span
-                        className={`text-sm font-bold font-mono ${selectedId === order.id ? "text-[#047857]" : "text-gray-700"}`}
-                      >
-                        {order.id}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-sidebar-bg rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0">
-                          {order.initials}
-                        </div>
-                        <span className="text-sm font-semibold text-gray-800">
-                          {order.customer}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-4 px-6">
-                      <div className="flex items-center gap-1.5 text-gray-500 text-xs font-medium">
-                        <span className="material-icons-round text-sm">
-                          {order.typeIcon}
-                        </span>
-                        {order.type}
-                      </div>
-                    </td>
-                    <td className="py-4 px-6 text-right text-sm font-bold text-gray-800">
-                      Ksh {order.amount.toLocaleString()}
-                    </td>
-                    <td className="py-4 px-6 text-center">
-                      <span
-                        className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${order.statusClass}`}
-                      >
-                        {order.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          <div className="p-4 border-t border-gray-100 flex justify-between items-center">
-            <p className="text-xs text-gray-400">
-              Showing 1 to {filtered.length} of 124 results
-            </p>
-            <div className="flex gap-1">
-              <button className="px-3 py-1.5 text-xs border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50">
-                Previous
-              </button>
-              {[1, 2, 3].map((p) => (
-                <button
-                  key={p}
-                  className={`px-3 py-1.5 text-xs rounded-lg ${p === 1 ? "bg-[#047857] text-white" : "border border-gray-200 text-gray-500 hover:bg-gray-50"}`}
-                >
-                  {p}
-                </button>
-              ))}
-              <span className="px-2 py-1.5 text-xs text-gray-400">...</span>
-              <button className="px-3 py-1.5 text-xs border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50">
-                Next
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Right — Order Detail Panel */}
-        <div className="w-80 xl:w-96 bg-white rounded-3xl border border-gray-100 shadow-sm overflow-y-auto flex flex-col shrink-0">
-          <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-            <span className="font-bold text-[#047857] font-mono text-sm">
-              {selected.id}
+      {/* Outer Tab Bar */}
+      <div className="flex items-center gap-1 px-4 lg:px-8 pt-4 border-b border-slate-200 bg-white shrink-0">
+        <button
+          onClick={() => setMainTab("orders")}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-t-lg transition-colors -mb-px border-b-2 ${mainTab === "orders" ? "text-[#047857] border-[#047857] bg-emerald-50" : "text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50"}`}
+        >
+          <span className="material-icons-round text-base">shopping_bag</span>
+          Orders
+        </button>
+        <button
+          onClick={() => setMainTab("queries")}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-t-lg transition-colors -mb-px border-b-2 ${mainTab === "queries" ? "text-[#047857] border-[#047857] bg-emerald-50" : "text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50"}`}
+        >
+          <span className="material-icons-round text-base">forum</span>
+          Queries
+          {queries.filter(q => !q.is_resolved).length > 0 && (
+            <span className="ml-0.5 rounded-full bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5">
+              {queries.filter(q => !q.is_resolved).length}
             </span>
-            <div className="flex gap-2">
-              <button
-                onClick={printInvoice}
-                className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
-              >
-                <span className="material-icons-round text-base">print</span>
-              </button>
+          )}
+        </button>
+        <button
+          onClick={() => setMainTab("transactions")}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-t-lg transition-colors -mb-px border-b-2 ${mainTab === "transactions" ? "text-[#047857] border-[#047857] bg-emerald-50" : "text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50"}`}
+        >
+          <span className="material-icons-round text-base">account_balance_wallet</span>
+          Transactions
+        </button>
+      </div>
+
+      {/* ═══ ORDERS TAB ═══ */}
+      {mainTab === "orders" && (
+        loading ? (
+          <div className="flex-1 flex items-center justify-center bg-[#f8fafc]">
+            <div className="text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#047857]"></div>
+              <p className="mt-4 text-sm text-gray-500">Loading orders...</p>
             </div>
           </div>
-
-          <div className="p-5 space-y-6 flex-1">
-            {/* Timeline */}
-            <div>
-              <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-4">
-                Order Status
-              </h4>
-              <div className="relative">
-                <div className="absolute left-2.75 top-0 bottom-0 w-0.5 bg-gray-100" />
-                {timeline.map((step, i) => (
-                  <div
-                    key={i}
-                    className="relative flex items-start gap-3 mb-4 last:mb-0"
+        ) : !selected ? (
+          <div className="flex-1 flex items-center justify-center bg-[#f8fafc]">
+            <div className="text-center">
+              <span className="material-icons-round text-6xl text-gray-300">shopping_bag</span>
+              <p className="mt-4 text-sm text-gray-500">No orders found</p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex gap-6 flex-1 min-h-0 p-4 lg:p-8 bg-[#f8fafc]">
+            {/* Left — Orders Table */}
+            <div className="flex-1 flex flex-col min-w-0 bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+              {/* Inner Tabs */}
+              <div className="flex gap-1 border-b border-gray-100 px-6 overflow-x-auto">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`py-4 px-3 text-sm font-semibold whitespace-nowrap transition border-b-2 -mb-px ${activeTab === tab ? "border-[#047857] text-[#047857]" : "border-transparent text-gray-400 hover:text-gray-600"}`}
                   >
-                    <div
-                      className={`relative z-10 w-5.5 h-5.5 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${step.done ? "bg-[#047857]" : step.current ? "bg-orange-500" : "bg-gray-200"}`}
-                    >
-                      {step.done ? (
-                        <span className="material-icons-round text-white text-xs">
-                          check
-                        </span>
-                      ) : step.current ? (
-                        <span className="w-2 h-2 bg-white rounded-full" />
-                      ) : (
-                        <span className="w-2 h-2 bg-gray-300 rounded-full" />
-                      )}
-                    </div>
-                    <div className="pt-0.5">
-                      <p
-                        className={`text-xs font-semibold ${step.done ? "text-[#047857]" : step.current ? "text-orange-700" : "text-gray-400"}`}
+                    {tab}
+                  </button>
+                ))}
+              </div>
+
+              {/* Table */}
+              <div className="flex-1 overflow-y-auto">
+                <table className="w-full">
+                  <thead className="sticky top-0 bg-gray-50/80 backdrop-blur-sm">
+                    <tr>
+                      <th className="text-left py-3 px-6 text-[10px] font-bold uppercase tracking-widest text-gray-400">Order ID</th>
+                      <th className="text-left py-3 px-6 text-[10px] font-bold uppercase tracking-widest text-gray-400">Customer</th>
+                      <th className="text-left py-3 px-6 text-[10px] font-bold uppercase tracking-widest text-gray-400">Type</th>
+                      <th className="text-right py-3 px-6 text-[10px] font-bold uppercase tracking-widest text-gray-400">Amount</th>
+                      <th className="text-center py-3 px-6 text-[10px] font-bold uppercase tracking-widest text-gray-400">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {filtered.map((order) => (
+                      <tr
+                        key={order.id}
+                        onClick={() => setSelectedId(order.id)}
+                        className={`cursor-pointer transition ${selectedId === order.id ? "bg-emerald-50/50" : "hover:bg-gray-50/50"}`}
                       >
-                        {step.label}
+                        <td className="py-4 px-6">
+                          <span className={`text-sm font-bold font-mono ${selectedId === order.id ? "text-[#047857]" : "text-gray-700"}`}>{order.id}</span>
+                        </td>
+                        <td className="py-4 px-6">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-sidebar-bg rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0">{order.initials}</div>
+                            <span className="text-sm font-semibold text-gray-800">{order.customer}</span>
+                          </div>
+                        </td>
+                        <td className="py-4 px-6">
+                          <div className="flex items-center gap-1.5 text-gray-500 text-xs font-medium">
+                            <span className="material-icons-round text-sm">{order.typeIcon}</span>
+                            {order.type}
+                          </div>
+                        </td>
+                        <td className="py-4 px-6 text-right text-sm font-bold text-gray-800">Ksh {order.amount.toLocaleString()}</td>
+                        <td className="py-4 px-6 text-center">
+                          <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${order.statusClass}`}>{order.status}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              <div className="p-4 border-t border-gray-100 flex justify-between items-center">
+                <p className="text-xs text-gray-400">Showing 1 to {filtered.length} of {allOrders.length} results</p>
+                <div className="flex gap-1">
+                  <button className="px-3 py-1.5 text-xs border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50">Previous</button>
+                  {[1, 2, 3].map((p) => (
+                    <button key={p} className={`px-3 py-1.5 text-xs rounded-lg ${p === 1 ? "bg-[#047857] text-white" : "border border-gray-200 text-gray-500 hover:bg-gray-50"}`}>{p}</button>
+                  ))}
+                  <button className="px-3 py-1.5 text-xs border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50">Next</button>
+                </div>
+              </div>
+            </div>
+
+            {/* Right — Order Detail Panel */}
+            <div className="w-80 xl:w-96 bg-white rounded-3xl border border-gray-100 shadow-sm overflow-y-auto flex flex-col shrink-0">
+              <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                <span className="font-bold text-[#047857] font-mono text-sm">{selected.id}</span>
+                <div className="flex gap-2">
+                  <button onClick={printInvoice} className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                    <span className="material-icons-round text-base">print</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-5 space-y-6 flex-1">
+                {/* Timeline */}
+                <div>
+                  <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-4">Order Status</h4>
+                  <div className="relative">
+                    <div className="absolute left-2.75 top-0 bottom-0 w-0.5 bg-gray-100" />
+                    {timeline.map((step, i) => (
+                      <div key={i} className="relative flex items-start gap-3 mb-4 last:mb-0">
+                        <div className={`relative z-10 w-5.5 h-5.5 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${step.done ? "bg-[#047857]" : step.current ? "bg-orange-500" : "bg-gray-200"}`}>
+                          {step.done ? (
+                            <span className="material-icons-round text-white text-xs">check</span>
+                          ) : step.current ? (
+                            <span className="w-2 h-2 bg-white rounded-full" />
+                          ) : (
+                            <span className="w-2 h-2 bg-gray-300 rounded-full" />
+                          )}
+                        </div>
+                        <div className="pt-0.5">
+                          <p className={`text-xs font-semibold ${step.done ? "text-[#047857]" : step.current ? "text-orange-700" : "text-gray-400"}`}>{step.label}</p>
+                          {step.current && <p className="text-[10px] text-orange-500">In Progress</p>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Customer */}
+                <div>
+                  <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">Customer</h4>
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-sidebar-bg rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0">{selected.initials}</div>
+                    <div>
+                      <p className="font-bold text-gray-800 text-sm">{selected.customer}</p>
+                      <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                        <span className="material-icons-round text-xs">phone</span>
+                        {selDetail.phone}
                       </p>
-                      {step.current && (
-                        <p className="text-[10px] text-orange-500">
-                          In Progress
-                        </p>
+                      <p className="text-xs text-gray-400 mt-1">{selDetail.address}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Items */}
+                <div>
+                  <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">Items</h4>
+                  <div className="space-y-2">
+                    {selDetail.items.map((item, i) => (
+                      <div key={i} className="flex justify-between items-start text-sm py-2 border-b border-gray-50 last:border-0">
+                        <div>
+                          <p className="font-semibold text-gray-800 text-xs">{item.name}</p>
+                          <p className="text-[10px] text-gray-400">{item.desc}</p>
+                        </div>
+                        <span className="font-bold text-gray-700 text-xs">Ksh {item.amount.toLocaleString()}</span>
+                      </div>
+                    ))}
+                    <div className="flex justify-between items-center pt-2 mt-1">
+                      <span className="text-xs font-bold text-gray-700">Total</span>
+                      <span className="text-base font-bold text-[#047857]">Ksh {selected.amount.toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="p-5 border-t border-gray-100 space-y-3">
+                {canAct ? (
+                  <button onClick={markReady} className="w-full py-3 bg-[#047857] text-white rounded-xl text-sm font-bold hover:opacity-90 transition shadow-lg shadow-[#047857]/20">
+                    {selected.type === "Pickup" ? "Mark as Ready" : "Mark as Delivered"}
+                  </button>
+                ) : (
+                  <div className="w-full py-3 bg-gray-100 text-gray-400 rounded-xl text-sm font-bold text-center">{selected.status}</div>
+                )}
+                <div className="grid grid-cols-2 gap-2">
+                  <button onClick={printInvoice} className="py-2 border border-gray-200 text-gray-600 rounded-xl text-xs font-semibold hover:bg-gray-50 flex items-center justify-center gap-1.5">
+                    <span className="material-icons-round text-sm">print</span>Print Invoice
+                  </button>
+                  {canAct ? (
+                    <button onClick={cancelOrder} className="py-2 border border-red-200 text-red-500 rounded-xl text-xs font-semibold hover:bg-red-50 flex items-center justify-center gap-1.5">
+                      <span className="material-icons-round text-sm">cancel</span>Cancel Order
+                    </button>
+                  ) : (
+                    <div className="py-2 border border-gray-100 text-gray-300 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5">
+                      <span className="material-icons-round text-sm">cancel</span>Cancel Order
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      )}
+
+      {/* ═══ QUERIES TAB ═══ */}
+      {mainTab === "queries" && (
+        <div className="flex-1 overflow-y-auto p-4 lg:p-8 bg-[#f8fafc]">
+          {queriesLoading && (
+            <div className="flex items-center justify-center py-20">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#047857]" />
+            </div>
+          )}
+          {queriesError && (
+            <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-center">
+              <p className="text-sm text-red-600">{queriesError}</p>
+              <button onClick={loadQueries} className="mt-2 text-sm font-semibold text-red-700 hover:underline">Retry</button>
+            </div>
+          )}
+          {!queriesLoading && !queriesError && (
+            queries.length === 0 ? (
+              <div className="py-24 text-center text-gray-400">
+                <span className="material-icons-round text-5xl mb-3 block">forum</span>
+                <p className="font-semibold text-gray-500">No customer queries yet.</p>
+                <p className="text-sm mt-1">Product queries from customers will appear here.</p>
+              </div>
+            ) : (
+              <div className="space-y-4 max-w-3xl mx-auto">
+                {queries.map((q) => (
+                  <div key={q.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                    <div className="flex items-center justify-between px-5 py-3 bg-gray-50 border-b border-gray-100">
+                      <div>
+                        <span className="text-sm font-bold text-gray-800">{q.customer_name}</span>
+                        <span className="ml-2 text-xs text-gray-400">asked about</span>
+                        <span className="ml-2 text-xs font-semibold text-[#047857]">{q.product_name}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {q.created_at && (
+                          <span className="text-[10px] text-gray-400">
+                            {new Date(q.created_at).toLocaleDateString()}
+                          </span>
+                        )}
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${q.is_resolved ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}`}>
+                          {q.is_resolved ? "Resolved" : "Pending"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-5">
+                      <div className="mb-4">
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center shrink-0">
+                            <span className="material-icons-round text-gray-500 text-sm">person</span>
+                          </div>
+                          <div className="bg-gray-50 rounded-xl px-4 py-3 flex-1">
+                            <p className="text-sm text-gray-700">{q.message}</p>
+                          </div>
+                        </div>
+                      </div>
+                      {q.reply && (
+                        <div className="flex items-start gap-3 mb-4">
+                          <div className="w-8 h-8 rounded-full bg-[#047857] flex items-center justify-center shrink-0">
+                            <span className="material-icons-round text-white text-sm">storefront</span>
+                          </div>
+                          <div className="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 flex-1">
+                            <p className="text-xs font-bold text-[#047857] mb-1">Your Reply</p>
+                            <p className="text-sm text-gray-700">{q.reply}</p>
+                          </div>
+                        </div>
+                      )}
+                      {!q.is_resolved && (
+                        <div className="flex gap-2 mt-2">
+                          <input
+                            type="text"
+                            placeholder="Type your reply..."
+                            value={replyDraft[q.id] ?? ""}
+                            onChange={(e) => setReplyDraft((prev) => ({ ...prev, [q.id]: e.target.value }))}
+                            onKeyDown={(e) => e.key === "Enter" && handleReply(q.id)}
+                            className="flex-1 text-sm border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#047857]/20 focus:border-[#047857]"
+                          />
+                          <button
+                            onClick={() => handleReply(q.id)}
+                            disabled={!replyDraft[q.id]?.trim() || replyingId === q.id}
+                            className="px-4 py-2 bg-[#047857] text-white text-sm font-bold rounded-xl hover:bg-emerald-800 transition disabled:opacity-40 flex items-center gap-1.5"
+                          >
+                            {replyingId === q.id ? (
+                              <span className="material-icons-round text-sm animate-spin">refresh</span>
+                            ) : (
+                              <span className="material-icons-round text-sm">send</span>
+                            )}
+                            Reply
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
+            )
+          )}
+        </div>
+      )}
 
-            {/* Customer */}
-            <div>
-              <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">
-                Customer
-              </h4>
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 bg-sidebar-bg rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0">
-                  {selected.initials}
-                </div>
-                <div>
-                  <p className="font-bold text-gray-800 text-sm">
-                    {selected.customer}
-                  </p>
-                  <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
-                    <span className="material-icons-round text-xs">phone</span>
-                    {selDetail.phone}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    {selDetail.address}
-                  </p>
-                </div>
-              </div>
+      {/* ═══ TRANSACTIONS TAB ═══ */}
+      {mainTab === "transactions" && (
+        <div className="flex-1 overflow-y-auto p-4 lg:p-8 bg-[#f8fafc]">
+          {txLoading && (
+            <div className="flex items-center justify-center py-20">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#047857]" />
             </div>
-
-            {/* Items */}
-            <div>
-              <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">
-                Items
-              </h4>
-              <div className="space-y-2">
-                {selDetail.items.map((item, i) => (
-                  <div
-                    key={i}
-                    className="flex justify-between items-start text-sm py-2 border-b border-gray-50 last:border-0"
-                  >
-                    <div>
-                      <p className="font-semibold text-gray-800 text-xs">
-                        {item.name}
-                      </p>
-                      <p className="text-[10px] text-gray-400">{item.desc}</p>
+          )}
+          {txError && (
+            <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-center">
+              <p className="text-sm text-red-600">{txError}</p>
+              <button onClick={loadTransactions} className="mt-2 text-sm font-semibold text-red-700 hover:underline">Retry</button>
+            </div>
+          )}
+          {!txLoading && !txError && (
+            <>
+              {/* Earnings summary */}
+              {earnings && (
+                <div className="grid gap-4 sm:grid-cols-3 mb-6">
+                  {[
+                    { label: "Total Earnings", value: earnings.total_earnings, icon: "payments", color: "text-[#047857]" },
+                    { label: "This Month", value: earnings.this_month, icon: "calendar_today", color: "text-blue-600" },
+                    { label: "Pending Payout", value: earnings.pending_payout, icon: "schedule", color: "text-amber-600" },
+                  ].map((s) => (
+                    <div key={s.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
+                      <div className={`w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center shrink-0 ${s.color}`}>
+                        <span className="material-icons-round text-xl">{s.icon}</span>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">{s.label}</p>
+                        <p className={`text-xl font-bold mt-0.5 ${s.color}`}>
+                          Ksh {s.value.toLocaleString()}
+                        </p>
+                      </div>
                     </div>
-                    <span className="font-bold text-gray-700 text-xs">
-                      Ksh {item.amount.toLocaleString()}
-                    </span>
-                  </div>
-                ))}
-                <div className="flex justify-between items-center pt-2 mt-1">
-                  <span className="text-xs font-bold text-gray-700">Total</span>
-                  <span className="text-base font-bold text-[#047857]">
-                    Ksh {selected.amount.toLocaleString()}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="p-5 border-t border-gray-100 space-y-3">
-            {canAct ? (
-              <button
-                onClick={markReady}
-                className="w-full py-3 bg-[#047857] text-white rounded-xl text-sm font-bold hover:opacity-90 transition shadow-lg shadow-[#047857]/20"
-              >
-                {selected.type === "Pickup"
-                  ? "Mark as Ready"
-                  : "Mark as Delivered"}
-              </button>
-            ) : (
-              <div className="w-full py-3 bg-gray-100 text-gray-400 rounded-xl text-sm font-bold text-center">
-                {selected.status}
-              </div>
-            )}
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={printInvoice}
-                className="py-2 border border-gray-200 text-gray-600 rounded-xl text-xs font-semibold hover:bg-gray-50 flex items-center justify-center gap-1.5"
-              >
-                <span className="material-icons-round text-sm">print</span>Print
-                Invoice
-              </button>
-              {canAct ? (
-                <button
-                  onClick={cancelOrder}
-                  className="py-2 border border-red-200 text-red-500 rounded-xl text-xs font-semibold hover:bg-red-50 flex items-center justify-center gap-1.5"
-                >
-                  <span className="material-icons-round text-sm">cancel</span>
-                  Cancel Order
-                </button>
-              ) : (
-                <div className="py-2 border border-gray-100 text-gray-300 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5">
-                  <span className="material-icons-round text-sm">cancel</span>
-                  Cancel Order
+                  ))}
                 </div>
               )}
-            </div>
-          </div>
+
+              {transactions.length === 0 ? (
+                <div className="py-16 text-center text-gray-400 bg-white rounded-2xl border border-gray-100">
+                  <span className="material-icons-round text-5xl mb-3 block">receipt_long</span>
+                  <p className="font-semibold text-gray-500">No transactions yet.</p>
+                </div>
+              ) : (
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                  <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                    <h3 className="text-base font-bold text-gray-800" style={{ fontFamily: "Playfair Display, serif" }}>Transaction History</h3>
+                    <span className="text-xs text-gray-400">{transactions.length} records</span>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50 text-[10px] uppercase tracking-widest text-gray-400">
+                        <tr>
+                          <th className="px-6 py-3 text-left">ID</th>
+                          <th className="px-6 py-3 text-left">Customer</th>
+                          <th className="px-6 py-3 text-left">Product</th>
+                          <th className="px-6 py-3 text-left">Date</th>
+                          <th className="px-6 py-3 text-right">Amount</th>
+                          <th className="px-6 py-3 text-left">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50">
+                        {transactions.map((t) => (
+                          <tr key={t.id} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-6 py-4 font-mono text-xs text-gray-500">TXN-{t.id}</td>
+                            <td className="px-6 py-4 font-medium text-gray-800">{t.customer_name ?? "—"}</td>
+                            <td className="px-6 py-4 text-gray-500 text-xs">{t.product_name ?? "—"}</td>
+                            <td className="px-6 py-4 text-gray-400 text-xs">
+                              {t.date ? new Date(t.date).toLocaleDateString() : "—"}
+                            </td>
+                            <td className="px-6 py-4 text-right font-bold text-[#047857]">
+                              Ksh {t.amount.toLocaleString()}
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${t.status.toLowerCase() === "completed" ? "bg-green-100 text-green-700" :
+                                  t.status.toLowerCase() === "pending" ? "bg-orange-100 text-orange-700" :
+                                    "bg-gray-100 text-gray-600"
+                                }`}>
+                                {t.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
-      </div>
       )}
     </div>
   );

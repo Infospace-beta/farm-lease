@@ -3,23 +3,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/providers";
+import FarmBot from "@/components/shared/FarmBot";
 
 const navItems = [
   { href: "/dealer/dashboard", icon: "dashboard", label: "Dashboard" },
-  { href: "/dealer/inventory", icon: "inventory_2", label: "Inventory" },
-  {
-    href: "/dealer/orders",
-    icon: "shopping_cart",
-    label: "Orders",
-    badge: "5",
-  },
-  { href: "/dealer/products", icon: "grid_view", label: "My Products" },
-  {
-    href: "/dealer/products/add",
-    icon: "add_circle",
-    label: "Add New Products",
-  },
-  { href: "/dealer/transactions", icon: "receipt_long", label: "Transactions" },
+  { href: "/dealer/products", icon: "inventory_2", label: "Products & Inventory" },
+  { href: "/dealer/orders", icon: "shopping_cart", label: "Orders & Queries" },
 ];
 
 export default function DealerLayout({
@@ -41,13 +30,6 @@ export default function DealerLayout({
   };
 
   const isActive = (href: string) => {
-    if (href === "/dealer/products/add") return pathname === href;
-    if (href === "/dealer/products")
-      return (
-        pathname === href ||
-        (pathname.startsWith("/dealer/products") &&
-          !pathname.startsWith("/dealer/products/add"))
-      );
     return pathname === href || pathname.startsWith(href + "/");
   };
 
@@ -184,6 +166,7 @@ export default function DealerLayout({
       <main className="flex-1 flex flex-col h-full bg-[#f8fafc] overflow-hidden pt-14 lg:pt-0">
         {children}
       </main>
+      <FarmBot />
     </div>
   );
 }

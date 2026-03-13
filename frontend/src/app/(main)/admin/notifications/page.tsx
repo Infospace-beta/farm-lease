@@ -90,17 +90,17 @@ export default function AdminNotificationsPage() {
         });
         setNotifications(mapped);
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, []);
 
   const handleMarkAllRead = () => {
-    adminApi.markAllNotificationsRead().catch(() => {});
+    adminApi.markAllNotificationsRead().catch(() => { });
     setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
   };
 
   const handleMarkRead = (id: number) => {
-    adminApi.markNotificationRead(id).catch(() => {});
+    adminApi.markNotificationRead(id).catch(() => { });
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, unread: false } : n))
     );
@@ -155,19 +155,17 @@ export default function AdminNotificationsPage() {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`relative flex items-center gap-2 px-4 py-4 text-sm font-semibold transition-colors border-b-2 -mb-px whitespace-nowrap ${
-                activeTab === tab.key
+              className={`relative flex items-center gap-2 px-4 py-4 text-sm font-semibold transition-colors border-b-2 -mb-px whitespace-nowrap ${activeTab === tab.key
                   ? "text-[#047857] border-[#047857]"
                   : "text-gray-500 border-transparent hover:text-gray-800"
-              }`}
+                }`}
             >
               {tab.label}
               <span
-                className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full ${
-                  activeTab === tab.key
+                className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full ${activeTab === tab.key
                     ? "bg-[#047857] text-white"
                     : "bg-gray-100 text-gray-500"
-                }`}
+                  }`}
               >
                 {tab.count}
               </span>
@@ -176,7 +174,7 @@ export default function AdminNotificationsPage() {
         </div>
 
         {/* Notification List */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 w-full max-w-7xl mx-auto">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 w-full">
           {loading ? (
             <div className="space-y-3">
               {[0, 1, 2, 3].map((i) => (
@@ -218,11 +216,10 @@ export default function AdminNotificationsPage() {
                       <div
                         key={notif.id}
                         onClick={() => notif.unread && handleMarkRead(notif.id)}
-                        className={`flex items-start gap-4 p-4 rounded-2xl border transition-all cursor-pointer ${
-                          notif.unread
+                        className={`flex items-start gap-4 p-4 rounded-2xl border transition-all cursor-pointer ${notif.unread
                             ? "bg-white border-[#047857]/20 shadow-sm"
                             : "bg-white/60 border-gray-100 hover:bg-white hover:border-gray-200"
-                        }`}
+                          }`}
                       >
                         <div
                           className={`w-11 h-11 ${notif.iconBg} rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5`}
@@ -237,9 +234,8 @@ export default function AdminNotificationsPage() {
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex items-center gap-2">
                               <h5
-                                className={`text-sm font-bold ${
-                                  notif.unread ? "text-gray-900" : "text-gray-700"
-                                }`}
+                                className={`text-sm font-bold ${notif.unread ? "text-gray-900" : "text-gray-700"
+                                  }`}
                               >
                                 {notif.title}
                               </h5>

@@ -116,7 +116,7 @@ export default function LesseeDashboard() {
       </LesseePageHeader>
 
       <div className="flex-1 overflow-y-auto p-4 lg:p-8 bg-[#f8fafc]">
-        <div className="grid grid-cols-12 gap-6 lg:gap-8 max-w-[1600px] mx-auto pb-8">
+        <div className="grid grid-cols-12 gap-6 lg:gap-8 w-full pb-8">
           {/* Left Column */}
           <div className="col-span-12 lg:col-span-8 xl:col-span-9 space-y-8 flex flex-col min-w-0">
             {/* Stats Cards */}

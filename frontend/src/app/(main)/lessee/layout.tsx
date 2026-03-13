@@ -4,29 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/providers";
+import FarmBot from "@/components/shared/FarmBot";
 
 const navItems = [
   { href: "/lessee/dashboard", icon: "dashboard", label: "Dashboard" },
-  { href: "/lessee/browse", icon: "landscape", label: "Browse Land" },
-  {
-    href: "/lessee/ai-predictor",
-    icon: "psychology",
-    label: "AI Predictor",
-    badge: "NEW",
-  },
-  { href: "/lessee/shop", icon: "storefront", label: "Agro-Dealer Shop" },
-  { href: "/lessee/wishlist", icon: "favorite", label: "Wishlist" },
+  { href: "/lessee/discover", icon: "explore", label: "Discover" },
   { href: "/lessee/leases", icon: "folder_shared", label: "My Leases" },
-  {
-    href: "/lessee/financials",
-    icon: "account_balance_wallet",
-    label: "Financials",
-  },
-  {
-    href: "/lessee/notifications",
-    icon: "notifications",
-    label: "Notifications",
-  },
+  { href: "/lessee/shop", icon: "storefront", label: "Shop" },
 ];
 
 export default function LesseeLayout({
@@ -48,9 +32,6 @@ export default function LesseeLayout({
   };
 
   const isActive = (href: string) => {
-    if (href === "/lessee/ai-predictor") {
-      return pathname.startsWith("/lessee/ai-predictor");
-    }
     return pathname === href || pathname.startsWith(href + "/");
   };
 
@@ -182,6 +163,7 @@ export default function LesseeLayout({
       <main className="flex-1 flex flex-col h-full bg-[#f8fafc] overflow-hidden pt-14 lg:pt-0">
         {children}
       </main>
+      <FarmBot />
     </div>
   );
 }

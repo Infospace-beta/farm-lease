@@ -66,9 +66,10 @@ api.interceptors.response.use(
         return api(original);
       } catch {
         isRefreshing = false;
-        // Refresh failed — redirect to login
+        // Refresh failed — clear auth tokens only (not the entire localStorage)
         if (typeof window !== "undefined") {
-          localStorage.clear();
+          localStorage.removeItem("access_token");
+          localStorage.removeItem("refresh_token");
           window.location.href = "/login";
         }
       }
@@ -128,14 +129,14 @@ export const adminApi = {
   // Notifications
   unreadCount: () =>
     api
-      .get("/accounts/notifications/unread-count/")
+      .get("/auth/notifications/unread-count/")
       .catch(() => ({ data: { unread_count: 0 } })),
   notifications: (params?: { page?: number }) =>
-    api.get("/accounts/notifications/", { params }),
+    api.get("/auth/notifications/", { params }),
   markNotificationRead: (id: number) =>
-    api.patch(`/accounts/notifications/${id}/`, { read: true }),
+    api.post(`/auth/notifications/${id}/read/`),
   markAllNotificationsRead: () =>
-    api.post("/accounts/notifications/mark-all-read/"),
+    api.post("/auth/notifications/mark-all-read/"),
 };
 
 // ─── Lessee API ───────────────────────────────────────────────────────────────
@@ -163,21 +164,48 @@ export const lesseeApi = {
     proposed_start_date: string;
     proposed_end_date: string;
     message?: string;
+    requested_area?: number;
   }) => api.post("/contracts/lease-requests/", data),
 
-  myLeaseRequests: () => api.get("/contracts/lease-requests/"),
+  myLeaseRequests: (params?: { status?: string }) =>
+    api.get("/contracts/lease-requests/", { params }),
   leaseRequestDetail: (id: number) =>
     api.get(`/contracts/lease-requests/${id}/`),
   cancelLeaseRequest: (id: number) =>
     api.post(`/contracts/lease-requests/${id}/cancel/`),
 
-  // Active Leases / Agreements
-  myLeases: () => api.get("/contracts/lease-requests/"),
-  leaseDetail: (id: number) => api.get(`/contracts/lease-requests/${id}/`),
-  signLease: (id: number) =>
-    api.post(`/contracts/lease-requests/${id}/cancel/`),
-  terminateLease: (id: number, reason: string) =>
-    api.post(`/contracts/lease-requests/${id}/cancel/`, { reason }),
+  // Agreements (full lifecycle)
+  myAgreements: (params?: { status?: string }) =>
+    api.get("/contracts/agreements/", { params }),
+  agreementDetail: (id: number) => api.get(`/contracts/agreements/${id}/`),
+  submitAgreement: (
+    id: number,
+    data: {
+      intended_use: string;
+      special_conditions?: string;
+      lessee_signature: string;
+      witness_name: string;
+      witness_id_number: string;
+      witness_phone: string;
+      witness_signature?: string;
+      agreed_start_date?: string;
+      agreed_end_date?: string;
+      agreed_monthly_rent?: number;
+      agreed_area?: number;
+    },
+  ) => api.post(`/contracts/agreements/${id}/submit/`, data),
+  witnessSign: (id: number, data: { witness_signature: string }) =>
+    api.post(`/contracts/agreements/${id}/witness-sign/`, data),
+
+  // Notifications
+  notifications: (params?: { page?: number }) =>
+    api.get("/auth/notifications/", { params }),
+  notificationsUnreadCount: () =>
+    api.get("/auth/notifications/unread-count/").catch(() => ({ data: { unread_count: 0 } })),
+  markNotificationRead: (id: number) =>
+    api.post(`/auth/notifications/${id}/read/`),
+  markAllNotificationsRead: () =>
+    api.post("/auth/notifications/mark-all-read/"),
 
   // Financials / Payments
   myPayments: (params?: { page?: number; status?: string }) =>
@@ -195,14 +223,15 @@ export const lesseeApi = {
 
   // AI Crop Predictor
   predictCrop: (data: {
+    mode: "regional" | "manual";
     region?: string;
     ph?: number;
     nitrogen?: number;
     phosphorus?: number;
     potassium?: number;
     rainfall?: number;
-  }) => api.post("/ai/predict/", data, { timeout: 60000 }), // 60 seconds for AI processing
-  aiHealthCheck: () => api.get("/ai/health/"),
+    temperature?: number;
+  }) => api.post("/lessee/ai-predict/", data),
   predictionHistory: (params?: { page?: number }) =>
     api.get("/lessee/ai-predict/history/", { params }),
 
@@ -361,8 +390,8 @@ export const ownerApi = {
     api.get("/contracts/owner/agreements/", { params }),
   agreementDetail: (id: number) =>
     api.get(`/contracts/owner/agreements/${id}/`),
-  signAgreement: (id: number) =>
-    api.post(`/contracts/owner/agreements/${id}/sign/`),
+  signAgreement: (id: number, owner_signature: string) =>
+    api.post(`/contracts/owner/agreements/${id}/sign/`, { owner_signature }),
   downloadAgreementPdf: (id: number) =>
     api.get(`/contracts/owner/agreements/${id}/pdf/`, {
       responseType: "blob",
@@ -390,11 +419,13 @@ export const ownerApi = {
 
   // Notifications
   notifications: (params?: { page?: number }) =>
-    api.get("/lands/owner-notifications/", { params }),
+    api.get("/auth/notifications/", { params }),
+  notificationsUnreadCount: () =>
+    api.get("/auth/notifications/unread-count/").catch(() => ({ data: { unread_count: 0 } })),
   markNotificationRead: (id: number) =>
-    api.patch(`/notifications/${id}/`, { read: true }),
+    api.post(`/auth/notifications/${id}/read/`),
   markAllNotificationsRead: () =>
-    api.post("/lands/owner-notifications/mark-all-read/"),
+    api.post("/auth/notifications/mark-all-read/"),
 
   // Activity Feed
   activityFeed: () => api.get("/lands/owner-activity/"),

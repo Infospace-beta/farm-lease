@@ -64,9 +64,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: true,
         isLoading: false,
       });
-    } catch {
-      clearTokens();
-      setState({ user: null, tokens: null, isAuthenticated: false, isLoading: false });
+    } catch (err: unknown) {
+      // Only clear the session for definitive auth failures (401).
+      // Network errors, timeouts, and 5xx server errors should NOT log out the user.
+      const httpStatus = (err as { response?: { status?: number } })?.response?.status;
+      if (httpStatus === 401 || !getRefreshToken()) {
+        clearTokens();
+        setState({ user: null, tokens: null, isAuthenticated: false, isLoading: false });
+      } else {
+        // Transient error — keep the user logged in; just stop the loading spinner.
+        setState((prev) => ({ ...prev, isLoading: false }));
+      }
     }
   }, []);
 
@@ -82,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const { data: user } = await accountsApi.me();
       const dashboardPath = dashboardPathFor(user.role);
-      
+
       setState({
         user,
         tokens: { access: data.access, refresh: data.refresh },

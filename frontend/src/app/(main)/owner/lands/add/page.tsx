@@ -311,7 +311,7 @@ export default function UploadLandPage() {
         subtitle="Upload your land details, soil data and photos to start receiving lease requests."
       />
       <div className="flex-1 overflow-y-auto p-3 md:p-4 lg:p-6 bg-slate-50">
-        <div className="mx-auto max-w-5xl">
+        <div className="w-full">
           {/* Step indicator */}
           <div className="mb-4 md:mb-6 flex items-center gap-0">
             {STEPS.map((s, i) => (

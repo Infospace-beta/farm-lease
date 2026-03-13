@@ -105,7 +105,7 @@ export default function ProfilePage() {
         subtitle="Manage your account information and security settings."
       />
       <div className="flex-1 overflow-y-auto p-4 lg:p-8 bg-slate-50">
-        <div className="mx-auto max-w-3xl">
+        <div className="w-full">
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <span className="material-symbols-outlined animate-spin text-primary text-4xl">
