@@ -18,6 +18,11 @@ db.sqlite3-journal
 /static/
 *.pot
 
+# FarmLease repo layout (Django project lives under backend/farmlease/)
+farmlease/db.sqlite3
+farmlease/db.sqlite3-journal
+farmlease/media/
+
 # Distribution / packaging
 *.egg-info/
 dist/

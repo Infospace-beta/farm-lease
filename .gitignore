@@ -26,6 +26,12 @@ db.sqlite3-journal
 .env
 *.pot
 
+# FarmLease repo layout (Django project lives under backend/farmlease/)
+backend/farmlease/db.sqlite3
+backend/farmlease/db.sqlite3-journal
+backend/farmlease/media/
+backend/.env
+
 # IDE
 .vscode/
 .idea/
