@@ -10,6 +10,8 @@ interface Agreement {
   land_location: string;
   land_area?: number;
   land_county?: string;
+  agreed_area?: number;
+  requested_area?: number;
   owner: number;
   lessor_name: string;
   lessor_id_number?: string;
@@ -65,6 +67,9 @@ export default function LeaseAgreementPanel({ agreement, myName, onClose, onSubm
   const [agreedStartDate, setAgreedStartDate] = useState(agreement.start_date ?? "");
   const [agreedEndDate, setAgreedEndDate] = useState(agreement.end_date ?? "");
   const [agreedRent, setAgreedRent] = useState(String(agreement.monthly_rent ?? ""));
+  const [agreedArea, setAgreedArea] = useState(
+    String(agreement.agreed_area ?? agreement.requested_area ?? ""),
+  );
 
   const [witnessSig, setWitnessSig] = useState(agreement.witness_signature ?? "");
 
@@ -78,6 +83,24 @@ export default function LeaseAgreementPanel({ agreement, myName, onClose, onSubm
     if (!lesseeSig.trim()) { setError("Your signature is required."); return; }
     if (!witnessName.trim() || !witnessId.trim() || !witnessPhone.trim()) {
       setError("Witness full name, ID number, and phone are required.");
+      return;
+    }
+    // Witness security checks — name
+    if (witnessName.trim().toLowerCase() === myName.trim().toLowerCase()) {
+      setError("The witness cannot be the lessee. Please have a neutral third party witness the agreement.");
+      return;
+    }
+    if (agreement.lessor_name && witnessName.trim().toLowerCase() === agreement.lessor_name.trim().toLowerCase()) {
+      setError("The witness cannot be the landlord. A neutral third party must witness the agreement.");
+      return;
+    }
+    // Witness security checks — national ID
+    if (agreement.lessee_id_number && witnessId.trim() === agreement.lessee_id_number.trim()) {
+      setError("The witness's National ID matches the lessee's. The witness must be a neutral third party.");
+      return;
+    }
+    if (agreement.lessor_id_number && witnessId.trim() === agreement.lessor_id_number.trim()) {
+      setError("The witness's National ID matches the landlord's. A neutral third party must witness the agreement.");
       return;
     }
     if (!witnessSig.trim()) {
@@ -98,6 +121,7 @@ export default function LeaseAgreementPanel({ agreement, myName, onClose, onSubm
         agreed_start_date: agreedStartDate || undefined,
         agreed_end_date: agreedEndDate || undefined,
         agreed_monthly_rent: agreedRent ? Number(agreedRent) : undefined,
+        agreed_area: agreedArea ? Number(agreedArea) : undefined,
       });
       onSubmitted();
       setStep("done");
@@ -234,6 +258,15 @@ export default function LeaseAgreementPanel({ agreement, myName, onClose, onSubm
                 {agreement.land_area && (
                   <p><span className="text-slate-500">Total Area:</span> {agreement.land_area} acres</p>
                 )}
+                {(agreement.agreed_area || agreement.requested_area) && (
+                  <p>
+                    <span className="text-slate-500">Leased Area (this agreement):</span>{" "}
+                    <strong>{agreement.agreed_area ?? agreement.requested_area} acres</strong>
+                    {agreement.land_area && Number(agreement.agreed_area ?? agreement.requested_area) < Number(agreement.land_area) && (
+                      <span className="ml-1 text-xs text-amber-700">(partial lease)</span>
+                    )}
+                  </p>
+                )}
               </div>
             </section>
 
@@ -279,6 +312,32 @@ export default function LeaseAgreementPanel({ agreement, myName, onClose, onSubm
                         className="w-full border-2 border-slate-200 focus:border-[#16a34a] rounded-xl px-3 py-2.5 text-sm outline-none"
                       />
                     </div>
+                    <div className="space-y-1.5 col-span-2">
+                      <label className="text-xs text-slate-500 font-semibold uppercase tracking-wide">
+                        Acres to Lease
+                        {agreement.land_area && (
+                          <span className="ml-1.5 font-normal text-slate-400 normal-case">
+                            (land total: {agreement.land_area} ac)
+                          </span>
+                        )}
+                      </label>
+                      <input
+                        type="number"
+                        min={0.1}
+                        step={0.1}
+                        max={agreement.land_area ?? undefined}
+                        value={agreedArea}
+                        onChange={(e) => setAgreedArea(e.target.value)}
+                        placeholder={`e.g. ${agreement.land_area ?? "5"}`}
+                        className="w-full border-2 border-slate-200 focus:border-[#16a34a] rounded-xl px-3 py-2.5 text-sm outline-none"
+                      />
+                      {agreement.land_area && agreedArea && Number(agreedArea) < Number(agreement.land_area) && (
+                        <p className="text-xs text-amber-700 flex items-center gap-1">
+                          <span className="material-icons-round text-sm">info</span>
+                          Partial lease — you are requesting {agreedArea} of {agreement.land_area} acres
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -296,6 +355,15 @@ export default function LeaseAgreementPanel({ agreement, myName, onClose, onSubm
                     <span className="text-slate-500">Monthly Rent:</span>{" "}
                     <strong>Kenya Shillings {Number(agreedRent || rent).toLocaleString()}/= (KES {Number(agreedRent || rent).toLocaleString()})</strong>
                   </p>
+                  {(agreedArea || agreement.agreed_area) && (
+                    <p>
+                      <span className="text-slate-500">Leased Area:</span>{" "}
+                      <strong>{agreedArea || agreement.agreed_area} Acres</strong>
+                      {agreement.land_area && Number(agreedArea || agreement.agreed_area) < Number(agreement.land_area) && (
+                        <span className="ml-1 text-xs text-amber-700">(partial — of {agreement.land_area} ac total)</span>
+                      )}
+                    </p>
+                  )}
                   <p><span className="text-slate-500">Payment Schedule:</span> Monthly, due on the 5th of each month, paid into escrow.</p>
                   <p><span className="text-slate-500">Security Deposit:</span> One (1) month&apos;s rent (KES {Number(agreedRent || rent).toLocaleString()}) held in escrow.</p>
                 </div>
@@ -534,6 +602,43 @@ export default function LeaseAgreementPanel({ agreement, myName, onClose, onSubm
                   </div>
                 ) : step === "witness" ? (
                   <div className="space-y-4">
+                    {/* Witness identity warning banners */}
+                    {witnessName.trim() && witnessName.trim().toLowerCase() === myName.trim().toLowerCase() && (
+                      <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 flex items-start gap-2 text-sm text-red-800">
+                        <span className="material-icons-round text-red-500 text-base mt-0.5 shrink-0">warning</span>
+                        <div>
+                          <p className="font-bold">Witness cannot be the lessee</p>
+                          <p className="text-xs mt-0.5">The witness name matches yours. The witness must be a neutral third party who is not a party to this agreement.</p>
+                        </div>
+                      </div>
+                    )}
+                    {witnessName.trim() && agreement.lessor_name && witnessName.trim().toLowerCase() === agreement.lessor_name.trim().toLowerCase() && (
+                      <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 flex items-start gap-2 text-sm text-red-800">
+                        <span className="material-icons-round text-red-500 text-base mt-0.5 shrink-0">warning</span>
+                        <div>
+                          <p className="font-bold">Witness cannot be the landlord</p>
+                          <p className="text-xs mt-0.5">The witness name matches the landlord&apos;s name. A neutral third party must witness this agreement.</p>
+                        </div>
+                      </div>
+                    )}
+                    {witnessId.trim() && agreement.lessee_id_number && witnessId.trim() === agreement.lessee_id_number.trim() && (
+                      <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 flex items-start gap-2 text-sm text-red-800">
+                        <span className="material-icons-round text-red-500 text-base mt-0.5 shrink-0">warning</span>
+                        <div>
+                          <p className="font-bold">Witness ID matches the lessee&apos;s ID</p>
+                          <p className="text-xs mt-0.5">The National ID entered belongs to the lessee. The witness must be a different, neutral person.</p>
+                        </div>
+                      </div>
+                    )}
+                    {witnessId.trim() && agreement.lessor_id_number && witnessId.trim() === agreement.lessor_id_number.trim() && (
+                      <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 flex items-start gap-2 text-sm text-red-800">
+                        <span className="material-icons-round text-red-500 text-base mt-0.5 shrink-0">warning</span>
+                        <div>
+                          <p className="font-bold">Witness ID matches the landlord&apos;s ID</p>
+                          <p className="text-xs mt-0.5">The National ID entered belongs to the landlord. A neutral third party must witness this agreement.</p>
+                        </div>
+                      </div>
+                    )}
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1.5">
                         <label className="text-xs text-slate-500 font-semibold uppercase tracking-wide">Full Name</label>
@@ -579,9 +684,10 @@ export default function LeaseAgreementPanel({ agreement, myName, onClose, onSubm
                         <p className="font-semibold text-blue-800 mb-0.5">No login required for the witness</p>
                         <p>
                           The witness is physically present with you. They fill in their details
-                          and sign here, on this device — no account needed. Their signature is
-                          recorded instantly with a timestamp. The witness must not be a party
-                          to this agreement.
+                          and sign here on this device — no account needed. Their identity is
+                          verified by <strong>full name</strong> and <strong>National ID</strong>, which must not match either
+                          party&apos;s. This applies equally whether the witness types or draws their
+                          signature. The witness must <strong>not</strong> be the lessee or the landlord.
                         </p>
                       </div>
                     </div>

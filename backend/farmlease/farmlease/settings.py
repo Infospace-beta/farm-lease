@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'productplace',
     'contracts',
     'payments',
+    'ai_predictor',
 ]
 
 MIDDLEWARE = [

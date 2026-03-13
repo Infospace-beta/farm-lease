@@ -126,19 +126,6 @@ export const landsApi = {
 };
 
 export const adminApi = {
-  // Dashboard stats (all-in-one)
-  dashboardStats: () => api.get("/auth/admin/"),
-  // User management
-  listUsers: (params?: { search?: string; role?: string; status?: string; page?: number; page_size?: number }) =>
-    api.get("/auth/admin/users/", { params }),
-  suspendUser: (userId: number) => api.post(`/auth/admin/users/${userId}/suspend/`),
-  // Land management
-  adminAllLands: (filter?: "all" | "pending" | "verified" | "flagged") =>
-    api.get("/lands/admin/all/", { params: filter ? { filter } : {} }),
-  adminLandStats: () => api.get("/lands/admin/stats/"),
-  verifyLand: (landId: number) => api.post(`/lands/admin/${landId}/verify/`),
-  flagLand: (landId: number, reason: string) =>
-    api.post(`/lands/admin/${landId}/flag/`, { reason }),
   // Notifications
   unreadCount: () =>
     api
@@ -150,19 +137,6 @@ export const adminApi = {
     api.post(`/auth/notifications/${id}/read/`),
   markAllNotificationsRead: () =>
     api.post("/auth/notifications/mark-all-read/"),
-  // Dealer oversight
-  dealerOversight: (params?: { search?: string; status?: string }) =>
-    api.get("/auth/admin/dealers/", { params }),
-  suspendDealer: (dealerId: number) =>
-    api.post(`/auth/admin/users/${dealerId}/suspend/`),
-  // Payments ledger
-  adminPayments: (params?: { page?: number; page_size?: number; search?: string; type?: string }) =>
-    api.get("/auth/admin/payments/", { params }),
-  // Agreements oversight
-  adminAgreements: (params?: { page?: number; page_size?: number; search?: string; status?: string }) =>
-    api.get("/contracts/admin/agreements/", { params }),
-  // Analytics
-  adminAnalytics: () => api.get("/auth/admin/analytics/"),
 };
 
 // ─── Lessee API ───────────────────────────────────────────────────────────────
@@ -217,6 +191,7 @@ export const lesseeApi = {
       agreed_start_date?: string;
       agreed_end_date?: string;
       agreed_monthly_rent?: number;
+      agreed_area?: number;
     },
   ) => api.post(`/contracts/agreements/${id}/submit/`, data),
   witnessSign: (id: number, data: { witness_signature: string }) =>
@@ -279,6 +254,14 @@ export const lesseeApi = {
     phone_number?: string;
   }) => api.post("/productplace/orders/", data),
   myOrders: () => api.get("/productplace/orders/my/"),
+
+  // Notifications
+  notifications: (params?: { page?: number }) =>
+    api.get("/lessee/notifications/", { params }),
+  markNotificationRead: (id: number) =>
+    api.patch(`/lessee/notifications/${id}/`, { read: true }),
+  markAllNotificationsRead: () =>
+    api.post("/lessee/notifications/mark-all-read/"),
 };
 
 // ─── Agro-Dealer API ──────────────────────────────────────────────────────────

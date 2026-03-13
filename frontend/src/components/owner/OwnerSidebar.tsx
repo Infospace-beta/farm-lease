@@ -9,11 +9,8 @@ import { useAuth } from "@/providers";
 const navLinks = [
   { href: "/owner/dashboard", label: "Dashboard", icon: "dashboard", badge: "" },
   { href: "/owner/lands", label: "My Lands", icon: "map", badge: "" },
-  { href: "/owner/lands/add", label: "Upload Land", icon: "upload_file", badge: "" },
-  { href: "/owner/lease-requests", label: "Lease Requests", icon: "pending_actions", badge: "3" },
+  { href: "/owner/requests-agreements", label: "Requests & Agreements", icon: "handshake", badge: "" },
   { href: "/owner/financials", label: "Financials", icon: "account_balance_wallet", badge: "" },
-  { href: "/owner/escrow", label: "Escrow Status", icon: "verified_user", badge: "" },
-  { href: "/owner/agreements", label: "Agreements", icon: "handshake", badge: "" },
 ];
 
 function OwnerSidebar() {
@@ -35,9 +32,7 @@ function OwnerSidebar() {
   const isActive = (href: string) => {
     if (href === "/owner/dashboard") return pathname === href;
     if (href === "/owner/lands")
-      return pathname === href ||
-        (pathname.startsWith("/owner/lands/") &&
-          !pathname.startsWith("/owner/lands/add"));
+      return pathname === href || pathname.startsWith("/owner/lands/");
     return pathname === href || pathname.startsWith(href + "/");
   };
 

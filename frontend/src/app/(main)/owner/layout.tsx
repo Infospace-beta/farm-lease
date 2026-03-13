@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { Suspense } from "react";
+import FarmBot from "@/components/shared/FarmBot";
 
 const OwnerSidebar = dynamic(() => import("@/components/owner/OwnerSidebar"), {
   loading: () => (
@@ -25,6 +26,7 @@ export default function OwnerLayout({
       <main className="flex-1 flex flex-col h-full bg-[#f8fafc] overflow-hidden pt-14 lg:pt-0">
         {children}
       </main>
+      <FarmBot />
     </div>
   );
 }

@@ -38,6 +38,7 @@ urlpatterns = [
     path('api/contracts/', include('contracts.urls')),
     path('api/payments/', include('payments.urls')),
     path('api/productplace/', include('productplace.urls')),
+    path('api/ai/', include('ai_predictor.urls')),
 
     # Dealer-specific endpoints
     path('api/dealer/dashboard/', dealer_dashboard, name='dealer-dashboard'),
