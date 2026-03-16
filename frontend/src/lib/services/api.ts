@@ -211,10 +211,10 @@ export const lesseeApi = {
   myPayments: (params?: { page?: number; status?: string }) =>
     api.get("/payments/my-payments/", { params }),
   initiatePayment: (data: {
-    lease: number;
+    lease_agreement_id: number;
+    phone_number: string;
     amount: number;
-    method: "escrow";
-  }) => api.post("/payments/initiate/", data),
+  }) => api.post("/payments/mpesa/initiate/", data),
   escrowBalance: () => api.get("/payments/escrow/balance/"),
   releaseEscrow: (paymentId: number) =>
     api.post(`/payments/escrow/${paymentId}/release/`),
@@ -409,6 +409,11 @@ export const ownerApi = {
   revenueSummary: () => api.get("/payments/owner/revenue/"),
   revenueChart: (period?: string) =>
     api.get("/payments/owner/revenue/chart/", { params: { period } }),
+  downloadStatement: (period?: "all" | "month" | "ytd") =>
+    api.get("/payments/owner/statement/", {
+      params: { period: period ?? "all" },
+      responseType: "blob",
+    }),
   requestWithdrawal: (amount: number, phone: string) =>
     api.post("/payments/owner/withdraw/", { amount, phone }),
 

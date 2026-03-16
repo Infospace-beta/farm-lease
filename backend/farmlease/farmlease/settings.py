@@ -91,7 +91,8 @@ WSGI_APPLICATION = 'farmlease.wsgi.application'
 
 from dotenv import load_dotenv
 
-load_dotenv()
+# Always load backend/.env regardless of where manage.py is launched from.
+load_dotenv(BASE_DIR.parent / '.env')
 
 DATABASES = {
     'default': {
@@ -211,3 +212,13 @@ CORS_ALLOW_HEADERS = [
     'x-csrftoken',
     'x-requested-with',
 ]
+
+# M-Pesa (Daraja) settings
+MPESA_CONFIG = {
+    'CONSUMER_KEY': os.getenv('MPESA_CONSUMER_KEY', '').strip(),
+    'CONSUMER_SECRET': os.getenv('MPESA_CONSUMER_SECRET', '').strip(),
+    'SHORTCODE': os.getenv('MPESA_SHORTCODE', '').strip(),
+    'PASSKEY': os.getenv('MPESA_PASSKEY', '').strip(),
+    'CALLBACK_URL': os.getenv('MPESA_CALLBACK_URL', '').strip(),
+    'ENVIRONMENT': os.getenv('MPESA_ENVIRONMENT', 'sandbox').strip(),
+}

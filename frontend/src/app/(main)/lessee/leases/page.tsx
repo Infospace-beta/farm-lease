@@ -95,7 +95,7 @@ function buildItem(req?: LeaseRequest, agr?: Agreement): LeaseItem {
         actionLabel: "View Agreement", actionVariant: "outline", agreement: agr,
       };
     }
-    // Stage 4: both signed, witness not yet — lessee can initiate first payment
+    // Stage 4: both signed, witness not yet
     if (agr.owner_signed && !agr.witness_signed_at && agr.status !== "active") {
       return {
         _type: "agreement", id: agr.id, landName: agr.land_name,
@@ -165,9 +165,27 @@ interface Payment {
   updated_at?: string;
 }
 
+interface EscrowAccountItem {
+  id: number;
+  agreement_id: number;
+  land_name?: string;
+  amount: number | string;
+  held_amount: number | string;
+  released_amount: number | string;
+  status: string;
+}
+
+interface EscrowBalanceResponse {
+  held_amount: number | string;
+  released_amount: number | string;
+  accounts: EscrowAccountItem[];
+}
+
 const PAYMENT_STATUS_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
   completed: { label: "Completed", color: "bg-emerald-100 text-emerald-700", icon: "check_circle" },
   pending: { label: "Pending", color: "bg-amber-100 text-amber-700", icon: "schedule" },
+  stk_initiated: { label: "STK Sent", color: "bg-blue-100 text-blue-700", icon: "phonelink_ring" },
+  in_escrow: { label: "In Escrow", color: "bg-violet-100 text-violet-700", icon: "lock" },
   processing: { label: "Processing", color: "bg-blue-100 text-blue-700", icon: "autorenew" },
   failed: { label: "Failed", color: "bg-red-100 text-red-600", icon: "cancel" },
   refunded: { label: "Refunded", color: "bg-violet-100 text-violet-700", icon: "undo" },
@@ -267,6 +285,9 @@ export default function LeasesPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [paymentsLoading, setPaymentsLoading] = useState(false);
   const [paymentsError, setPaymentsError] = useState<string | null>(null);
+  const [escrow, setEscrow] = useState<EscrowBalanceResponse | null>(null);
+  const [escrowLoading, setEscrowLoading] = useState(false);
+  const [escrowError, setEscrowError] = useState<string | null>(null);
 
   const fetchPayments = useCallback(async () => {
     setPaymentsLoading(true);
@@ -282,11 +303,27 @@ export default function LeasesPage() {
     }
   }, []);
 
+  const fetchEscrow = useCallback(async () => {
+    setEscrowLoading(true);
+    setEscrowError(null);
+    try {
+      const res = await lesseeApi.escrowBalance();
+      setEscrow(res.data);
+    } catch {
+      setEscrowError("Could not load escrow balance.");
+    } finally {
+      setEscrowLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (tab === "payments" && payments.length === 0 && !paymentsLoading) {
       fetchPayments();
     }
-  }, [tab, payments.length, paymentsLoading, fetchPayments]);
+    if (tab === "payments" && !escrow && !escrowLoading) {
+      fetchEscrow();
+    }
+  }, [tab, payments.length, paymentsLoading, fetchPayments, escrow, escrowLoading, fetchEscrow]);
 
   const paymentStats = useMemo(() => ({
     total: payments.length,
@@ -295,6 +332,12 @@ export default function LeasesPage() {
       .reduce((s, p) => s + Number(p.amount), 0),
     pending: payments.filter((p) => p.status === "pending" || p.status === "processing").length,
   }), [payments]);
+
+  const escrowStats = useMemo(() => ({
+    held: Number(escrow?.held_amount ?? 0),
+    released: Number(escrow?.released_amount ?? 0),
+    accounts: escrow?.accounts?.length ?? 0,
+  }), [escrow]);
 
   const fetchAll = async () => {
     setLoading(true);
@@ -366,9 +409,9 @@ export default function LeasesPage() {
           role="lessee"
           onClose={() => setDetailAgreement(null)}
           onPaymentOpen={() => {
-            const agr = detailAgreement;
+            const agreement = detailAgreement;
             setDetailAgreement(null);
-            setPaymentAgreement(agr);
+            setPaymentAgreement(agreement);
           }}
         />
       )}
@@ -390,7 +433,11 @@ export default function LeasesPage() {
           monthlyRent={Number(paymentAgreement.monthly_rent)}
           landName={paymentAgreement.land_name}
           onClose={() => setPaymentAgreement(null)}
-          onSuccess={() => { setPaymentAgreement(null); fetchAll(); }}
+          onSuccess={() => {
+            setPaymentAgreement(null);
+            fetchAll();
+            fetchPayments();
+          }}
         />
       )}
 
@@ -461,11 +508,18 @@ export default function LeasesPage() {
         {tab === "payments" && (
           <div>
             {/* Payment stats */}
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               {[
                 { label: "Total Payments", value: paymentStats.total, icon: "receipt_long", color: "text-slate-700", bg: "bg-slate-100" },
                 { label: "Total Paid", value: `KES ${paymentStats.totalPaid.toLocaleString()}`, icon: "account_balance_wallet", color: "text-emerald-600", bg: "bg-emerald-50" },
                 { label: "Pending", value: paymentStats.pending, icon: "pending_actions", color: "text-amber-600", bg: "bg-amber-50" },
+                {
+                  label: "Escrow Held",
+                  value: escrowLoading ? "..." : `KES ${escrowStats.held.toLocaleString()}`,
+                  icon: "lock",
+                  color: "text-violet-700",
+                  bg: "bg-violet-50",
+                },
               ].map((s) => (
                 <div key={s.label} className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
                   <div className={`w-10 h-10 ${s.bg} rounded-xl flex items-center justify-center mb-3`}>
@@ -479,6 +533,72 @@ export default function LeasesPage() {
                   <div className="text-xs text-slate-500">{s.label}</div>
                 </div>
               ))}
+            </div>
+
+            {/* Escrow panel */}
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-6 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-slate-800">Escrow Balance</h3>
+                {!escrowLoading && (
+                  <button onClick={fetchEscrow} className="text-xs text-slate-400 hover:text-slate-600 flex items-center gap-1">
+                    <span className="material-icons-round text-sm">refresh</span> Refresh
+                  </button>
+                )}
+              </div>
+
+              {escrowLoading && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 animate-pulse">
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} className="h-20 rounded-xl bg-slate-100" />
+                  ))}
+                </div>
+              )}
+
+              {!escrowLoading && escrowError && (
+                <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2">
+                  {escrowError}
+                </div>
+              )}
+
+              {!escrowLoading && !escrowError && escrow && (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                    <div className="rounded-xl bg-violet-50 border border-violet-100 px-4 py-3">
+                      <p className="text-xs text-violet-700 font-semibold">Held in Escrow</p>
+                      <p className="text-lg font-extrabold text-violet-900">KES {escrowStats.held.toLocaleString()}</p>
+                    </div>
+                    <div className="rounded-xl bg-emerald-50 border border-emerald-100 px-4 py-3">
+                      <p className="text-xs text-emerald-700 font-semibold">Released to Owners</p>
+                      <p className="text-lg font-extrabold text-emerald-900">KES {escrowStats.released.toLocaleString()}</p>
+                    </div>
+                    <div className="rounded-xl bg-slate-50 border border-slate-100 px-4 py-3">
+                      <p className="text-xs text-slate-500 font-semibold">Escrow Accounts</p>
+                      <p className="text-lg font-extrabold text-slate-900">{escrowStats.accounts}</p>
+                    </div>
+                  </div>
+
+                  {escrow.accounts.length > 0 ? (
+                    <div className="space-y-2">
+                      {escrow.accounts.map((account) => (
+                        <div key={account.id} className="flex items-center justify-between gap-3 border border-slate-100 rounded-xl px-3 py-2.5">
+                          <div>
+                            <p className="text-sm font-semibold text-slate-800">
+                              {account.land_name ?? `Agreement #${account.agreement_id}`}
+                            </p>
+                            <p className="text-xs text-slate-400">Status: {account.status}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-bold text-violet-800">Held: KES {Number(account.held_amount).toLocaleString()}</p>
+                            <p className="text-xs text-slate-400">Total paid: KES {Number(account.amount).toLocaleString()}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-400">No escrow accounts yet.</p>
+                  )}
+                </>
+              )}
             </div>
 
             {/* Payment list */}

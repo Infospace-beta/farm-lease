@@ -1,27 +1,39 @@
 """URL configuration for the payments app."""
 from django.urls import path
-from . import views
+from .views import (
+    LesseeEscrowBalanceView,
+    MpesaCallbackView,
+    MpesaInitiateView,
+    MyPaymentsView,
+    OwnerTransactionDetailView,
+    OwnerTransactionListView,
+    OwnerEscrowDetailView,
+    OwnerEscrowListView,
+    owner_revenue_chart,
+    owner_revenue_summary,
+    owner_download_statement,
+    PaymentStatusView,
+    ReleaseEscrowView,
+    request_withdrawal,
+)
 
 urlpatterns = [
-    # ── Lessee endpoints ──────────────────────────────────────
-    path('my-payments/', views.LesseePaymentListView.as_view(), name='my-payments'),
-    path('initiate/', views.initiate_payment, name='initiate-payment'),
-    path('escrow/balance/', views.lessee_escrow_balance, name='lessee-escrow-balance'),
-    path('status/<str:transaction_id>/', views.transaction_status, name='transaction-status'),
-    path('escrow/<int:payment_id>/release/', views.release_escrow, name='release-escrow'),
+    path('my-payments/', MyPaymentsView.as_view(), name='my-payments'),
+    path('mpesa/initiate/', MpesaInitiateView.as_view(), name='mpesa-initiate'),
+    path('mpesa/callback/', MpesaCallbackView.as_view(), name='mpesa-callback'),
+    path('status/<str:transaction_id>/', PaymentStatusView.as_view(), name='payment-status'),
+    path('escrow/balance/', LesseeEscrowBalanceView.as_view(), name='lessee-escrow-balance'),
+    path('escrow/<int:payment_id>/release/', ReleaseEscrowView.as_view(), name='release-escrow'),
 
-    # ── Owner transaction endpoints ───────────────────────────
-    path('owner/transactions/', views.OwnerTransactionListView.as_view(), name='owner-transactions'),
-    path('owner/transactions/<int:pk>/', views.OwnerTransactionDetailView.as_view(), name='owner-transaction-detail'),
+    # Owner financials
+    path('owner/transactions/', OwnerTransactionListView.as_view(), name='owner-transactions'),
+    path('owner/transactions/<str:id>/', OwnerTransactionDetailView.as_view(), name='owner-transaction-detail'),
+    path('owner/revenue/', owner_revenue_summary, name='owner-revenue-summary'),
+    path('owner/revenue/chart/', owner_revenue_chart, name='owner-revenue-chart'),
+    path('owner/statement/', owner_download_statement, name='owner-download-statement'),
+    path('owner/withdraw/', request_withdrawal, name='owner-withdraw'),
 
-    # Owner revenue endpoints
-    path('owner/revenue/', views.owner_revenue_summary, name='owner-revenue-summary'),
-    path('owner/revenue/chart/', views.owner_revenue_chart, name='owner-revenue-chart'),
-
-    # Withdrawal
-    path('owner/withdraw/', views.request_withdrawal, name='request-withdrawal'),
-
-    # Escrow endpoints
-    path('owner/escrow/', views.OwnerEscrowListView.as_view(), name='owner-escrow-list'),
-    path('owner/escrow/<int:pk>/', views.OwnerEscrowDetailView.as_view(), name='owner-escrow-detail'),
+    # Owner escrow
+    path('owner/escrow/', OwnerEscrowListView.as_view(), name='owner-escrow-list'),
+    path('owner/escrow/<int:pk>/', OwnerEscrowDetailView.as_view(), name='owner-escrow-detail'),
 ]
