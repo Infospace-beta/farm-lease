@@ -30,7 +30,12 @@ from productplace.views import dealer_dashboard
 def favicon_view(request):
     return HttpResponse(status=204)  # No Content
 
+
+def root_view(request):
+    return HttpResponse("FarmLease API is running", content_type="text/plain")
+
 urlpatterns = [
+    path('', root_view),
     path('favicon.ico', favicon_view),
     path('admin/', admin.site.urls),
     path('api/auth/', include('accounts.urls')),
