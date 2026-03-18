@@ -91,26 +91,19 @@ WSGI_APPLICATION = 'farmlease.wsgi.application'
 
 from dotenv import load_dotenv
 
-load_dotenv()
+# Always load backend/.env regardless of where manage.py is launched from.
+load_dotenv(BASE_DIR.parent / '.env')
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
     }
 }
-
-# Uncomment below to use PostgreSQL instead:
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': os.getenv('DB_NAME'),
-#         'USER': os.getenv('DB_USER'),
-#         'PASSWORD': os.getenv('DB_PASSWORD'),
-#         'HOST': os.getenv('DB_HOST'),
-#         'PORT': os.getenv('DB_PORT'),
-#     }
-# }
 
 
 # Password validation
@@ -219,3 +212,13 @@ CORS_ALLOW_HEADERS = [
     'x-csrftoken',
     'x-requested-with',
 ]
+
+# M-Pesa (Daraja) settings
+MPESA_CONFIG = {
+    'CONSUMER_KEY': os.getenv('MPESA_CONSUMER_KEY', '').strip(),
+    'CONSUMER_SECRET': os.getenv('MPESA_CONSUMER_SECRET', '').strip(),
+    'SHORTCODE': os.getenv('MPESA_SHORTCODE', '').strip(),
+    'PASSKEY': os.getenv('MPESA_PASSKEY', '').strip(),
+    'CALLBACK_URL': os.getenv('MPESA_CALLBACK_URL', '').strip(),
+    'ENVIRONMENT': os.getenv('MPESA_ENVIRONMENT', 'sandbox').strip(),
+}

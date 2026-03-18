@@ -1,9 +1,12 @@
 from django.contrib.auth import get_user_model
 from rest_framework import generics, permissions, status
+from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .permissions import IsSystemAdmin
@@ -159,6 +162,31 @@ class MyTokenObtainPairView(TokenObtainPairView):
     """Login view returning JWT tokens with custom claims."""
 
     serializer_class = MyTokenObtainPairSerializer
+
+
+class MyTokenRefreshView(APIView):
+    """Refresh access tokens and avoid leaking server errors on bad payloads."""
+
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+
+    def post(self, request):
+        serializer = TokenRefreshSerializer(data=request.data)
+        try:
+            serializer.is_valid(raise_exception=True)
+            return Response(serializer.validated_data, status=status.HTTP_200_OK)
+        except (InvalidToken, TokenError):
+            return Response(
+                {"detail": "Invalid refresh token"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+        except ValidationError as exc:
+            return Response(exc.detail, status=status.HTTP_400_BAD_REQUEST)
+        except Exception:
+            return Response(
+                {"detail": "Unable to refresh token"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
 
 class LogoutView(APIView):

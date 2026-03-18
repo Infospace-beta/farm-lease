@@ -55,6 +55,15 @@ export default function FinancialsPage() {
   const [escrowLoading, setEscrowLoading] = useState(false);
   const [escrowError, setEscrowError] = useState<string | null>(null);
 
+  // Withdrawal modal state
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [withdrawPhone, setWithdrawPhone] = useState("");
+  const [withdrawLoading, setWithdrawLoading] = useState(false);
+  const [withdrawError, setWithdrawError] = useState<string | null>(null);
+  const [withdrawSuccess, setWithdrawSuccess] = useState<string | null>(null);
+  const [downloadLoading, setDownloadLoading] = useState(false);
+
   useEffect(() => {
     loadFinancialData();
   }, []);
@@ -71,7 +80,11 @@ export default function FinancialsPage() {
       setEscrowLoading(true);
       setEscrowError(null);
       const res = await ownerApi.escrowStatus();
-      setEscrowRecords(Array.isArray(res.data) ? res.data : (res.data?.results ?? []));
+      const payload = res.data;
+      const rows = Array.isArray(payload)
+        ? payload
+        : (payload?.escrows ?? payload?.results ?? []);
+      setEscrowRecords(rows);
     } catch {
       setEscrowError("Failed to load escrow records.");
     } finally {
@@ -127,21 +140,150 @@ export default function FinancialsPage() {
     { id: "escrow" as const, label: "Escrow", icon: "lock_clock" },
   ];
 
+  const submitWithdrawal = async () => {
+    setWithdrawError(null);
+    setWithdrawSuccess(null);
+
+    const amountNum = Number(withdrawAmount);
+    if (!amountNum || amountNum <= 0) {
+      setWithdrawError("Enter a valid amount greater than 0.");
+      return;
+    }
+    if (!withdrawPhone.trim()) {
+      setWithdrawError("Enter a valid M-Pesa phone number.");
+      return;
+    }
+
+    try {
+      setWithdrawLoading(true);
+      const res = await ownerApi.requestWithdrawal(amountNum, withdrawPhone.trim());
+      setWithdrawSuccess(res.data?.detail ?? "Withdrawal request submitted.");
+      setWithdrawAmount("");
+      setWithdrawPhone("");
+      await loadFinancialData();
+    } catch (err: any) {
+      setWithdrawError(
+        err?.response?.data?.detail ||
+        (typeof err?.response?.data?.available_balance !== "undefined"
+          ? `Insufficient balance. Available: Ksh ${Number(err.response.data.available_balance).toLocaleString()}`
+          : "Failed to submit withdrawal request.")
+      );
+    } finally {
+      setWithdrawLoading(false);
+    }
+  };
+
+  const downloadStatement = async () => {
+    try {
+      setDownloadLoading(true);
+      const res = await ownerApi.downloadStatement("all");
+      const blob = new Blob([res.data], { type: "text/csv;charset=utf-8;" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+      link.href = url;
+      link.setAttribute("download", `owner_statement_${stamp}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      alert("Failed to download statement. Please try again.");
+    } finally {
+      setDownloadLoading(false);
+    }
+  };
+
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       <OwnerPageHeader
         title="Financials"
         subtitle="Track your revenue, escrow releases and payment history."
       >
-        <button className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+        <button
+          onClick={downloadStatement}
+          disabled={downloadLoading}
+          className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-60"
+        >
           <span className="material-symbols-outlined text-base">download</span>
-          Download Statement
+          {downloadLoading ? "Downloading..." : "Download Statement"}
         </button>
-        <button className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark transition-colors">
+        <button
+          onClick={() => {
+            setWithdrawError(null);
+            setWithdrawSuccess(null);
+            setShowWithdrawModal(true);
+          }}
+          className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark transition-colors"
+        >
           <span className="material-symbols-outlined text-base">payments</span>
           Request Withdrawal
         </button>
       </OwnerPageHeader>
+
+      {showWithdrawModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={() => setShowWithdrawModal(false)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-slate-800">Request Withdrawal</h3>
+              <button onClick={() => setShowWithdrawModal(false)} className="text-slate-400 hover:text-slate-600">
+                <span className="material-icons-round">close</span>
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-slate-600 block mb-1">Amount (Ksh)</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={withdrawAmount}
+                  onChange={(e) => setWithdrawAmount(e.target.value)}
+                  placeholder="e.g. 5000"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-600 block mb-1">Phone Number</label>
+                <input
+                  type="tel"
+                  value={withdrawPhone}
+                  onChange={(e) => setWithdrawPhone(e.target.value)}
+                  placeholder="07XXXXXXXX"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                />
+              </div>
+
+              {withdrawError && (
+                <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+                  {withdrawError}
+                </div>
+              )}
+              {withdrawSuccess && (
+                <div className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">
+                  {withdrawSuccess}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                onClick={() => setShowWithdrawModal(false)}
+                className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitWithdrawal}
+                disabled={withdrawLoading}
+                className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold disabled:opacity-60"
+              >
+                {withdrawLoading ? "Submitting..." : "Submit"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tab bar */}
       <div className="flex items-center gap-1 px-4 lg:px-8 pt-4 border-b border-slate-200 bg-white shrink-0">

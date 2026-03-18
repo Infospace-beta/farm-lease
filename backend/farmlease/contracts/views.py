@@ -316,6 +316,14 @@ def sign_agreement_owner(request, pk):
 
     agreement.save()
 
+    # Escrow release condition: both parties have signed and payment exists in escrow.
+    try:
+        from payments.escrow_utils import ensure_escrow_for_agreement, try_release_escrow
+        ensure_escrow_for_agreement(agreement)
+        try_release_escrow(agreement)
+    except Exception:
+        pass
+
     return Response(
         {'detail': 'Agreement signed successfully.'},
         status=status.HTTP_200_OK
@@ -389,6 +397,14 @@ def submit_agreement_lessee(request, pk):
     agreement.lessee_submitted_at = timezone.now()
     agreement.save()
 
+    # Escrow release condition: both parties have signed and payment exists in escrow.
+    try:
+        from payments.escrow_utils import ensure_escrow_for_agreement, try_release_escrow
+        ensure_escrow_for_agreement(agreement)
+        try_release_escrow(agreement)
+    except Exception:
+        pass
+
     # Notify owner
     try:
         from accounts.models import create_notification
@@ -456,6 +472,14 @@ def sign_agreement_witness(request, pk):
         agreement.land.save()
 
     agreement.save()
+
+    # Keep escrow synchronized with signatures; release is based on owner+lessee agreement.
+    try:
+        from payments.escrow_utils import ensure_escrow_for_agreement, try_release_escrow
+        ensure_escrow_for_agreement(agreement)
+        try_release_escrow(agreement)
+    except Exception:
+        pass
 
     return Response(
         {'detail': 'Witness signature recorded. Lease is now fully executed.'},

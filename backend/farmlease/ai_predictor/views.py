@@ -1,9 +1,6 @@
 import os
 import json
-try:
-    import google.generativeai as genai
-except Exception:  # pragma: no cover
-    genai = None
+import google.genai as genai
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
