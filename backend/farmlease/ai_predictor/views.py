@@ -1,6 +1,9 @@
 import os
 import json
-import google.generativeai as genai
+try:
+    import google.generativeai as genai
+except Exception:  # pragma: no cover
+    genai = None
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -9,7 +12,7 @@ from rest_framework import status
 
 # Configure Gemini AI
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
-if GEMINI_API_KEY:
+if GEMINI_API_KEY and genai:
     genai.configure(api_key=GEMINI_API_KEY)
 
 
@@ -28,6 +31,16 @@ def predict_crop(request):
     - rainfall (optional): Average annual rainfall (mm/year)
     """
     
+    # Check if the optional dependency is installed
+    if not genai:
+        return Response(
+            {
+                'error': 'AI service unavailable',
+                'message': 'Optional dependency is missing: google-generativeai',
+            },
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+
     # Check if API key is configured
     if not GEMINI_API_KEY:
         return Response(
@@ -165,7 +178,16 @@ Provide exactly 5 crop recommendations ranked by suitability score. Use realisti
 def health_check(request):
     """Check if the AI service is properly configured"""
     return Response({
-        'status': 'healthy' if GEMINI_API_KEY else 'unconfigured',
+        'status': 'healthy' if (GEMINI_API_KEY and genai) else 'unconfigured',
+        'dependency_installed': bool(genai),
         'api_key_set': bool(GEMINI_API_KEY),
-        'message': 'AI prediction service is ready' if GEMINI_API_KEY else 'GEMINI_API_KEY not set'
+        'message': (
+            'AI prediction service is ready'
+            if (GEMINI_API_KEY and genai)
+            else (
+                'google-generativeai not installed'
+                if not genai
+                else 'GEMINI_API_KEY not set'
+            )
+        ),
     })

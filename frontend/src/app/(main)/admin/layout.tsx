@@ -22,6 +22,10 @@ export default function AdminLayout({
   const router = useRouter();
 
   useEffect(() => {
+    if (!isLoading && !user) {
+      router.replace("/login");
+      return;
+    }
     if (!isLoading && user && user.role !== "admin") {
       // Redirect non-admin users to their own dashboard
       router.replace(dashboardPathFor(user.role));
@@ -29,7 +33,7 @@ export default function AdminLayout({
   }, [user, isLoading, router]);
 
   // While we're confirming role, show nothing (parent layout handles the loading spinner)
-  if (isLoading || (user && user.role !== "admin")) return null;
+  if (isLoading || !user || user.role !== "admin") return null;
 
   return (
     <div className="bg-[#f8fafc] text-gray-800 antialiased overflow-hidden h-screen flex flex-col lg:flex-row">

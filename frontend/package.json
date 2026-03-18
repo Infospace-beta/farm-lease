@@ -4,7 +4,8 @@
   "version": "1.0.0",
   "description": "FarmLease Platform Frontend - Land Leasing Marketplace",
   "scripts": {
-    "dev": "next dev",
+    "predev": "node -e \"require('fs').rmSync('.next', { recursive: true, force: true });\"",
+    "dev": "next dev --webpack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"

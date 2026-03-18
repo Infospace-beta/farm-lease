@@ -126,6 +126,24 @@ export const landsApi = {
 };
 
 export const adminApi = {
+  // Dashboard
+  dashboardStats: () => api.get("/auth/admin/"),
+  adminAnalytics: () => api.get("/auth/admin/analytics/"),
+
+  // Admin management
+  users: (params?: { page?: number; search?: string }) =>
+    api.get("/auth/admin/users/", { params }),
+  suspendUser: (userId: number) =>
+    api.post(`/auth/admin/users/${userId}/suspend/`),
+  dealers: (params?: { page?: number; search?: string }) =>
+    api.get("/auth/admin/dealers/", { params }),
+  payments: (params?: {
+    page?: number;
+    page_size?: number;
+    search?: string;
+    type?: string;
+  }) => api.get("/auth/admin/payments/", { params }),
+
   // Notifications
   unreadCount: () =>
     api
