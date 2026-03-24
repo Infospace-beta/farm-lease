@@ -253,6 +253,8 @@ class AdminDashboardStatsView(APIView):
 
     def get(self, request):
         from django.db.models import Sum
+        from django.db.models import DecimalField, F
+        from django.db.models.functions import Coalesce
         from landmanagement.models import LandListing
         from contracts.models import LeaseRequest, LeaseAgreement
         from payments.models import Transaction, EscrowAccount
@@ -270,12 +272,25 @@ class AdminDashboardStatsView(APIView):
         verified_lands = all_lands.filter(is_verified=True).count()
         flagged_lands = all_lands.filter(is_flagged=True).count()
 
-        # ── Escrow total ─────────────────────────────────────────────────────
-        escrow_total = float(
-            EscrowAccount.objects.filter(status='active').aggregate(
-                t=Sum('amount')
-            )['t'] or 0
+        # ── Escrow total (held funds) ───────────────────────────────────────
+        # NOTE: EscrowAccount has no 'active' status. Held amount is computed as
+        # amount - released_amount - refunded_amount.
+        escrow_total_decimal = (
+            EscrowAccount.objects.aggregate(
+                t=Coalesce(
+                    Sum(
+                        F('amount')
+                        - F('released_amount')
+                        - F('refunded_amount'),
+                        output_field=DecimalField(max_digits=12, decimal_places=2),
+                    ),
+                    0,
+                    output_field=DecimalField(max_digits=12, decimal_places=2),
+                )
+            )['t']
+            or 0
         )
+        escrow_total = float(escrow_total_decimal)
 
         # ── Revenue = all completed transactions ─────────────────────────────
         platform_revenue = float(
@@ -284,11 +299,8 @@ class AdminDashboardStatsView(APIView):
             )['t'] or 0
         )
 
-        # ── Active disputes (lease requests flagged as rejected with reason,
-        #    or agreements in "terminated" status) — proxy for disputes ────────
-        active_disputes = LeaseAgreement.objects.filter(
-            status='terminated'
-        ).count()
+        # Disputes are intentionally disabled for now.
+        active_disputes = 0
 
         # ── Active leases ────────────────────────────────────────────────────
         active_leases = LeaseAgreement.objects.filter(status='active').count()
@@ -391,20 +403,6 @@ class AdminDashboardStatsView(APIView):
         # Sort activity by recency (already roughly ordered)
         activity = activity[:5]
 
-        # ── Active disputes (terminated agreements) ──────────────────────────
-        disputed_agreements = LeaseAgreement.objects.filter(
-            status='terminated'
-        ).select_related('lessee', 'owner', 'land').order_by('-created_at')[:3]
-
-        disputes_data = []
-        for ag in disputed_agreements:
-            disputes_data.append({
-                "id": ag.id,
-                "label": f"Lease #{ag.id}",
-                "note": f"{ag.land.title if ag.land else 'Land'} - Terminated",
-                "priority": "High",
-            })
-
         stats = {
             # Stat cards
             "total_users": total_users,
@@ -414,7 +412,6 @@ class AdminDashboardStatsView(APIView):
             "pending_land_docs": pending_land_docs,
             "escrow_total": escrow_total,
             "platform_revenue": platform_revenue,
-            "active_disputes": active_disputes,
             "active_leases": active_leases,
             "verified_lands": verified_lands,
             "flagged_lands": flagged_lands,
@@ -422,7 +419,6 @@ class AdminDashboardStatsView(APIView):
             "verification_queue": verification_queue,
             "dealers": dealers_data,
             "activity_pulse": activity,
-            "disputes": disputes_data,
         }
         return Response(stats)
 
@@ -433,14 +429,27 @@ class AdminPaymentsView(APIView):
 
     def get(self, request):
         from django.db.models import Sum, Q
+        from django.db.models import DecimalField, F
+        from django.db.models.functions import Coalesce
         from payments.models import Transaction, EscrowAccount
 
         # ── Summary stats ─────────────────────────────────────────────────────
-        escrow_total = float(
-            EscrowAccount.objects.filter(status='active').aggregate(
-                t=Sum('amount')
-            )['t'] or 0
+        escrow_total_decimal = (
+            EscrowAccount.objects.aggregate(
+                t=Coalesce(
+                    Sum(
+                        F('amount')
+                        - F('released_amount')
+                        - F('refunded_amount'),
+                        output_field=DecimalField(max_digits=12, decimal_places=2),
+                    ),
+                    0,
+                    output_field=DecimalField(max_digits=12, decimal_places=2),
+                )
+            )['t']
+            or 0
         )
+        escrow_total = float(escrow_total_decimal)
         released_funds = float(
             EscrowAccount.objects.filter(status='released').aggregate(
                 t=Sum('released_amount')

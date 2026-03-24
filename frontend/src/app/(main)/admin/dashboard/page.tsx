@@ -5,7 +5,6 @@ import {
   FileWarning,
   Lock,
   Wallet,
-  Gavel,
   TrendingUp,
   TrendingDown,
   ArrowRight,
@@ -48,13 +47,6 @@ interface ActivityItem {
   amount?: number;
 }
 
-interface DisputeItem {
-  id: number;
-  label: string;
-  note: string;
-  priority: "High" | "Medium" | "Low";
-}
-
 interface DashboardStats {
   total_users: number;
   total_farmers: number;
@@ -63,14 +55,12 @@ interface DashboardStats {
   pending_land_docs: number;
   escrow_total: number;
   platform_revenue: number;
-  active_disputes: number;
   active_leases: number;
   verified_lands: number;
   flagged_lands: number;
   verification_queue: VerificationItem[];
   dealers: DealerItem[];
   activity_pulse: ActivityItem[];
-  disputes: DisputeItem[];
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -83,24 +73,9 @@ function formatKsh(value: number): string {
 
 const ACTIVITY_DOT: Record<string, string> = {
   registration: "bg-emerald-600",
-  payment: "bg-[#5D4037]",
+  payment: "bg-earth",
   lease: "bg-blue-400",
   default: "bg-gray-400",
-};
-
-const DISPUTE_STYLES: Record<string, { wrapper: string; badge: string }> = {
-  High: {
-    wrapper: "bg-red-50 border-red-100",
-    badge: "bg-red-200 text-red-800",
-  },
-  Medium: {
-    wrapper: "bg-yellow-50 border-yellow-100",
-    badge: "bg-yellow-200 text-yellow-800",
-  },
-  Low: {
-    wrapper: "bg-gray-50 border-gray-100",
-    badge: "bg-gray-200 text-gray-700",
-  },
 };
 
 
@@ -188,15 +163,6 @@ export default function AdminDashboardPage() {
           iconBg: "bg-purple-50",
           iconColor: "text-purple-600",
         },
-        {
-          label: "Active Disputes",
-          value: stats.active_disputes.toString(),
-          sub: `${stats.active_leases} active leases`,
-          up: stats.active_disputes === 0,
-          icon: Gavel,
-          iconBg: "bg-red-50",
-          iconColor: "text-red-600",
-        },
       ]
     : [];
 
@@ -257,7 +223,7 @@ export default function AdminDashboardPage() {
 
       <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-slate-50">
         {/* Stat Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
           {statCards.map((card) => {
             const Icon = card.icon;
             return (
@@ -450,53 +416,6 @@ export default function AdminDashboardPage() {
                     ))}
                   </div>
                 )}
-              </div>
-
-              {/* Dispute Resolution */}
-              <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex flex-col">
-                <div className="mb-3">
-                  <h3 className="text-base font-bold text-earth font-serif mb-1">
-                    Dispute Resolution Center
-                  </h3>
-                  <p className="text-xs text-gray-500">
-                    Overview of recent high-priority tickets.
-                  </p>
-                </div>
-                <div className="space-y-2 mb-4 flex-1">
-                  {stats?.disputes.length === 0 ? (
-                    <p className="text-sm text-gray-400 text-center py-4">
-                      No active disputes.
-                    </p>
-                  ) : (
-                    stats?.disputes.map((d) => {
-                      const s = DISPUTE_STYLES[d.priority] ?? DISPUTE_STYLES.Low;
-                      return (
-                        <div
-                          key={d.id}
-                          className={`border ${s.wrapper} p-3 rounded-lg flex justify-between items-center`}
-                        >
-                          <div>
-                            <p className="text-xs font-bold text-gray-800">
-                              {d.label}
-                            </p>
-                            <p className="text-[10px] text-gray-500">{d.note}</p>
-                          </div>
-                          <span
-                            className={`px-2 py-1 ${s.badge} text-[10px] font-bold rounded uppercase`}
-                          >
-                            {d.priority}
-                          </span>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-                <Link
-                  href="/admin/agreements"
-                  className="w-full py-2.5 bg-sidebar-bg text-white text-sm font-bold rounded-lg hover:opacity-90 transition flex items-center justify-center gap-2"
-                >
-                  View All Cases <ArrowRight className="w-4 h-4" />
-                </Link>
               </div>
             </div>
           </div>

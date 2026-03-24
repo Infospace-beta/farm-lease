@@ -283,7 +283,7 @@ export default function DealerDashboardPage() {
                 <div className="p-6">
                   <div className="flex items-center gap-3 mb-5">
                     <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center">
-                      <span className="material-icons-round text-[#5D4037]">
+                      <span className="material-icons-round text-earth">
                         store
                       </span>
                     </div>
@@ -299,7 +299,7 @@ export default function DealerDashboardPage() {
                   <div className="grid grid-cols-3 gap-4">
                     {[
                       ["8", "Pending", "text-orange-600 bg-orange-50"],
-                      ["3", "Ready", "text-[#5D4037] bg-orange-100/50"],
+                      ["3", "Ready", "text-earth bg-orange-100/50"],
                       ["15", "Collected", "text-gray-500 bg-gray-100"],
                     ].map(([n, l, cls]) => (
                       <Link

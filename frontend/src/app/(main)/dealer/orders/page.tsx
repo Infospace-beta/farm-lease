@@ -51,13 +51,23 @@ function getStatusClass(status: string): string {
   if (s === "pending") return "bg-orange-100 text-orange-700";
   if (s === "ready") return "bg-blue-100 text-blue-700";
   if (s === "delivered" || s === "collected" || s === "completed") return "bg-green-100 text-green-700";
-  if (s === "dispute" || s === "cancelled") return "bg-red-100 text-red-700";
+  if (s === "cancelled") return "bg-red-100 text-red-700";
   return "bg-gray-100 text-gray-600";
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapOrder(o: any): Order {
   const type = o.delivery_type ?? o.type ?? "Delivery";
+  const rawStatus = String(o.status ?? "pending").toLowerCase();
+  const knownStatuses = new Set([
+    "pending",
+    "ready",
+    "delivered",
+    "collected",
+    "completed",
+    "cancelled",
+  ]);
+  const normalizedStatus = knownStatuses.has(rawStatus) ? rawStatus : "cancelled";
   return {
     id: o.id ? `#ORD-${String(o.id).padStart(4, "0")}` : String(o.id),
     customer: o.customer_name ?? o.buyer_name ?? o.customer ?? "Customer",
@@ -65,8 +75,8 @@ function mapOrder(o: any): Order {
     type: type.charAt(0).toUpperCase() + type.slice(1).toLowerCase(),
     typeIcon: type.toLowerCase().includes("pickup") || type.toLowerCase().includes("pick") ? "store" : "local_shipping",
     amount: Number(o.total_amount ?? o.amount ?? 0),
-    status: o.status ? o.status.charAt(0).toUpperCase() + o.status.slice(1).toLowerCase() : "Pending",
-    statusClass: getStatusClass(o.status ?? "pending"),
+    status: normalizedStatus ? normalizedStatus.charAt(0).toUpperCase() + normalizedStatus.slice(1).toLowerCase() : "Pending",
+    statusClass: getStatusClass(normalizedStatus),
     phone: o.phone ?? o.customer_phone ?? undefined,
     address: o.delivery_address ?? o.address ?? undefined,
   };
@@ -97,12 +107,6 @@ const TIMELINE: Record<string, TimelineStep[]> = {
     { label: "Processing", done: true, current: false },
     { label: "Ready for Dispatch", done: true, current: false },
     { label: "Collected", done: true, current: false },
-  ],
-  Dispute: [
-    { label: "Order Received", done: true, current: false },
-    { label: "Dispute Filed", done: false, current: true },
-    { label: "Resolution Pending", done: false, current: false },
-    { label: "Resolved", done: false, current: false },
   ],
 };
 

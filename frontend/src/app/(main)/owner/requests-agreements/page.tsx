@@ -181,7 +181,7 @@ function RequestsTab() {
     </div>
   );
   if (error) return (
-    <div className="text-center py-16"><span className="material-symbols-outlined text-5xl text-red-400 mb-3">error</span><p className="text-red-600 font-medium">{error}</p><button onClick={load} className="mt-4 px-4 py-2 rounded-lg bg-[#0f392b] text-white text-sm font-medium">Retry</button></div>
+    <div className="text-center py-16"><span className="material-symbols-outlined text-5xl text-red-400 mb-3">error</span><p className="text-red-600 font-medium">{error}</p><button onClick={load} className="mt-4 px-4 py-2 rounded-lg bg-sidebar-bg text-white text-sm font-medium">Retry</button></div>
   );
 
   return (
@@ -215,10 +215,10 @@ function RequestsTab() {
       <div className="flex gap-1 bg-slate-100 rounded-xl p-1 mb-5 overflow-x-auto">
         {TABS.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
-            className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${tab === t.key ? "bg-white text-[#0f392b] shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
+            className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${tab === t.key ? "bg-white text-sidebar-bg shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
             {t.label}
             {t.key !== "all" && counts[t.key] > 0 && (
-              <span className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-xs font-bold ${tab === t.key ? "bg-[#0f392b] text-white" : "bg-slate-300 text-slate-700"}`}>{counts[t.key]}</span>
+              <span className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-xs font-bold ${tab === t.key ? "bg-sidebar-bg text-white" : "bg-slate-300 text-slate-700"}`}>{counts[t.key]}</span>
             )}
           </button>
         ))}
@@ -253,7 +253,7 @@ function RequestsTab() {
                       </span>
                     </div>
                     <div className="flex items-center gap-2 mb-3 p-2.5 bg-slate-50 rounded-lg">
-                      <div className="w-8 h-8 rounded-full bg-[#0f392b] text-[#13ec80] flex items-center justify-center text-xs font-bold flex-shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-sidebar-bg text-[#13ec80] flex items-center justify-center text-xs font-bold flex-shrink-0">
                         {initials(req.lessee.first_name, req.lessee.last_name)}
                       </div>
                       <div>
@@ -325,7 +325,7 @@ function AgreementsTab() {
     .filter(a => !search || a.land?.title?.toLowerCase().includes(search.toLowerCase()) || (a.lessee_name ?? "").toLowerCase().includes(search.toLowerCase()) || `${a.lessee?.first_name} ${a.lessee?.last_name}`.toLowerCase().includes(search.toLowerCase()));
 
   if (loading) return <div className="flex items-center justify-center h-48"><div className="w-8 h-8 border-4 border-[#13ec80]/30 border-t-[#13ec80] rounded-full animate-spin" /></div>;
-  if (error) return <div className="text-center py-16"><span className="material-symbols-outlined text-5xl text-red-400 mb-3">error</span><p className="text-red-600">{error}</p><button onClick={load} className="mt-4 px-4 py-2 rounded-lg bg-[#0f392b] text-white text-sm">Retry</button></div>;
+  if (error) return <div className="text-center py-16"><span className="material-symbols-outlined text-5xl text-red-400 mb-3">error</span><p className="text-red-600">{error}</p><button onClick={load} className="mt-4 px-4 py-2 rounded-lg bg-sidebar-bg text-white text-sm">Retry</button></div>;
 
   return (
     <>
@@ -346,7 +346,7 @@ function AgreementsTab() {
         <div className="flex gap-1 bg-slate-100 rounded-xl p-1 overflow-x-auto">
           {ATABS.map(t => (
             <button key={t.key} onClick={() => setTab(t.key)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${tab === t.key ? "bg-white text-[#0f392b] shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
+              className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${tab === t.key ? "bg-white text-sidebar-bg shadow-sm" : "text-slate-500 hover:text-slate-700"}`}>
               {t.label}
             </button>
           ))}
@@ -396,7 +396,7 @@ function AgreementsTab() {
                 </div>
                 <div className="flex items-center gap-3 flex-wrap">
                   {ag.lessee_submitted && !ag.owner_signed && (
-                    <button onClick={() => setSignTarget(ag)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#0f392b] text-[#13ec80] text-xs font-semibold hover:bg-[#1a5c42] transition-colors">
+                    <button onClick={() => setSignTarget(ag)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-sidebar-bg text-[#13ec80] text-xs font-semibold hover:bg-[#1a5c42] transition-colors">
                       <span className="material-symbols-outlined text-sm">draw</span>View &amp; Sign
                     </button>
                   )}
@@ -445,7 +445,7 @@ export default function RequestsAgreementsPage() {
               { key: "agreements", label: "Agreements",       icon: "description" },
             ] as { key: MainTab; label: string; icon: string }[]).map(t => (
               <button key={t.key} onClick={() => setMain(t.key)}
-                className={`flex-1 flex items-center justify-center gap-2 py-3.5 text-sm font-semibold transition-all ${main === t.key ? "bg-[#0f392b] text-[#13ec80]" : "text-slate-600 hover:bg-slate-50"}`}>
+                className={`flex-1 flex items-center justify-center gap-2 py-3.5 text-sm font-semibold transition-all ${main === t.key ? "bg-sidebar-bg text-[#13ec80]" : "text-slate-600 hover:bg-slate-50"}`}>
                 <span className="material-symbols-outlined text-lg">{t.icon}</span>{t.label}
               </button>
             ))}

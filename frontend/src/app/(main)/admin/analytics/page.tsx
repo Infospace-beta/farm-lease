@@ -144,7 +144,7 @@ export default function AnalyticsPage() {
           change: data.land_area_change,
           up: data.land_area_up,
           icon: <MapPin className="w-5 h-5" />,
-          iconBg: "bg-[#0f392b]/10 text-[#0f392b]",
+          iconBg: "bg-sidebar-bg/10 text-sidebar-bg",
           note: "All registered land listings",
         },
       ]

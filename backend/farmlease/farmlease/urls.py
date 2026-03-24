@@ -26,6 +26,7 @@ from accounts.views import (
     mark_all_notifications_read,
 )
 from productplace.views import dealer_dashboard
+from ai_predictor import views as ai_views
 
 def favicon_view(request):
     return HttpResponse(status=204)  # No Content
@@ -50,6 +51,9 @@ urlpatterns = [
 
     # Lessee-specific endpoints
     path('api/lessee/dashboard/', LesseeDashboardView.as_view(), name='lessee-dashboard'),
+    path('api/lessee/ai-predict/', ai_views.predict_crop, name='lessee-ai-predict'),
+    path('api/lessee/ai-predict/history/', ai_views.prediction_history, name='lessee-ai-predict-history'),
+    path('api/lessee/land-match/', ai_views.land_match, name='lessee-land-match'),
     path('api/lessee/notifications/', LesseeNotificationListView.as_view(), name='lessee-notifications'),
     path('api/lessee/notifications/<int:pk>/', mark_notification_read, name='lessee-notification-read'),
     path('api/lessee/notifications/mark-all-read/', mark_all_notifications_read, name='lessee-notifications-mark-all'),

@@ -91,7 +91,7 @@ export default function SignupPage() {
   }, [isAuthenticated, user]);
 
   const inputClass =
-    "w-full px-4 py-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#16a34a]/30 focus:border-[#16a34a] transition-all placeholder:text-gray-400";
+    "w-full px-4 py-3 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all placeholder:text-gray-400";
 
   const Field = ({
     label,
@@ -117,14 +117,14 @@ export default function SignupPage() {
       {loading && (
         <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="flex flex-col items-center gap-3">
-            <Loader2 size={40} className="animate-spin text-[#16a34a]" />
+            <Loader2 size={40} className="animate-spin text-primary" />
             <p className="text-sm font-medium text-gray-700">Creating account and redirecting…</p>
           </div>
         </div>
       )}
 
       {/* ── Left panel: Brand ───────────────────────────────────── */}
-      <div className="hidden lg:flex lg:w-[42%] bg-[#0f392b] flex-col justify-between p-12 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-[42%] bg-sidebar-bg flex-col justify-between p-12 relative overflow-hidden">
         <div
           className="absolute inset-0"
           style={{
@@ -134,7 +134,7 @@ export default function SignupPage() {
           }}
         />
         <div className="absolute top-20 right-20 w-64 h-64 bg-[#13ec80]/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-20 left-20 w-48 h-48 bg-[#16a34a]/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-20 left-20 w-48 h-48 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
         {/* Logo */}
         <div className="relative z-10">
@@ -203,11 +203,11 @@ export default function SignupPage() {
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-2 mb-8">
-            <div className="w-9 h-9 bg-[#0f392b] rounded-xl flex items-center justify-center">
+            <div className="w-9 h-9 bg-sidebar-bg rounded-xl flex items-center justify-center">
               <span className="material-symbols-outlined text-[#13ec80] text-xl">grid_view</span>
             </div>
             <span
-              className="text-xl font-bold text-[#0f392b]"
+              className="text-xl font-bold text-sidebar-bg"
               style={{ fontFamily: "var(--font-playfair)" }}
             >
               FarmLease
@@ -279,18 +279,18 @@ export default function SignupPage() {
                     type="button"
                     onClick={() => setValue("role", r.value, { shouldValidate: true })}
                     className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 text-center transition-all cursor-pointer ${selectedRole === r.value
-                        ? "border-[#16a34a] bg-[#16a34a]/5 shadow-sm"
+                        ? "border-primary bg-primary/5 shadow-sm"
                         : "border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-white"
                       }`}
                   >
                     <span
-                      className={`material-symbols-outlined text-2xl ${selectedRole === r.value ? "text-[#16a34a]" : "text-gray-400"
+                      className={`material-symbols-outlined text-2xl ${selectedRole === r.value ? "text-primary" : "text-gray-400"
                         }`}
                     >
                       {r.icon}
                     </span>
                     <span
-                      className={`text-xs font-semibold leading-tight ${selectedRole === r.value ? "text-[#16a34a]" : "text-gray-600"
+                      className={`text-xs font-semibold leading-tight ${selectedRole === r.value ? "text-primary" : "text-gray-600"
                         }`}
                     >
                       {r.label}
@@ -354,7 +354,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 bg-[#0f392b] hover:bg-[#16a34a] disabled:opacity-60 text-white font-semibold rounded-xl py-3.5 text-sm transition-all shadow-lg shadow-[#0f392b]/20"
+              className="w-full flex items-center justify-center gap-2 bg-sidebar-bg hover:bg-primary disabled:opacity-60 text-white font-semibold rounded-xl py-3.5 text-sm transition-all shadow-lg shadow-sidebar-bg/20"
             >
               {loading ? (
                 <>
@@ -374,7 +374,7 @@ export default function SignupPage() {
             Already have an account?{" "}
             <Link
               href="/login"
-              className="text-[#16a34a] hover:text-[#15803d] font-semibold transition-colors"
+              className="text-primary hover:text-primary-dark font-semibold transition-colors"
             >
               Sign in
             </Link>

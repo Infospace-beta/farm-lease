@@ -1,6 +1,9 @@
 """URL configuration for the payments app."""
 from django.urls import path
 from .views import (
+    AdminEscrowListView,
+    AdminReleaseWithdrawalView,
+    AdminWithdrawalRequestsView,
     LesseeEscrowBalanceView,
     MpesaCallbackView,
     MpesaInitiateView,
@@ -36,4 +39,9 @@ urlpatterns = [
     # Owner escrow
     path('owner/escrow/', OwnerEscrowListView.as_view(), name='owner-escrow-list'),
     path('owner/escrow/<int:pk>/', OwnerEscrowDetailView.as_view(), name='owner-escrow-detail'),
+
+    # Admin escrow / withdrawals
+    path('admin/escrow/', AdminEscrowListView.as_view(), name='admin-escrow-list'),
+    path('admin/withdrawals/', AdminWithdrawalRequestsView.as_view(), name='admin-withdrawals'),
+    path('admin/withdrawals/<str:transaction_id>/release/', AdminReleaseWithdrawalView.as_view(), name='admin-release-withdrawal'),
 ]

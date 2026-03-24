@@ -321,10 +321,7 @@ export default function AgreementsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl overflow-hidden">
             {/* Header */}
-            <div
-              className="flex items-center justify-between px-6 py-4 border-b border-slate-100"
-              style={{ backgroundColor: "#0f392b" }}
-            >
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-sidebar-bg">
               <div className="flex items-center gap-3">
                 <span className="material-icons-round text-xl" style={{ color: "#13ec80" }}>draw</span>
                 <div>

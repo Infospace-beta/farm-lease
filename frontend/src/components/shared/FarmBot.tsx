@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { aiApi } from "@/lib/services/api";
 
 interface Message {
   id: number;
@@ -39,7 +40,7 @@ function BotBubble({ text }: { text: string }) {
   const parts = text.split(/\*\*(.*?)\*\*/g);
   return (
     <div className="flex items-end gap-2 max-w-[88%]">
-      <div className="w-7 h-7 rounded-full bg-[#0f392b] flex items-center justify-center shrink-0 mb-0.5">
+      <div className="w-7 h-7 rounded-full bg-sidebar-bg flex items-center justify-center shrink-0 mb-0.5">
         <span className="material-symbols-outlined text-white" style={{ fontSize: 14 }}>
           spa
         </span>
@@ -47,7 +48,7 @@ function BotBubble({ text }: { text: string }) {
       <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-sm px-4 py-2.5 text-sm text-gray-800 leading-relaxed shadow-sm">
         {parts.map((part, i) =>
           i % 2 === 1 ? (
-            <strong key={i} className="font-semibold text-[#0f392b]">
+            <strong key={i} className="font-semibold text-sidebar-bg">
               {part}
             </strong>
           ) : (
@@ -62,7 +63,7 @@ function BotBubble({ text }: { text: string }) {
 function UserBubble({ text }: { text: string }) {
   return (
     <div className="flex justify-end max-w-[88%] ml-auto">
-      <div className="bg-[#0f392b] text-white rounded-2xl rounded-br-sm px-4 py-2.5 text-sm leading-relaxed">
+      <div className="bg-sidebar-bg text-white rounded-2xl rounded-br-sm px-4 py-2.5 text-sm leading-relaxed">
         {text}
       </div>
     </div>
@@ -87,18 +88,24 @@ export default function FarmBot() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, typing]);
 
-  const sendMessage = (text: string) => {
+  const sendMessage = async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed) return;
     const userMsg: Message = { id: Date.now(), role: "user", text: trimmed };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setTyping(true);
-    setTimeout(() => {
-      const reply = matchReply(trimmed);
-      setTyping(false);
+
+    try {
+      const res = await aiApi.chat({ message: trimmed });
+      const reply = String(res.data?.reply || "").trim() || matchReply(trimmed);
       setMessages((prev) => [...prev, { id: Date.now() + 1, role: "bot", text: reply }]);
-    }, 900);
+    } catch {
+      const reply = matchReply(trimmed);
+      setMessages((prev) => [...prev, { id: Date.now() + 1, role: "bot", text: reply }]);
+    } finally {
+      setTyping(false);
+    }
   };
 
   const handleKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -114,12 +121,12 @@ export default function FarmBot() {
       <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
         {/* Pulse ring when closed */}
         {!open && (
-          <div className="absolute inset-0 rounded-full bg-[#0f392b]/30 animate-ping pointer-events-none" />
+          <div className="absolute inset-0 rounded-full bg-sidebar-bg/30 animate-ping pointer-events-none" />
         )}
         <button
           onClick={() => setOpen((v) => !v)}
           aria-label="Toggle FarmBot"
-          className="relative w-14 h-14 rounded-full bg-[#0f392b] text-white shadow-2xl flex items-center justify-center hover:bg-[#1a5c3e] transition-all active:scale-95"
+          className="relative w-14 h-14 rounded-full bg-sidebar-bg text-white shadow-2xl flex items-center justify-center hover:bg-[#1a5c3e] transition-all active:scale-95"
         >
           <span
             className="material-symbols-outlined transition-all duration-200"
@@ -132,11 +139,11 @@ export default function FarmBot() {
 
       {/* Chat Panel */}
       <div
-        className={`fixed bottom-24 right-6 z-50 w-[340px] max-h-[520px] flex flex-col bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden transition-all duration-300 origin-bottom-right ${open ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-95 pointer-events-none"
+        className={`fixed bottom-24 right-6 z-50 w-85 max-h-130 flex flex-col bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden transition-all duration-300 origin-bottom-right ${open ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-95 pointer-events-none"
           }`}
       >
         {/* Header */}
-        <div className="bg-[#0f392b] px-4 py-3 flex items-center gap-3 shrink-0">
+        <div className="bg-sidebar-bg px-4 py-3 flex items-center gap-3 shrink-0">
           <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
             <span className="material-symbols-outlined text-white" style={{ fontSize: 18 }}>
               spa
@@ -169,7 +176,7 @@ export default function FarmBot() {
           )}
           {typing && (
             <div className="flex items-end gap-2">
-              <div className="w-7 h-7 rounded-full bg-[#0f392b] flex items-center justify-center shrink-0">
+              <div className="w-7 h-7 rounded-full bg-sidebar-bg flex items-center justify-center shrink-0">
                 <span className="material-symbols-outlined text-white" style={{ fontSize: 14 }}>
                   spa
                 </span>
@@ -195,7 +202,7 @@ export default function FarmBot() {
               <button
                 key={p}
                 onClick={() => sendMessage(p)}
-                className="text-xs px-3 py-1.5 rounded-full border border-[#0f392b]/30 text-[#0f392b] hover:bg-emerald-50 transition font-medium"
+                className="text-xs px-3 py-1.5 rounded-full border border-sidebar-bg/30 text-sidebar-bg hover:bg-emerald-50 transition font-medium"
               >
                 {p}
               </button>
@@ -212,12 +219,12 @@ export default function FarmBot() {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKey}
             placeholder="Ask me anything…"
-            className="flex-1 text-sm px-4 py-2.5 rounded-xl bg-slate-100 border border-transparent focus:border-[#0f392b]/30 focus:outline-none text-gray-800 placeholder-gray-400 transition"
+            className="flex-1 text-sm px-4 py-2.5 rounded-xl bg-slate-100 border border-transparent focus:border-sidebar-bg/30 focus:outline-none text-gray-800 placeholder-gray-400 transition"
           />
           <button
             onClick={() => sendMessage(input)}
             disabled={!input.trim() || typing}
-            className="w-9 h-9 rounded-xl bg-[#0f392b] text-white flex items-center justify-center disabled:opacity-40 hover:bg-[#1a5c3e] transition active:scale-95 shrink-0"
+            className="w-9 h-9 rounded-xl bg-sidebar-bg text-white flex items-center justify-center disabled:opacity-40 hover:bg-[#1a5c3e] transition active:scale-95 shrink-0"
           >
             <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
               send

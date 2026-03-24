@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('landmanagement', '0004_merge_20260310_1532'),
+        ('landmanagement', '0004_merge_20260311_1033'),
         ('landmanagement', '0005_landlisting_leased_area'),
     ]
 

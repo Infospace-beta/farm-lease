@@ -58,8 +58,8 @@ function CompareCheckbox({ selected, onToggle }: { selected: boolean; onToggle: 
     <button
       onClick={(e) => { e.stopPropagation(); onToggle(); }}
       className={`absolute top-3 left-3 z-10 w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all duration-200 shadow-sm ${selected
-        ? "bg-[#0f392b] border-[#0f392b] text-white"
-        : "bg-white/90 border-slate-300 text-transparent hover:border-[#0f392b]"
+        ? "bg-sidebar-bg border-sidebar-bg text-white"
+        : "bg-white/90 border-slate-300 text-transparent hover:border-sidebar-bg"
         }`}
       title={selected ? "Remove from compare" : "Add to compare"}
     >
@@ -89,7 +89,7 @@ function LandCard({
 
   return (
     <div
-      className={`group relative bg-white rounded-2xl overflow-hidden shadow-sm border transition-all duration-200 cursor-pointer hover:shadow-lg hover:-translate-y-0.5 ${isSelected ? "ring-2 ring-[#0f392b] border-transparent" : "border-slate-200"
+      className={`group relative bg-white rounded-2xl overflow-hidden shadow-sm border transition-all duration-200 cursor-pointer hover:shadow-lg hover:-translate-y-0.5 ${isSelected ? "ring-2 ring-sidebar-bg border-transparent" : "border-slate-200"
         }`}
       onClick={onDetail}
     >
@@ -114,7 +114,7 @@ function LandCard({
       )}
 
       {/* Image */}
-      <div className="relative h-44 bg-gradient-to-br from-emerald-50 to-slate-100 overflow-hidden">
+      <div className="relative h-44 bg-linear-to- from-emerald-50 to-slate-100 overflow-hidden">
         {img ? (
           <img src={img} alt={land.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
         ) : (
@@ -141,7 +141,7 @@ function LandCard({
       <div className="p-4">
         <div className="flex items-start justify-between gap-2 mb-1">
           <h3 className="font-semibold text-slate-800 text-sm leading-tight line-clamp-1">{land.title}</h3>
-          <span className="text-[#0f392b] font-bold text-sm shrink-0">
+          <span className="text-sidebar-bg font-bold text-sm shrink-0">
             Ksh {(land.price_per_month / 1000).toFixed(0)}k<span className="text-[10px] font-normal text-slate-500">/mo</span>
           </span>
         </div>
@@ -176,7 +176,7 @@ function LandCard({
 
         <button
           onClick={(e) => { e.stopPropagation(); onDetail(); }}
-          className="w-full bg-[#0f392b] hover:bg-[#0d2e22] text-white text-xs font-semibold py-2 rounded-xl transition-colors"
+          className="w-full bg-sidebar-bg hover:bg-[#0d2e22] text-white text-xs font-semibold py-2 rounded-xl transition-colors"
         >
           View & Request Lease
         </button>
@@ -194,7 +194,7 @@ function CompareBar({ items, onRemove, onCompare, onClear }: {
 }) {
   if (items.length === 0) return null;
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-[#0f392b] text-white rounded-2xl shadow-2xl px-5 py-3 flex items-center gap-4 min-w-[320px] max-w-[600px] border border-white/10">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-sidebar-bg text-white rounded-2xl shadow-2xl px-5 py-3 flex items-center gap-4 min-w-[320px] max-w-150 border border-white/10">
       <div className="flex items-center gap-2 flex-1">
         <span className="material-icons-round text-[#13ec80] text-lg">compare</span>
         <span className="text-sm font-medium">
@@ -206,7 +206,7 @@ function CompareBar({ items, onRemove, onCompare, onClear }: {
       <div className="flex gap-2">
         {items.map((land) => (
           <div key={land.id} className="flex items-center gap-1.5 bg-white/10 rounded-lg px-2.5 py-1 text-xs">
-            <span className="truncate max-w-[80px]">{land.title}</span>
+            <span className="truncate max-w-20">{land.title}</span>
             <button onClick={() => onRemove(land.id)} className="text-white/60 hover:text-white">
               <span className="material-icons-round text-[14px]">close</span>
             </button>
@@ -216,7 +216,7 @@ function CompareBar({ items, onRemove, onCompare, onClear }: {
       {items.length >= 2 && (
         <button
           onClick={onCompare}
-          className="bg-[#13ec80] text-[#0f392b] text-xs font-bold px-4 py-2 rounded-xl hover:bg-[#0ecf6e] transition-colors shrink-0"
+          className="bg-[#13ec80] text-sidebar-bg text-xs font-bold px-4 py-2 rounded-xl hover:bg-[#0ecf6e] transition-colors shrink-0"
         >
           Compare
         </button>
@@ -246,7 +246,7 @@ function CompareModal({ items, onClose }: { items: LandListing[]; onClose: () =>
       <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden">
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
           <div className="flex items-center gap-2">
-            <span className="material-icons-round text-[#0f392b]">compare</span>
+            <span className="material-icons-round text-sidebar-bg">compare</span>
             <h2 className="font-bold text-slate-800 text-lg">Side-by-Side Comparison</h2>
           </div>
           <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100">
@@ -293,26 +293,73 @@ function CompareModal({ items, onClose }: { items: LandListing[]; onClose: () =>
 
 // ─── AI Predictor Panel ───────────────────────────────────────────────────────
 function AIPredictorPanel({ onClose }: { onClose: () => void }) {
-  const [mode, setMode] = useState<"regional" | "manual">("regional");
-  const [region, setRegion] = useState("Nairobi");
+  const [mode, setMode] = useState<"regional" | "manual">("manual");
+  const [region, setRegion] = useState<string>("");
   const [ph, setPh] = useState(6.5);
+  const [nitrogen, setNitrogen] = useState<string>("140");
+  const [phosphorus, setPhosphorus] = useState<string>("45");
+  const [potassium, setPotassium] = useState<string>("38");
+  const [rainfall, setRainfall] = useState<string>("850");
+  const [temperature, setTemperature] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<PredictResult[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  const numOrUndef = (v: string): number | undefined => {
+    const s = String(v ?? "").trim();
+    if (!s) return undefined;
+    const n = Number(s);
+    return Number.isFinite(n) ? n : undefined;
+  };
+
+  const phLabel = ph < 6 ? "Acidic" : ph > 7.5 ? "Alkaline" : "Neutral";
 
   const handlePredict = async () => {
     setLoading(true);
     setError(null);
     try {
-      const payload =
-        mode === "regional"
-          ? { mode, region }
-          : { mode, ph };
-      const res = await lesseeApi.predictCrop(payload as Parameters<typeof lesseeApi.predictCrop>[0]);
+      const payload: Parameters<typeof lesseeApi.predictCrop>[0] = {
+        mode,
+        ...(region ? { region } : {}),
+      };
+
+      if (mode === "manual") {
+        const n = numOrUndef(nitrogen);
+        const p = numOrUndef(phosphorus);
+        const k = numOrUndef(potassium);
+        const r = numOrUndef(rainfall);
+        const t = numOrUndef(temperature);
+
+        payload.ph = ph;
+        if (typeof n !== "undefined") payload.nitrogen = n;
+        if (typeof p !== "undefined") payload.phosphorus = p;
+        if (typeof k !== "undefined") payload.potassium = k;
+        if (typeof r !== "undefined") payload.rainfall = r;
+        if (typeof t !== "undefined") payload.temperature = t;
+      }
+      const res = await lesseeApi.predictCrop(payload);
       const data = res.data;
-      if (Array.isArray(data)) setResults(data);
-      else if (data.top_crops) setResults(data.top_crops);
-      else setResults([{ crop: data.crop || "Unknown", confidence: data.confidence || 0, advice: data.advice || "" }]);
+      if (Array.isArray(data)) {
+        setResults(data);
+      } else if (Array.isArray(data?.predictions)) {
+        setResults(
+          data.predictions.map((p: any) => ({
+            crop: p.crop_name ?? p.crop ?? "Unknown",
+            confidence: Number(p.suitability_score ?? p.confidence ?? 0),
+            advice: p.description ?? p.care_tips ?? p.advice ?? "",
+          })),
+        );
+      } else if (data?.top_crops) {
+        setResults(data.top_crops);
+      } else {
+        setResults([
+          {
+            crop: data?.crop || "Unknown",
+            confidence: data?.confidence || 0,
+            advice: data?.advice || "",
+          },
+        ]);
+      }
     } catch {
       setError("AI prediction unavailable. Try again.");
     } finally {
@@ -321,7 +368,7 @@ function AIPredictorPanel({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="bg-gradient-to-br from-[#0f392b] to-[#1a5c42] rounded-2xl p-5 text-white">
+    <div className="bg-gradient-to-br from-sidebar-bg to-[#1a5c42] rounded-2xl p-5 text-white">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <span className="material-icons-round text-[#13ec80]">psychology</span>
@@ -331,54 +378,131 @@ function AIPredictorPanel({ onClose }: { onClose: () => void }) {
           <span className="material-icons-round text-lg">close</span>
         </button>
       </div>
-      <p className="text-white/70 text-xs mb-4">Get AI-powered crop recommendations for any land.</p>
-
-      {/* Mode toggle */}
-      <div className="flex gap-2 mb-4">
-        {(["regional", "manual"] as const).map((m) => (
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <p className="text-white/70 text-xs">Input Parameters</p>
+          <p className="text-[11px] text-white/50">AI Model v4.2</p>
+        </div>
+        <div className="inline-flex rounded-xl bg-white/10 border border-white/15 overflow-hidden">
           <button
-            key={m}
-            onClick={() => setMode(m)}
-            className={`flex-1 text-xs py-1.5 rounded-lg font-semibold transition-colors ${mode === m ? "bg-[#13ec80] text-[#0f392b]" : "bg-white/10 text-white/70 hover:bg-white/20"
-              }`}
+            onClick={() => setMode("regional")}
+            className={`px-3 py-1.5 text-[11px] font-semibold transition-colors ${mode === "regional" ? "bg-white/15 text-white" : "text-white/70 hover:text-white"}`}
           >
-            {m === "regional" ? "By Region" : "Manual Input"}
+            Regional Presets
           </button>
-        ))}
+          <button
+            onClick={() => setMode("manual")}
+            className={`px-3 py-1.5 text-[11px] font-semibold transition-colors ${mode === "manual" ? "bg-white/15 text-white" : "text-white/70 hover:text-white"}`}
+          >
+            Manual Entry
+          </button>
+        </div>
       </div>
 
-      {mode === "regional" ? (
-        <div className="mb-4">
-          <label className="text-xs text-white/60 mb-1 block">Region / County</label>
-          <select
-            value={region}
-            onChange={(e) => setRegion(e.target.value)}
-            className="w-full bg-white/10 border border-white/20 rounded-xl text-white text-sm px-3 py-2 focus:outline-none focus:border-[#13ec80]"
-          >
-            {KENYA_REGIONS.slice(1).map((r) => (
-              <option key={r} value={r} className="text-slate-800">{r}</option>
-            ))}
-          </select>
-        </div>
-      ) : (
-        <div className="mb-4">
-          <label className="text-xs text-white/60 mb-1 block">Soil pH: {ph}</label>
-          <input
-            type="range" min={4} max={9} step={0.1}
-            value={ph}
-            onChange={(e) => setPh(Number(e.target.value))}
-            className="w-full accent-[#13ec80]"
-          />
-          <div className="flex justify-between text-[10px] text-white/40 mt-1">
-            <span>4.0 (Acidic)</span><span>9.0 (Alkaline)</span>
+      <div className="mb-4">
+        <label className="text-xs text-white/60 mb-1 block">Region / County (optional)</label>
+        <select
+          value={region}
+          onChange={(e) => setRegion(e.target.value)}
+          className="w-full bg-white/10 border border-white/20 rounded-xl text-white text-sm px-3 py-2 focus:outline-none focus:border-[#13ec80]"
+        >
+          <option value="" className="text-slate-800">Select a region…</option>
+          {KENYA_REGIONS.slice(1).map((r) => (
+            <option key={r} value={r} className="text-slate-800">{r}</option>
+          ))}
+        </select>
+      </div>
+
+      {mode === "manual" && (
+        <>
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs text-white/60 block">Soil pH Level</label>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 border border-white/15 text-white/80 font-bold uppercase tracking-wide">
+                {phLabel}
+              </span>
+            </div>
+            <label className="text-xs mb-1 block text-white/60">{ph.toFixed(1)}</label>
+            <input
+              type="range"
+              min={4}
+              max={9}
+              step={0.1}
+              value={ph}
+              onChange={(e) => setPh(Number(e.target.value))}
+              className="w-full accent-[#13ec80]"
+            />
+            <div className="flex justify-between text-[10px] text-white/40 mt-1">
+              <span>4.0</span><span>9.0</span>
+            </div>
           </div>
-        </div>
+
+          <div className="grid grid-cols-1 gap-3 mb-4">
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="text-xs text-white/60 mb-1 block">Nitrogen (N)</label>
+                <input
+                  value={nitrogen}
+                  onChange={(e) => setNitrogen(e.target.value)}
+                  placeholder="140"
+                  inputMode="decimal"
+                  className="w-full bg-white/10 border border-white/20 rounded-xl text-white text-sm px-3 py-2 focus:outline-none focus:border-[#13ec80]"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-white/60 mb-1 block">Phosphorus (P)</label>
+                <input
+                  value={phosphorus}
+                  onChange={(e) => setPhosphorus(e.target.value)}
+                  placeholder="45"
+                  inputMode="decimal"
+                  className="w-full bg-white/10 border border-white/20 rounded-xl text-white text-sm px-3 py-2 focus:outline-none focus:border-[#13ec80]"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-white/60 mb-1 block">Potassium (K)</label>
+                <input
+                  value={potassium}
+                  onChange={(e) => setPotassium(e.target.value)}
+                  placeholder="38"
+                  inputMode="decimal"
+                  className="w-full bg-white/10 border border-white/20 rounded-xl text-white text-sm px-3 py-2 focus:outline-none focus:border-[#13ec80]"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-white/60 mb-1 block">Avg. Rainfall (mm/yr)</label>
+                <input
+                  value={rainfall}
+                  onChange={(e) => setRainfall(e.target.value)}
+                  placeholder="850"
+                  inputMode="decimal"
+                  className="w-full bg-white/10 border border-white/20 rounded-xl text-white text-sm px-3 py-2 focus:outline-none focus:border-[#13ec80]"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-white/60 mb-1 block">Temperature (°C, optional)</label>
+                <input
+                  value={temperature}
+                  onChange={(e) => setTemperature(e.target.value)}
+                  placeholder=""
+                  inputMode="decimal"
+                  className="w-full bg-white/10 border border-white/20 rounded-xl text-white text-sm px-3 py-2 focus:outline-none focus:border-[#13ec80]"
+                />
+              </div>
+            </div>
+          </div>
+
+          <p className="text-[11px] text-white/50 mt-2">Tip: empty fields are ignored.</p>
+        </>
       )}
 
       <button
         onClick={handlePredict}
         disabled={loading}
-        className="w-full bg-[#13ec80] text-[#0f392b] font-bold py-2.5 rounded-xl text-sm hover:bg-[#0ecf6e] transition-colors disabled:opacity-60"
+        className="w-full bg-[#13ec80] text-sidebar-bg font-bold py-2.5 rounded-xl text-sm hover:bg-[#0ecf6e] transition-colors disabled:opacity-60"
       >
         {loading ? "Predicting..." : "Predict Best Crops"}
       </button>
@@ -418,7 +542,7 @@ function LandDetailModal({
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-white w-full sm:rounded-3xl shadow-2xl max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
         {/* Image */}
-        <div className="relative h-52 bg-gradient-to-br from-emerald-50 to-slate-100 shrink-0">
+        <div className="relative h-52 bg-linear-to- from-emerald-50 to-slate-100 shrink-0">
           {img ? (
             <img src={img} alt={land.title} className="w-full h-full object-cover" />
           ) : (
@@ -433,7 +557,7 @@ function LandDetailModal({
             <span className="material-icons-round text-lg">close</span>
           </button>
           {land.ai_score && (
-            <div className="absolute bottom-4 left-4 bg-[#0f392b]/90 backdrop-blur-sm text-white px-3 py-1.5 rounded-xl flex items-center gap-2">
+            <div className="absolute bottom-4 left-4 bg-sidebar-bg/90 backdrop-blur-sm text-white px-3 py-1.5 rounded-xl flex items-center gap-2">
               <span className="material-icons-round text-[#13ec80] text-base">psychology</span>
               <span className="text-sm font-bold">{land.ai_score}% AI Match</span>
             </div>
@@ -500,7 +624,7 @@ function LandDetailModal({
           </button>
           <button
             onClick={onRequestLease}
-            className="flex-1 bg-[#0f392b] text-white py-3 rounded-xl text-sm font-bold hover:bg-[#0d2e22] transition-colors flex items-center justify-center gap-2"
+            className="flex-1 bg-sidebar-bg text-white py-3 rounded-xl text-sm font-bold hover:bg-[#0d2e22] transition-colors flex items-center justify-center gap-2"
           >
             <span className="material-icons-round text-base">handshake</span>
             Request Lease
@@ -549,7 +673,7 @@ function LeaseRequestModal({ land, onClose, onSuccess }: {
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
         <div className="flex items-center gap-3 px-6 pt-6 pb-4 border-b border-slate-100">
-          <div className="w-10 h-10 bg-[#0f392b] rounded-xl flex items-center justify-center">
+          <div className="w-10 h-10 bg-sidebar-bg rounded-xl flex items-center justify-center">
             <span className="material-icons-round text-white text-lg">handshake</span>
           </div>
           <div>
@@ -568,7 +692,7 @@ function LeaseRequestModal({ land, onClose, onSuccess }: {
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
               min={new Date().toISOString().split("T")[0]}
-              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f392b]/20 focus:border-[#0f392b]"
+              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-bg/20 focus:border-sidebar-bg"
               required
             />
           </div>
@@ -579,7 +703,7 @@ function LeaseRequestModal({ land, onClose, onSuccess }: {
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
               min={startDate || new Date().toISOString().split("T")[0]}
-              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f392b]/20 focus:border-[#0f392b]"
+              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-bg/20 focus:border-sidebar-bg"
               required
             />
           </div>
@@ -590,7 +714,7 @@ function LeaseRequestModal({ land, onClose, onSuccess }: {
               onChange={(e) => setMessage(e.target.value)}
               rows={3}
               placeholder="Describe your farming plans, experience, etc."
-              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f392b]/20 focus:border-[#0f392b] resize-none"
+              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-bg/20 focus:border-sidebar-bg resize-none"
             />
           </div>
           {error && (
@@ -603,7 +727,7 @@ function LeaseRequestModal({ land, onClose, onSuccess }: {
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-[#0f392b] text-white py-3 rounded-xl text-sm font-bold hover:bg-[#0d2e22] transition-colors disabled:opacity-60"
+              className="flex-1 bg-sidebar-bg text-white py-3 rounded-xl text-sm font-bold hover:bg-[#0d2e22] transition-colors disabled:opacity-60"
             >
               {loading ? "Submitting..." : "Submit Request"}
             </button>
@@ -661,12 +785,31 @@ export default function DiscoverPage() {
       if (search) params.search = search;
       const res = await lesseeApi.listings(params as Parameters<typeof lesseeApi.listings>[0]);
       const data: LandListing[] = Array.isArray(res.data) ? res.data : (res.data?.results ?? []);
-      // Simulate AI match scores if not returned from backend
-      const withScores = data.map((land, i) => ({
-        ...land,
-        ai_score: land.ai_score ?? Math.floor(Math.random() * 30) + 65,
-        ai_reason: land.ai_reason ?? (i === 0 ? "Top match based on your region and farming history." : undefined),
-      }));
+      let withScores = data;
+
+      try {
+        const matchRes = await lesseeApi.landMatch({ land_ids: data.map((l) => l.id) });
+        const matches: { land_id: number; ai_score: number; ai_reason?: string }[] = matchRes.data?.matches ?? [];
+        const byId = new Map(matches.map((m) => [m.land_id, m]));
+        withScores = data.map((land, i) => {
+          const m = byId.get(land.id);
+          return {
+            ...land,
+            ai_score: land.ai_score ?? m?.ai_score ?? Math.floor(Math.random() * 30) + 65,
+            ai_reason:
+              land.ai_reason ??
+              m?.ai_reason ??
+              (i === 0 ? "Top match based on your region and farming history." : undefined),
+          };
+        });
+      } catch {
+        withScores = data.map((land, i) => ({
+          ...land,
+          ai_score: land.ai_score ?? Math.floor(Math.random() * 30) + 65,
+          ai_reason: land.ai_reason ?? (i === 0 ? "Top match based on your region and farming history." : undefined),
+        }));
+      }
+
       setLands(withScores);
     } catch {
       setError("Unable to load listings. Please try again.");
@@ -739,7 +882,7 @@ export default function DiscoverPage() {
       )}
       {/* Success Toast */}
       {showSuccess && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-[#0f392b] text-white px-6 py-3 rounded-2xl shadow-xl flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-sidebar-bg text-white px-6 py-3 rounded-2xl shadow-xl flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
           <span className="material-icons-round text-[#13ec80]">check_circle</span>
           <span className="text-sm font-semibold">Lease request submitted!</span>
         </div>
@@ -752,8 +895,8 @@ export default function DiscoverPage() {
         <button
           onClick={() => setShowAI((v) => !v)}
           className={`flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-sm font-semibold transition-colors ${showAI
-            ? "bg-[#0f392b] text-white border-[#0f392b]"
-            : "bg-white text-slate-700 border-slate-200 hover:border-[#0f392b]"
+            ? "bg-sidebar-bg text-white border-sidebar-bg"
+            : "bg-white text-slate-700 border-slate-200 hover:border-sidebar-bg"
             }`}
         >
           <span className="material-icons-round text-base">psychology</span>
@@ -761,12 +904,12 @@ export default function DiscoverPage() {
         </button>
         <button
           onClick={() => setShowFilters((v) => !v)}
-          className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 hover:border-[#0f392b] transition-colors"
+          className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 hover:border-sidebar-bg transition-colors"
         >
           <span className="material-icons-round text-base">tune</span>
           Filters
           {(region !== "All Regions" || soil !== "All Soils" || water !== "All Sources" || maxPrice) && (
-            <span className="w-2 h-2 bg-[#0f392b] rounded-full" />
+            <span className="w-2 h-2 bg-sidebar-bg rounded-full" />
           )}
         </button>
       </LesseePageHeader>
@@ -777,20 +920,20 @@ export default function DiscoverPage() {
           <div className="flex-1 min-w-0 p-4 lg:p-6">
             {/* Search + Sort bar */}
             <div className="flex gap-3 mb-4 flex-wrap sm:flex-nowrap">
-              <div className="relative flex-1 min-w-[200px]">
+              <div className="relative flex-1 min-w-50">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 material-icons-round text-slate-400 text-[18px]">search</span>
                 <input
                   type="text"
                   placeholder="Search by title, location, owner…"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0f392b]/20 focus:border-[#0f392b]"
+                  className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-bg/20 focus:border-sidebar-bg"
                 />
               </div>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                className="bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0f392b]/20"
+                className="bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-sidebar-bg/20"
               >
                 <option value="match">Best AI Match</option>
                 <option value="price_asc">Price: Low → High</option>
@@ -804,19 +947,19 @@ export default function DiscoverPage() {
               <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>
                   <label className="text-xs font-semibold text-slate-500 mb-1.5 block">Region</label>
-                  <select value={region} onChange={(e) => setRegion(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f392b]/20">
+                  <select value={region} onChange={(e) => setRegion(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-bg/20">
                     {KENYA_REGIONS.map((r) => <option key={r}>{r}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-slate-500 mb-1.5 block">Soil Type</label>
-                  <select value={soil} onChange={(e) => setSoil(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f392b]/20">
+                  <select value={soil} onChange={(e) => setSoil(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-bg/20">
                     {SOIL_TYPES.map((s) => <option key={s}>{s}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-slate-500 mb-1.5 block">Water Source</label>
-                  <select value={water} onChange={(e) => setWater(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f392b]/20">
+                  <select value={water} onChange={(e) => setWater(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-bg/20">
                     {WATER_SOURCES.map((w) => <option key={w}>{w}</option>)}
                   </select>
                 </div>
@@ -827,7 +970,7 @@ export default function DiscoverPage() {
                     placeholder="e.g. 20000"
                     value={maxPrice}
                     onChange={(e) => setMaxPrice(e.target.value)}
-                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f392b]/20"
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-bg/20"
                   />
                 </div>
                 <div className="col-span-2 sm:col-span-4 flex justify-end gap-2 pt-1 border-t border-slate-100">
@@ -837,7 +980,7 @@ export default function DiscoverPage() {
                   >
                     Clear filters
                   </button>
-                  <button onClick={() => setShowFilters(false)} className="bg-[#0f392b] text-white text-sm font-semibold px-5 py-2 rounded-xl hover:bg-[#0d2e22] transition-colors">
+                  <button onClick={() => setShowFilters(false)} className="bg-sidebar-bg text-white text-sm font-semibold px-5 py-2 rounded-xl hover:bg-[#0d2e22] transition-colors">
                     Apply
                   </button>
                 </div>
@@ -873,7 +1016,7 @@ export default function DiscoverPage() {
               <div className="flex flex-col items-center py-16 text-center">
                 <span className="material-icons-round text-4xl text-slate-300 mb-2">cloud_off</span>
                 <p className="text-slate-500 text-sm mb-4">{error}</p>
-                <button onClick={fetchLands} className="bg-[#0f392b] text-white px-5 py-2 rounded-xl text-sm font-semibold">
+                <button onClick={fetchLands} className="bg-sidebar-bg text-white px-5 py-2 rounded-xl text-sm font-semibold">
                   Retry
                 </button>
               </div>
@@ -887,7 +1030,7 @@ export default function DiscoverPage() {
                 <p className="text-slate-400 text-sm mb-4">Try adjusting your filters or search term.</p>
                 <button
                   onClick={() => { setRegion("All Regions"); setSoil("All Soils"); setWater("All Sources"); setMaxPrice(""); setSearch(""); }}
-                  className="text-[#0f392b] text-sm font-semibold border border-[#0f392b] px-5 py-2 rounded-xl hover:bg-[#0f392b] hover:text-white transition-colors"
+                  className="text-sidebar-bg text-sm font-semibold border border-sidebar-bg px-5 py-2 rounded-xl hover:bg-sidebar-bg hover:text-white transition-colors"
                 >
                   Clear all filters
                 </button>

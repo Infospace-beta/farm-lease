@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { FileDown } from "lucide-react";
+import { adminApi } from "@/lib/services/api";
 
 const paymentsData = [
   { id: 1, ref: "PAY-00341", tenant: "Jane Smith", landTitle: "Fertile Valley Farm", amount: 45000, method: "M-Pesa", date: "May 1, 2025", status: "Completed" },
@@ -19,11 +20,6 @@ const agreementsData = [
   { id: 4, tenant: "Peter Omondi", landowner: "Hassan Mwangi", landTitle: "Savanna Grazing Land", start: "Jun 1, 2025", end: "May 31, 2026", rent: 70000, status: "Pending" },
 ];
 
-const disputesData = [
-  { id: 1, raiser: "Jane Smith", against: "John Doe", landTitle: "Fertile Valley Farm", reason: "Non-refund of deposit after early exit.", filed: "Apr 20, 2025", status: "Open" },
-  { id: 2, raiser: "Moses Kariuki", against: "Grace Achieng", landTitle: "Highland Pastures", reason: "Undisclosed drainage issues on the property.", filed: "May 2, 2025", status: "Under Review" },
-  { id: 3, raiser: "David Kamau", against: "Alice Wanjiku", landTitle: "Riverside Plots", reason: "Unpaid rent for March 2025.", filed: "Apr 8, 2025", status: "Resolved" },
-];
 
 const PAYMENT_STATUS = {
   Completed: "bg-green-100 text-green-700",
@@ -37,20 +33,91 @@ const AGREEMENT_STATUS = {
   Expired: "bg-gray-100 text-gray-600",
 };
 
-const DISPUTE_STATUS = {
-  Open: "bg-red-100 text-red-700",
-  "Under Review": "bg-amber-100 text-amber-700",
-  Resolved: "bg-green-100 text-green-700",
+type AdminEscrowRow = {
+  id: number;
+  agreement_id: number | null;
+  land_title: string | null;
+  owner_name: string | null;
+  lessee_name: string | null;
+  amount: number;
+  held_amount: number;
+  released_amount: number;
+  status: string;
+  amount_received: boolean;
+  lessee_agreed: boolean;
+  owner_signed: boolean;
+  can_be_released: boolean;
+  amount_received_at: string | null;
+  released_at: string | null;
+};
+
+type AdminWithdrawalRow = {
+  transaction_id: string;
+  owner_id: number;
+  owner_name: string;
+  owner_email: string;
+  amount: number;
+  phone_number: string | null;
+  created_at: string | null;
+  description: string | null;
 };
 
 export default function FinanceContractsPage() {
-  const [tab, setTab] = useState<"payments" | "agreements" | "disputes">("payments");
+  const [tab, setTab] = useState<"payments" | "escrow" | "agreements">("payments");
+
+  const [escrows, setEscrows] = useState<AdminEscrowRow[]>([]);
+  const [withdrawals, setWithdrawals] = useState<AdminWithdrawalRow[]>([]);
+  const [escrowLoading, setEscrowLoading] = useState(false);
+  const [escrowError, setEscrowError] = useState<string | null>(null);
+
+  const loadEscrowData = async () => {
+    try {
+      setEscrowLoading(true);
+      setEscrowError(null);
+      const [escrowRes, withdrawalRes] = await Promise.all([
+        adminApi.escrow(),
+        adminApi.withdrawalRequests(),
+      ]);
+      setEscrows(escrowRes.data?.escrows ?? []);
+      setWithdrawals(withdrawalRes.data?.results ?? []);
+    } catch {
+      setEscrowError("Failed to load escrow data.");
+    } finally {
+      setEscrowLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (tab === "escrow") {
+      loadEscrowData();
+    }
+  }, [tab]);
+
+  const handleReleaseEscrow = async (escrowId: number) => {
+    try {
+      await adminApi.releaseEscrow(escrowId);
+      await loadEscrowData();
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || err?.response?.data?.detail || "Failed to release escrow.";
+      setEscrowError(msg);
+    }
+  };
+
+  const handleReleaseWithdrawal = async (transactionId: string) => {
+    try {
+      await adminApi.releaseWithdrawal(transactionId);
+      await loadEscrowData();
+    } catch (err: any) {
+      const msg = err?.response?.data?.detail || "Failed to release withdrawal.";
+      setEscrowError(msg);
+    }
+  };
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       <AdminPageHeader
         title="Finance & Contracts"
-        subtitle="Monitor lease payments, review signed agreements, and manage tenant-landowner disputes."
+        subtitle="Monitor lease payments, review signed agreements, and manage escrow releases."
       >
         <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition shadow-sm text-sm font-medium">
           <FileDown className="w-4 h-4" />
@@ -62,9 +129,9 @@ export default function FinanceContractsPage() {
       <div className="flex items-center gap-1 px-5 lg:px-8 pt-4 border-b border-slate-200 bg-white shrink-0">
         {([
           { key: "payments", label: "Payments", icon: "payments" },
+          { key: "escrow", label: "Escrow", icon: "lock_clock" },
           { key: "agreements", label: "Agreements", icon: "description" },
-          { key: "disputes", label: "Disputes", icon: "gavel", badge: disputesData.filter((d) => d.status !== "Resolved").length },
-        ] as { key: "payments" | "agreements" | "disputes"; label: string; icon: string; badge?: number }[]).map((t) => (
+        ] as { key: "payments" | "escrow" | "agreements"; label: string; icon: string; badge?: number }[]).map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
@@ -81,6 +148,164 @@ export default function FinanceContractsPage() {
           </button>
         ))}
       </div>
+
+      {/* ═══ ESCROW TAB ═══ */}
+      {tab === "escrow" && (
+        <div className="flex-1 overflow-y-auto p-5 lg:p-8 bg-slate-50">
+          {escrowLoading && (
+            <div className="flex items-center justify-center py-20">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#0f392b] mx-auto mb-4" />
+                <p className="text-sm text-slate-500">Loading escrow…</p>
+              </div>
+            </div>
+          )}
+
+          {escrowError && !escrowLoading && (
+            <div className="rounded-lg bg-red-50 border border-red-200 p-4 text-center mb-4">
+              <p className="text-sm text-red-600">{escrowError}</p>
+              <button onClick={loadEscrowData} className="mt-2 text-sm font-semibold text-red-700 hover:underline">
+                Retry
+              </button>
+            </div>
+          )}
+
+          {!escrowLoading && !escrowError && (
+            <>
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                {[
+                  {
+                    label: "Total Held",
+                    value: `Ksh ${Math.round(escrows.reduce((a, c) => a + Number(c.held_amount || 0), 0)).toLocaleString()}`,
+                    color: "text-[#0f392b]",
+                    bg: "bg-emerald-50",
+                    icon: "lock",
+                  },
+                  {
+                    label: "Ready to Release",
+                    value: escrows.filter((e) => e.can_be_released).length,
+                    color: "text-amber-600",
+                    bg: "bg-amber-50",
+                    icon: "published_with_changes",
+                  },
+                  {
+                    label: "Pending Withdrawals",
+                    value: withdrawals.length,
+                    color: "text-slate-700",
+                    bg: "bg-slate-100",
+                    icon: "payments",
+                  },
+                ].map((s) => (
+                  <div key={s.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-xl ${s.bg} flex items-center justify-center shrink-0 ${s.color}`}>
+                      <span className="material-symbols-outlined" style={{ fontSize: 22 }}>{s.icon}</span>
+                    </div>
+                    <div>
+                      <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+                      <p className="text-xs text-gray-500 font-medium mt-0.5">{s.label}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-6">
+                <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                  <h3 className="font-bold text-gray-800" style={{ fontFamily: "Playfair Display, serif" }}>Escrow Accounts</h3>
+                  <span className="text-xs text-gray-400">{escrows.length} record(s)</span>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 text-[10px] uppercase tracking-widest text-gray-400">
+                      <tr>
+                        <th className="px-6 py-3 text-left">Escrow</th>
+                        <th className="px-6 py-3 text-left">Land</th>
+                        <th className="px-6 py-3 text-left">Lessee</th>
+                        <th className="px-6 py-3 text-left">Owner</th>
+                        <th className="px-6 py-3 text-right">Held</th>
+                        <th className="px-6 py-3 text-left">Status</th>
+                        <th className="px-6 py-3"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {escrows.map((e) => (
+                        <tr key={e.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-6 py-4 font-mono text-xs text-gray-500">ESC-{e.id}</td>
+                          <td className="px-6 py-4 text-gray-700 text-xs">{e.land_title ?? "—"}</td>
+                          <td className="px-6 py-4 text-gray-700 text-xs">{e.lessee_name ?? "—"}</td>
+                          <td className="px-6 py-4 text-gray-700 text-xs">{e.owner_name ?? "—"}</td>
+                          <td className="px-6 py-4 text-right font-bold text-[#0f392b]">Ksh {Math.round(Number(e.held_amount || 0)).toLocaleString()}</td>
+                          <td className="px-6 py-4">
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${e.can_be_released ? "bg-amber-100 text-amber-700" : e.status === "released" ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-700"}`}>
+                              {e.can_be_released ? "Ready" : e.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <button
+                              onClick={() => handleReleaseEscrow(e.id)}
+                              disabled={!e.can_be_released}
+                              className="px-3 py-2 rounded-lg text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 disabled:hover:bg-emerald-600 transition"
+                            >
+                              Release Funds
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {escrows.length === 0 && (
+                        <tr>
+                          <td colSpan={7} className="px-6 py-12 text-center text-sm text-gray-400">No escrow records yet.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                  <h3 className="font-bold text-gray-800" style={{ fontFamily: "Playfair Display, serif" }}>Withdrawal Requests</h3>
+                  <span className="text-xs text-gray-400">{withdrawals.length} pending</span>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 text-[10px] uppercase tracking-widest text-gray-400">
+                      <tr>
+                        <th className="px-6 py-3 text-left">Request</th>
+                        <th className="px-6 py-3 text-left">Owner</th>
+                        <th className="px-6 py-3 text-left">Phone</th>
+                        <th className="px-6 py-3 text-right">Amount</th>
+                        <th className="px-6 py-3"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {withdrawals.map((w) => (
+                        <tr key={w.transaction_id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-6 py-4 font-mono text-xs text-gray-500">{w.transaction_id}</td>
+                          <td className="px-6 py-4 text-gray-700 text-xs">{w.owner_name}</td>
+                          <td className="px-6 py-4 text-gray-500 text-xs">{w.phone_number ?? "—"}</td>
+                          <td className="px-6 py-4 text-right font-bold text-[#0f392b]">Ksh {Math.round(Number(w.amount || 0)).toLocaleString()}</td>
+                          <td className="px-6 py-4 text-right">
+                            <button
+                              onClick={() => handleReleaseWithdrawal(w.transaction_id)}
+                              className="px-3 py-2 rounded-lg text-xs font-bold bg-sidebar-bg text-white hover:bg-[#0d2e22] transition"
+                            >
+                              Release Funds
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {withdrawals.length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="px-6 py-12 text-center text-sm text-gray-400">No pending withdrawal requests.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {/* ═══ PAYMENTS TAB ═══ */}
       {tab === "payments" && (
@@ -219,65 +444,6 @@ export default function FinanceContractsPage() {
               </tbody>
             </table>
           </div>
-        </div>
-      )}
-
-      {/* ═══ DISPUTES TAB ═══ */}
-      {tab === "disputes" && (
-        <div className="flex-1 overflow-y-auto p-5 lg:p-8 bg-slate-50">
-          {disputesData.length === 0 ? (
-            <div className="py-24 text-center text-gray-400">
-              <span className="material-symbols-outlined text-5xl mb-3 block">gavel</span>
-              <p className="font-semibold text-gray-500">No disputes on record.</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {disputesData.map((d) => (
-                <div key={d.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                  <div className="flex items-center justify-between px-6 py-3 bg-gray-50 border-b border-gray-100">
-                    <div className="flex items-center gap-3">
-                      <span className="material-symbols-outlined text-gray-400" style={{ fontSize: 18 }}>gavel</span>
-                      <span className="font-bold text-gray-800 text-sm">Dispute #{String(d.id).padStart(4, "0")}</span>
-                      <span className="text-xs text-gray-400">Filed {d.filed}</span>
-                    </div>
-                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${DISPUTE_STATUS[d.status as keyof typeof DISPUTE_STATUS]}`}>
-                      {d.status}
-                    </span>
-                  </div>
-                  <div className="px-6 py-4 grid grid-cols-3 gap-6 text-sm">
-                    <div>
-                      <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-1">Raised By</p>
-                      <p className="font-semibold text-gray-800">{d.raiser}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-1">Against</p>
-                      <p className="font-semibold text-gray-800">{d.against}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-1">Land</p>
-                      <p className="text-gray-600">{d.landTitle}</p>
-                    </div>
-                    <div className="col-span-3">
-                      <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-1">Issue</p>
-                      <p className="text-gray-700">{d.reason}</p>
-                    </div>
-                    {d.status !== "Resolved" && (
-                      <div className="col-span-3 flex gap-2 pt-2">
-                        <button className="px-4 py-2 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700 transition flex items-center gap-1.5">
-                          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>check_circle</span>
-                          Mark as Resolved
-                        </button>
-                        <button className="px-4 py-2 bg-white border border-gray-200 text-gray-600 text-xs font-bold rounded-lg hover:bg-gray-50 transition flex items-center gap-1.5">
-                          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>visibility</span>
-                          View Details
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       )}
     </div>

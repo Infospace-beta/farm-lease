@@ -130,7 +130,7 @@ export default function ESignatureInput({
               }}
               className={`px-4 py-1.5 font-semibold transition-colors ${
                 mode === m
-                  ? "bg-[#0f392b] text-white"
+                  ? "bg-sidebar-bg text-white"
                   : "bg-white text-slate-600 hover:bg-slate-50"
               }`}
             >
@@ -156,7 +156,7 @@ export default function ESignatureInput({
             )
           ) : (
             <>
-              <div className="relative rounded-xl border-2 border-slate-200 focus-within:border-[#16a34a] bg-white transition-colors">
+              <div className="relative rounded-xl border-2 border-slate-200 focus-within:border-primary bg-white transition-colors">
                 <input
                   type="text"
                   value={typedName}
@@ -169,7 +169,7 @@ export default function ESignatureInput({
                   style={{ fontFamily: "cursive", fontSize: "1.1rem" }}
                 />
                 {typedName && (
-                  <span className="material-icons-round absolute right-3 top-1/2 -translate-y-1/2 text-[#16a34a] text-base">
+                  <span className="material-icons-round absolute right-3 top-1/2 -translate-y-1/2 text-primary text-base">
                     verified
                   </span>
                 )}
@@ -204,7 +204,7 @@ export default function ESignatureInput({
             <>
               <div
                 className={`relative border-2 rounded-xl overflow-hidden bg-white ${
-                  hasDrawing ? "border-[#16a34a]" : "border-slate-200"
+                  hasDrawing ? "border-primary" : "border-slate-200"
                 }`}
               >
                 <canvas

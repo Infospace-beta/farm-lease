@@ -56,9 +56,14 @@ api.interceptors.response.use(
         const refresh = localStorage.getItem("refresh_token");
         if (!refresh) throw new Error("No refresh token");
 
-        const { data } = await axios.post(`${API_BASE}/auth/refresh/`, {
-          refresh,
-        });
+        const { data } = await axios.post(
+          `${API_BASE}/auth/refresh/`,
+          { refresh },
+          {
+            timeout: 10000,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
         localStorage.setItem("access_token", data.access);
         original.headers.Authorization = `Bearer ${data.access}`;
         isRefreshing = false;
@@ -79,6 +84,11 @@ api.interceptors.response.use(
 );
 
 export default api;
+
+// ─── Shared AI API ──────────────────────────────────────────────────────────
+export const aiApi = {
+  chat: (data: { message: string }) => api.post("/ai/chat/", data),
+};
 
 /* ─── Typed API helpers ──────────────────────────────────── */
 export const accountsApi = {
@@ -143,6 +153,13 @@ export const adminApi = {
     search?: string;
     type?: string;
   }) => api.get("/auth/admin/payments/", { params }),
+
+  // Escrow / Withdrawals
+  escrow: () => api.get("/payments/admin/escrow/"),
+  withdrawalRequests: () => api.get("/payments/admin/withdrawals/"),
+  releaseWithdrawal: (transactionId: string) =>
+    api.post(`/payments/admin/withdrawals/${transactionId}/release/`),
+  releaseEscrow: (escrowId: number) => api.post(`/payments/escrow/${escrowId}/release/`),
 
   // Notifications
   unreadCount: () =>
@@ -215,16 +232,6 @@ export const lesseeApi = {
   witnessSign: (id: number, data: { witness_signature: string }) =>
     api.post(`/contracts/agreements/${id}/witness-sign/`, data),
 
-  // Notifications
-  notifications: (params?: { page?: number }) =>
-    api.get("/auth/notifications/", { params }),
-  notificationsUnreadCount: () =>
-    api.get("/auth/notifications/unread-count/").catch(() => ({ data: { unread_count: 0 } })),
-  markNotificationRead: (id: number) =>
-    api.post(`/auth/notifications/${id}/read/`),
-  markAllNotificationsRead: () =>
-    api.post("/auth/notifications/mark-all-read/"),
-
   // Financials / Payments
   myPayments: (params?: { page?: number; status?: string }) =>
     api.get("/payments/my-payments/", { params }),
@@ -252,6 +259,10 @@ export const lesseeApi = {
   }) => api.post("/lessee/ai-predict/", data),
   predictionHistory: (params?: { page?: number }) =>
     api.get("/lessee/ai-predict/history/", { params }),
+
+  // Smart Land Match
+  landMatch: (data: { land_ids: number[] }) =>
+    api.post("/lessee/land-match/", data),
 
   // Shop / Agro-Dealer Marketplace
   shopProducts: (params?: {

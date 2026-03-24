@@ -95,7 +95,7 @@ export default function TrendsPage() {
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       {toast && (
-        <div className="fixed top-6 right-6 bg-[#0f392b] text-white text-sm px-4 py-3 rounded-xl shadow-xl z-50 flex items-center gap-2">
+        <div className="fixed top-6 right-6 bg-sidebar-bg text-white text-sm px-4 py-3 rounded-xl shadow-xl z-50 flex items-center gap-2">
           <span className="material-icons-round text-sm">check_circle</span>
           {toast}
         </div>
@@ -160,7 +160,7 @@ export default function TrendsPage() {
                   {alert.badge}
                 </span>
                 <span
-                  className={`material-icons-round text-2xl ${alert.textLight ? "text-emerald-300" : "text-[#0f392b]"}`}
+                  className={`material-icons-round text-2xl ${alert.textLight ? "text-emerald-300" : "text-sidebar-bg"}`}
                 >
                   {alert.icon}
                 </span>
@@ -205,7 +205,7 @@ export default function TrendsPage() {
                   Fertilizer
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="w-3 h-1 bg-[#5D4037] rounded border-dashed border border-[#5D4037]" />
+                  <span className="w-3 h-1 bg-earth rounded border-dashed border border-earth" />
                   Seeds
                 </span>
                 <span className="flex items-center gap-1">
@@ -255,10 +255,10 @@ export default function TrendsPage() {
                   strokeWidth="2"
                 />
               </svg>
-              <div className="absolute top-0 left-[calc(50%-60px)] bg-[#0f392b] text-white text-[10px] py-1.5 px-3 rounded-lg shadow-xl pointer-events-none">
+              <div className="absolute top-0 left-[calc(50%-60px)] bg-sidebar-bg text-white text-[10px] py-1.5 px-3 rounded-lg shadow-xl pointer-events-none">
                 <p className="font-bold">Peak Demand</p>
                 <p>Urea: 450 Bags</p>
-                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#0f392b] rotate-45" />
+                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-sidebar-bg rotate-45" />
               </div>
               <div className="flex justify-between text-[10px] text-gray-400 font-medium mt-2">
                 <span>Week 1</span>
@@ -326,7 +326,7 @@ export default function TrendsPage() {
             <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <span className="material-icons-round text-[#5D4037]">
+                  <span className="material-icons-round text-earth">
                     notifications_active
                   </span>
                   <h3 className="font-bold text-gray-800 text-sm">

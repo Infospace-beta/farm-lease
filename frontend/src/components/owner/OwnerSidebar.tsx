@@ -39,7 +39,7 @@ function OwnerSidebar() {
   return (
     <>
       {/* ── Mobile top-bar ─────────────────────────────────────── */}
-      <header className="lg:hidden fixed top-0 inset-x-0 z-40 h-14 bg-[#0f392b] flex items-center gap-3 px-4 shadow-lg">
+      <header className="lg:hidden fixed top-0 inset-x-0 z-40 h-14 bg-sidebar-bg flex items-center gap-3 px-4 shadow-lg">
         <button
           onClick={() => setMobileSidebarOpen(true)}
           className="p-2 text-white rounded-lg hover:bg-white/10 transition-colors"
@@ -49,7 +49,7 @@ function OwnerSidebar() {
         </button>
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-md bg-[#13ec80] flex items-center justify-center">
-            <span className="material-icons-round text-[#0f392b] text-base">agriculture</span>
+            <span className="material-icons-round text-sidebar-bg text-base">agriculture</span>
           </div>
           <span
             className="text-white font-bold text-base"
@@ -73,7 +73,7 @@ function OwnerSidebar() {
       <aside
         className={`
           fixed lg:relative top-0 left-0 z-50 h-full w-72 lg:w-72
-          bg-[#0f392b] flex flex-col py-6 px-6
+          bg-sidebar-bg flex flex-col py-6 px-6
           shadow-xl border-r border-white/5 shrink-0 overflow-y-auto
           transition-transform duration-300 ease-in-out
           ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"}
@@ -85,7 +85,7 @@ function OwnerSidebar() {
           <div className="flex items-center justify-between mb-10 px-2 mt-2">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-[#13ec80] flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(19,236,128,0.2)]">
-                <span className="material-icons-round text-[#0f392b] text-2xl">agriculture</span>
+                <span className="material-icons-round text-sidebar-bg text-2xl">agriculture</span>
               </div>
               <div>
                 <h1

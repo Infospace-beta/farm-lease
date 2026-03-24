@@ -385,7 +385,7 @@ export default function LeaseRequestsPage() {
                                 <span className="text-xs mt-1">No photo</span>
                               </div>
                             )}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                            <div className="absolute inset-0 bg-linear-to- from-black/70 via-black/10 to-transparent" />
                             <div className="absolute bottom-0 left-0 right-0 p-3">
                               <p className="text-white text-xs font-bold truncate">{req.land.title}</p>
                               {req.land.price_per_month && (

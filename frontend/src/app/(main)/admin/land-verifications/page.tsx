@@ -220,7 +220,7 @@ export default function LandVerificationsPage() {
                     onClick={() => setFilter(opt.value as typeof filter)}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
                       isActive
-                        ? "bg-[#0f392b] text-white"
+                        ? "bg-sidebar-bg text-white"
                         : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                     }`}
                   >
@@ -238,7 +238,7 @@ export default function LandVerificationsPage() {
                 placeholder="Search by title, owner, deed..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0f392b]/20"
+                className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-bg/20"
               />
             </div>
           </div>
@@ -247,7 +247,7 @@ export default function LandVerificationsPage() {
         {/* Lands List */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-[#0f392b]" />
+            <Loader2 className="w-8 h-8 animate-spin text-sidebar-bg" />
           </div>
         ) : filteredLands.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-12 text-center">
@@ -276,7 +276,7 @@ export default function LandVerificationsPage() {
               >
                 <div className="flex flex-col lg:flex-row">
                   {/* Image */}
-                  <div className="lg:w-48 h-40 lg:h-auto bg-gradient-to-br from-slate-100 to-slate-50 flex-shrink-0">
+                  <div className="lg:w-48 h-40 lg:h-auto bg-linear-to- from-slate-100 to-slate-50 flex-shrink-0">
                     {land.images?.[0]?.image ? (
                       <img
                         src={land.images[0].image}

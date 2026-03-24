@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import base64
 from datetime import datetime
+import socket
 from typing import Any, Tuple
+from urllib.parse import urlparse
 
 import requests
 from django.conf import settings
@@ -114,6 +116,25 @@ class MpesaClient:
                 or "M-Pesa rejected the STK request",
                 "raw": data,
             }
+        except requests.exceptions.ConnectionError as exc:
+            host = urlparse(self.base_url).hostname or self.base_url
+            dns_failed = False
+            for err in (exc, getattr(exc, "__cause__", None), getattr(exc, "__context__", None)):
+                if isinstance(err, socket.gaierror):
+                    dns_failed = True
+                    break
+                if err is not None and "NameResolutionError" in repr(err):
+                    dns_failed = True
+                    break
+
+            if dns_failed:
+                return False, {
+                    "error": (
+                        "Failed to reach M-Pesa service: DNS lookup failed for "
+                        f"'{host}'. Check internet/DNS/VPN/firewall, or try 'nslookup {host}'."
+                    )
+                }
+            return False, {"error": f"Failed to reach M-Pesa service: {exc}"}
         except requests.RequestException as exc:
             return False, {"error": f"Failed to reach M-Pesa service: {exc}"}
         except Exception as exc:  # noqa: BLE001

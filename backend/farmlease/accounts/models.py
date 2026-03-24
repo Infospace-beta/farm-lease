@@ -38,6 +38,9 @@ class User(AbstractUser):
         Sync is_staff with role='admin'.
         Admin users always get is_staff=True; all others are stripped of staff/superuser.
         """
+        # Backward-compat: some older data used role='owner'. Normalize it.
+        if self.role == 'owner':
+            self.role = 'landowner'
         if self.role == 'admin':
             self.is_staff = True
         else:

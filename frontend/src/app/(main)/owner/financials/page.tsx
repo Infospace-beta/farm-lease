@@ -27,18 +27,18 @@ interface EscrowRecord {
   id: number;
   status: string;
   amount: number;
+  held_amount?: number;
   land_title?: string;
   lessee_name?: string;
-  created_at?: string;
+  deposited_date?: string;
   release_date?: string;
 }
 
 const MONTHS = ["Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb"];
 
 const ESCROW_STATUS_CONFIG: Record<string, { color: string; label: string }> = {
-  held: { color: "bg-blue-100 text-blue-700", label: "Held" },
+  holding: { color: "bg-blue-100 text-blue-700", label: "Holding" },
   released: { color: "bg-emerald-100 text-emerald-700", label: "Released" },
-  disputed: { color: "bg-red-100 text-red-700", label: "Disputed" },
   pending: { color: "bg-amber-100 text-amber-700", label: "Pending" },
 };
 
@@ -68,27 +68,34 @@ export default function FinancialsPage() {
     loadFinancialData();
   }, []);
 
-  // Load escrow data when tab switches
+  // Load + auto-refresh escrow data while viewing the escrow tab
   useEffect(() => {
-    if (tab === "escrow" && escrowRecords.length === 0 && !escrowLoading) {
-      loadEscrowData();
-    }
+    if (tab !== "escrow") return;
+
+    loadEscrowData({ silent: false });
+    const intervalId = window.setInterval(() => {
+      loadEscrowData({ silent: true });
+    }, 8000);
+
+    return () => window.clearInterval(intervalId);
   }, [tab]);
 
-  const loadEscrowData = async () => {
+  const loadEscrowData = async ({ silent }: { silent: boolean }) => {
     try {
-      setEscrowLoading(true);
+      if (!silent) {
+        setEscrowLoading(true);
+      }
       setEscrowError(null);
       const res = await ownerApi.escrowStatus();
       const payload = res.data;
-      const rows = Array.isArray(payload)
-        ? payload
-        : (payload?.escrows ?? payload?.results ?? []);
+      const rows = (payload?.escrows ?? payload?.results ?? (Array.isArray(payload) ? payload : [])) as EscrowRecord[];
       setEscrowRecords(rows);
     } catch {
       setEscrowError("Failed to load escrow records.");
     } finally {
-      setEscrowLoading(false);
+      if (!silent) {
+        setEscrowLoading(false);
+      }
     }
   };
 
@@ -480,7 +487,7 @@ export default function FinancialsPage() {
               {escrowError && (
                 <div className="rounded-lg bg-red-50 border border-red-200 p-4 text-center mb-4">
                   <p className="text-sm text-red-600">{escrowError}</p>
-                  <button onClick={loadEscrowData} className="mt-2 text-sm font-semibold text-red-700 hover:underline">
+                  <button onClick={() => loadEscrowData({ silent: false })} className="mt-2 text-sm font-semibold text-red-700 hover:underline">
                     Retry
                   </button>
                 </div>
@@ -492,7 +499,7 @@ export default function FinancialsPage() {
                   <div className="mb-4 rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 flex items-start gap-2">
                     <span className="material-icons-round text-blue-500 text-sm mt-0.5">info</span>
                     <p className="text-xs text-blue-700">
-                      Escrow funds are held securely until lease milestones are met. Funds are auto-released upon agreement completion or can be disputed within 7 days.
+                      Escrow funds are held securely until lease milestones are met. Once payment is confirmed, the escrow record updates automatically.
                     </p>
                   </div>
 
@@ -529,13 +536,14 @@ export default function FinancialsPage() {
                           <tbody className="divide-y divide-slate-100">
                             {escrowRecords.map((e) => {
                               const cfg = ESCROW_STATUS_CONFIG[e.status?.toLowerCase()] ?? { color: "bg-slate-100 text-slate-700", label: e.status };
+                              const amountValue = typeof e.held_amount === "number" ? e.held_amount : e.amount;
                               return (
                                 <tr key={e.id} className="hover:bg-slate-50 transition-colors">
                                   <td className="px-6 py-4 font-mono text-xs text-slate-500">ESC-{e.id}</td>
                                   <td className="px-6 py-4 font-medium text-slate-800">{e.land_title ?? "—"}</td>
                                   <td className="px-6 py-4 text-slate-600">{e.lessee_name ?? "—"}</td>
                                   <td className="px-6 py-4 text-right font-bold text-primary">
-                                    {formatCurrency(e.amount)}
+                                    {formatCurrency(amountValue)}
                                   </td>
                                   <td className="px-6 py-4">
                                     <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${cfg.color}`}>
@@ -543,7 +551,11 @@ export default function FinancialsPage() {
                                     </span>
                                   </td>
                                   <td className="px-6 py-4 text-slate-500 text-xs">
-                                    {e.created_at ? new Date(e.created_at).toLocaleDateString() : "—"}
+                                    {e.deposited_date
+                                      ? new Date(e.deposited_date).toLocaleDateString()
+                                      : e.release_date
+                                        ? new Date(e.release_date).toLocaleDateString()
+                                        : "—"}
                                   </td>
                                 </tr>
                               );

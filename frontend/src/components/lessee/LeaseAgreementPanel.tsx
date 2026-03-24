@@ -149,7 +149,7 @@ export default function LeaseAgreementPanel({ agreement, myName, onClose, onSubm
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-[#0f392b] px-6 py-4 flex items-center justify-between shrink-0 print:hidden">
+        <div className="bg-sidebar-bg px-6 py-4 flex items-center justify-between shrink-0 print:hidden">
           <div>
             <p className="text-[#13ec80] text-xs font-semibold uppercase tracking-widest">Lease Agreement</p>
             <h2 className="text-white font-bold text-lg">{agreement.land_name}</h2>
@@ -183,7 +183,7 @@ export default function LeaseAgreementPanel({ agreement, myName, onClose, onSubm
                 onClick={() => setStep(key as PanelStep)}
                 className={`text-sm font-semibold pb-2 border-b-2 transition-colors ${
                   step === key
-                    ? "border-[#16a34a] text-[#16a34a]"
+                    ? "border-primary text-primary"
                     : "border-transparent text-slate-400 hover:text-slate-600"
                 }`}
               >
@@ -227,7 +227,7 @@ export default function LeaseAgreementPanel({ agreement, myName, onClose, onSubm
               <div className="grid grid-cols-2 gap-6 text-sm">
                 {/* Landlord */}
                 <div className="space-y-1">
-                  <p className="font-bold text-[#0f392b] text-xs uppercase tracking-wider">The Landlord (Lessor)</p>
+                  <p className="font-bold text-sidebar-bg text-xs uppercase tracking-wider">The Landlord (Lessor)</p>
                   <p><span className="text-slate-500">Full Name:</span> <strong>{agreement.lessor_name}</strong></p>
                   {agreement.lessor_id_number && (
                     <p><span className="text-slate-500">National ID:</span> {agreement.lessor_id_number}</p>
@@ -235,7 +235,7 @@ export default function LeaseAgreementPanel({ agreement, myName, onClose, onSubm
                 </div>
                 {/* Tenant */}
                 <div className="space-y-1">
-                  <p className="font-bold text-[#0f392b] text-xs uppercase tracking-wider">The Tenant (Lessee)</p>
+                  <p className="font-bold text-sidebar-bg text-xs uppercase tracking-wider">The Tenant (Lessee)</p>
                   <p><span className="text-slate-500">Full Name:</span> <strong>{agreement.lessee_name}</strong></p>
                   {agreement.lessee_id_number && (
                     <p><span className="text-slate-500">National ID:</span> {agreement.lessee_id_number}</p>
@@ -289,7 +289,7 @@ export default function LeaseAgreementPanel({ agreement, myName, onClose, onSubm
                         type="date"
                         value={agreedStartDate}
                         onChange={(e) => setAgreedStartDate(e.target.value)}
-                        className="w-full border-2 border-slate-200 focus:border-[#16a34a] rounded-xl px-3 py-2.5 text-sm outline-none"
+                        className="w-full border-2 border-slate-200 focus:border-primary rounded-xl px-3 py-2.5 text-sm outline-none"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -298,7 +298,7 @@ export default function LeaseAgreementPanel({ agreement, myName, onClose, onSubm
                         type="date"
                         value={agreedEndDate}
                         onChange={(e) => setAgreedEndDate(e.target.value)}
-                        className="w-full border-2 border-slate-200 focus:border-[#16a34a] rounded-xl px-3 py-2.5 text-sm outline-none"
+                        className="w-full border-2 border-slate-200 focus:border-primary rounded-xl px-3 py-2.5 text-sm outline-none"
                       />
                     </div>
                     <div className="space-y-1.5 col-span-2">
@@ -309,7 +309,7 @@ export default function LeaseAgreementPanel({ agreement, myName, onClose, onSubm
                         value={agreedRent}
                         onChange={(e) => setAgreedRent(e.target.value)}
                         placeholder="e.g. 15000"
-                        className="w-full border-2 border-slate-200 focus:border-[#16a34a] rounded-xl px-3 py-2.5 text-sm outline-none"
+                        className="w-full border-2 border-slate-200 focus:border-primary rounded-xl px-3 py-2.5 text-sm outline-none"
                       />
                     </div>
                     <div className="space-y-1.5 col-span-2">
@@ -329,7 +329,7 @@ export default function LeaseAgreementPanel({ agreement, myName, onClose, onSubm
                         value={agreedArea}
                         onChange={(e) => setAgreedArea(e.target.value)}
                         placeholder={`e.g. ${agreement.land_area ?? "5"}`}
-                        className="w-full border-2 border-slate-200 focus:border-[#16a34a] rounded-xl px-3 py-2.5 text-sm outline-none"
+                        className="w-full border-2 border-slate-200 focus:border-primary rounded-xl px-3 py-2.5 text-sm outline-none"
                       />
                       {agreement.land_area && agreedArea && Number(agreedArea) < Number(agreement.land_area) && (
                         <p className="text-xs text-amber-700 flex items-center gap-1">
@@ -384,7 +384,7 @@ export default function LeaseAgreementPanel({ agreement, myName, onClose, onSubm
                     onChange={(e) => setIntendedUse(e.target.value)}
                     placeholder="Describe the intended agricultural use (e.g., maize cultivation, dairy farming, horticulture)"
                     rows={3}
-                    className="w-full border-2 border-slate-200 focus:border-[#16a34a] rounded-xl px-4 py-3 text-sm outline-none text-slate-800 resize-none transition-colors"
+                    className="w-full border-2 border-slate-200 focus:border-primary rounded-xl px-4 py-3 text-sm outline-none text-slate-800 resize-none transition-colors"
                     style={{ fontFamily: "Georgia, serif" }}
                   />
                 )
@@ -401,7 +401,7 @@ export default function LeaseAgreementPanel({ agreement, myName, onClose, onSubm
                 5. Covenants &amp; Obligations
               </h2>
               <div className="text-sm space-y-2">
-                <p className="font-semibold text-[#0f392b]">The Lessee undertakes to:</p>
+                <p className="font-semibold text-sidebar-bg">The Lessee undertakes to:</p>
                 <ol className="list-decimal list-inside space-y-1.5 text-slate-700 ml-2">
                   <li>Maintain the Land in good agricultural condition and manage it sustainably.</li>
                   <li>Not sub-let or transfer any interest in the Land without prior written consent of the Landlord.</li>
@@ -410,11 +410,11 @@ export default function LeaseAgreementPanel({ agreement, myName, onClose, onSubm
                   <li>Allow the Landlord reasonable access to inspect the Land upon 48 hours&apos; notice.</li>
                   <li>Pay rent on time and settle any utility or local authority charges relating to the Land.</li>
                 </ol>
-                <p className="font-semibold text-[#0f392b] mt-3">The Landlord undertakes to:</p>
+                <p className="font-semibold text-sidebar-bg mt-3">The Landlord undertakes to:</p>
                 <ol className="list-decimal list-inside space-y-1.5 text-slate-700 ml-2">
                   <li>Ensure the Lessee&apos;s quiet enjoyment of the Land throughout the Lease Term.</li>
                   <li>Not interfere with the Lessee&apos;s lawful agricultural activities.</li>
-                  <li>Disclose any encumbrances, third-party claims, or disputes over the Land at the time of signing.</li>
+                  <li>Disclose any encumbrances or third-party claims over the Land at the time of signing.</li>
                 </ol>
               </div>
             </section>
@@ -433,7 +433,7 @@ export default function LeaseAgreementPanel({ agreement, myName, onClose, onSubm
                     onChange={(e) => setConditions(e.target.value)}
                     placeholder="Any additional or special conditions agreed between parties (leave blank if none)"
                     rows={3}
-                    className="w-full border-2 border-slate-200 focus:border-[#16a34a] rounded-xl px-4 py-3 text-sm outline-none text-slate-800 resize-none transition-colors"
+                    className="w-full border-2 border-slate-200 focus:border-primary rounded-xl px-4 py-3 text-sm outline-none text-slate-800 resize-none transition-colors"
                     style={{ fontFamily: "Georgia, serif" }}
                   />
                 )
@@ -454,21 +454,10 @@ export default function LeaseAgreementPanel({ agreement, myName, onClose, onSubm
               </div>
             </section>
 
-            {/* Dispute Resolution */}
-            <section className="space-y-3">
-              <h2 className="text-base font-bold uppercase tracking-wide border-b border-slate-300 pb-1">
-                8. Dispute Resolution &amp; Governing Law
-              </h2>
-              <div className="text-sm space-y-1.5 text-slate-700">
-                <p>This Agreement shall be governed by the laws of Kenya, including the Land Act 2012, the Land Registration Act 2012, and the Agricultural Act (Cap. 318).</p>
-                <p>Any dispute arising from this Agreement shall first be referred to mediation through the FarmLease platform. If unresolved within 21 days, the dispute shall be referred to the Environment and Land Court of the relevant county.</p>
-              </div>
-            </section>
-
             {/* Signatures */}
             <section className="space-y-5">
               <h2 className="text-base font-bold uppercase tracking-wide border-b border-slate-300 pb-1">
-                9. Execution &amp; Signatures
+                8. Execution &amp; Signatures
               </h2>
               <p className="text-sm text-slate-600">
                 By signing below, the parties acknowledge that they have read, understood, and voluntarily agreed to all terms of this Agreement.
@@ -476,7 +465,7 @@ export default function LeaseAgreementPanel({ agreement, myName, onClose, onSubm
 
               {/* Lessee signature block */}
               <div className="border border-slate-200 rounded-xl p-5 space-y-4">
-                <p className="font-bold text-xs uppercase tracking-wider text-[#0f392b]">Signed by the Lessee (Tenant)</p>
+                <p className="font-bold text-xs uppercase tracking-wider text-sidebar-bg">Signed by the Lessee (Tenant)</p>
                 {step === "witness" || isViewOnly ? (
                   <div className="space-y-3">
                     <div>
@@ -521,7 +510,7 @@ export default function LeaseAgreementPanel({ agreement, myName, onClose, onSubm
 
               {/* Owner signature block */}
               <div className="border border-slate-200 rounded-xl p-5 space-y-3">
-                <p className="font-bold text-xs uppercase tracking-wider text-[#0f392b]">Signed by the Landlord (Lessor)</p>
+                <p className="font-bold text-xs uppercase tracking-wider text-sidebar-bg">Signed by the Landlord (Lessor)</p>
                 {agreement.owner_signed ? (
                   <div className="space-y-3">
                     {agreement.owner_signature?.startsWith("data:image") ? (
@@ -551,7 +540,7 @@ export default function LeaseAgreementPanel({ agreement, myName, onClose, onSubm
               {/* Witness block */}
               <div className="border border-slate-200 rounded-xl p-5 space-y-4">
                 <div className="flex items-start justify-between gap-3">
-                  <p className="font-bold text-xs uppercase tracking-wider text-[#0f392b]">Witness</p>
+                  <p className="font-bold text-xs uppercase tracking-wider text-sidebar-bg">Witness</p>
                   {step === "witness" && (
                     <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 shrink-0">
                       <span className="material-icons-round text-sm">how_to_reg</span>
@@ -646,7 +635,7 @@ export default function LeaseAgreementPanel({ agreement, myName, onClose, onSubm
                           value={witnessName}
                           onChange={(e) => setWitnessName(e.target.value)}
                           placeholder="Witness full legal name"
-                          className="w-full border-2 border-slate-200 focus:border-[#16a34a] rounded-xl px-3 py-2.5 text-sm outline-none"
+                          className="w-full border-2 border-slate-200 focus:border-primary rounded-xl px-3 py-2.5 text-sm outline-none"
                         />
                       </div>
                       <div className="space-y-1.5">
@@ -655,7 +644,7 @@ export default function LeaseAgreementPanel({ agreement, myName, onClose, onSubm
                           value={witnessId}
                           onChange={(e) => setWitnessId(e.target.value)}
                           placeholder="e.g. 12345678"
-                          className="w-full border-2 border-slate-200 focus:border-[#16a34a] rounded-xl px-3 py-2.5 text-sm outline-none"
+                          className="w-full border-2 border-slate-200 focus:border-primary rounded-xl px-3 py-2.5 text-sm outline-none"
                         />
                       </div>
                       <div className="space-y-1.5 col-span-2">
@@ -664,7 +653,7 @@ export default function LeaseAgreementPanel({ agreement, myName, onClose, onSubm
                           value={witnessPhone}
                           onChange={(e) => setWitnessPhone(e.target.value)}
                           placeholder="e.g. 0712 345 678"
-                          className="w-full border-2 border-slate-200 focus:border-[#16a34a] rounded-xl px-3 py-2.5 text-sm outline-none"
+                          className="w-full border-2 border-slate-200 focus:border-primary rounded-xl px-3 py-2.5 text-sm outline-none"
                         />
                       </div>
                     </div>
@@ -739,7 +728,7 @@ export default function LeaseAgreementPanel({ agreement, myName, onClose, onSubm
                 {step === "review" && (
                   <button
                     onClick={() => setStep("fill")}
-                    className="bg-[#16a34a] text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-emerald-700 transition-colors flex items-center gap-2"
+                    className="bg-primary text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-emerald-700 transition-colors flex items-center gap-2"
                   >
                     Fill Agreement Details
                     <span className="material-icons-round text-base">arrow_forward</span>
@@ -754,7 +743,7 @@ export default function LeaseAgreementPanel({ agreement, myName, onClose, onSubm
                       setError("");
                       setStep("witness");
                     }}
-                    className="bg-[#16a34a] text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-emerald-700 transition-colors flex items-center gap-2"
+                    className="bg-primary text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-emerald-700 transition-colors flex items-center gap-2"
                   >
                     Next: Add Witness
                     <span className="material-icons-round text-base">arrow_forward</span>
@@ -765,7 +754,7 @@ export default function LeaseAgreementPanel({ agreement, myName, onClose, onSubm
                   <button
                     onClick={handleSubmit}
                     disabled={loading}
-                    className="bg-[#0f392b] text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-emerald-900 disabled:opacity-60 transition-colors flex items-center gap-2"
+                    className="bg-sidebar-bg text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-emerald-900 disabled:opacity-60 transition-colors flex items-center gap-2"
                   >
                     {loading ? (
                       <>
@@ -787,7 +776,7 @@ export default function LeaseAgreementPanel({ agreement, myName, onClose, onSubm
           {isViewOnly && (
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2 text-sm text-slate-500">
-                <span className="material-icons-round text-base text-[#16a34a]">lock</span>
+                <span className="material-icons-round text-base text-primary">lock</span>
                 Agreement locked — cannot be edited after submission
               </div>
               <button

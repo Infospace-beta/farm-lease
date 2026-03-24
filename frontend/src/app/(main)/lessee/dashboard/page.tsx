@@ -106,7 +106,7 @@ export default function LesseeDashboard() {
         </button>
         <Link
           href="/lessee/browse"
-          className="flex px-5 py-2.5 bg-[#0f392b] text-white rounded-lg items-center gap-2 hover:bg-opacity-90 transition shadow-lg"
+          className="flex px-5 py-2.5 bg-sidebar-bg text-white rounded-lg items-center gap-2 hover:bg-opacity-90 transition shadow-lg"
         >
           <span className="material-icons-round text-[#13ec80] text-sm">
             search
@@ -201,14 +201,14 @@ export default function LesseeDashboard() {
               <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-4">
                   <h3
-                    className="text-xl font-bold text-[#5D4037]"
+                    className="text-xl font-bold text-earth"
                     style={{ fontFamily: "Playfair Display, serif" }}
                   >
                     My Lease Portfolio
                   </h3>
                   <a
                     href="#"
-                    className="text-xs font-bold text-[#0f392b] hover:underline flex items-center gap-1"
+                    className="text-xs font-bold text-sidebar-bg hover:underline flex items-center gap-1"
                   >
                     View All My Leases{" "}
                     <span className="material-icons-round text-sm">
@@ -217,10 +217,10 @@ export default function LesseeDashboard() {
                   </a>
                 </div>
                 <div className="flex gap-2">
-                  <button className="p-2 text-gray-400 hover:text-[#0f392b] hover:bg-gray-100 rounded-lg transition">
+                  <button className="p-2 text-gray-400 hover:text-sidebar-bg hover:bg-gray-100 rounded-lg transition">
                     <span className="material-icons-round">grid_view</span>
                   </button>
-                  <button className="p-2 text-gray-400 hover:text-[#0f392b] hover:bg-gray-100 rounded-lg transition">
+                  <button className="p-2 text-gray-400 hover:text-sidebar-bg hover:bg-gray-100 rounded-lg transition">
                     <span className="material-icons-round">list</span>
                   </button>
                 </div>
@@ -239,7 +239,7 @@ export default function LesseeDashboard() {
                   <div className="col-span-2 flex flex-col items-center justify-center py-16 text-center">
                     <span className="material-icons-round text-5xl text-gray-200 mb-3">landscape</span>
                     <p className="text-gray-400 font-medium">No active leases yet</p>
-                    <Link href="/lessee/browse" className="mt-4 px-5 py-2 bg-[#0f392b] text-white text-sm font-semibold rounded-xl hover:bg-opacity-90 transition">
+                    <Link href="/lessee/browse" className="mt-4 px-5 py-2 bg-sidebar-bg text-white text-sm font-semibold rounded-xl hover:bg-opacity-90 transition">
                       Browse Land
                     </Link>
                   </div>
@@ -249,16 +249,16 @@ export default function LesseeDashboard() {
                     const isPending = lease.status?.toLowerCase() === "pending";
                     return (
                       <div key={lease.id} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] flex flex-col hover:shadow-lg transition cursor-pointer">
-                        <div className="relative h-48 w-full bg-gradient-to-br from-gray-200 to-gray-300 rounded-xl overflow-hidden mb-4 group">
+                        <div className="relative h-48 w-full bg-linear-to- from-gray-200 to-gray-300 rounded-xl overflow-hidden mb-4 group">
                           <div className="absolute inset-0 bg-black/10"></div>
                           <div className="absolute inset-0 flex items-center justify-center">
                             <div
-                              className={`w-32 h-24 ${isActive ? "bg-[#13ec80]/40 border-[#13ec80]/60" : "bg-[#5D4037]/40 border-[#5D4037]/60"} border-2 backdrop-blur-sm shadow-lg transform group-hover:scale-105 transition-transform duration-500`}
+                              className={`w-32 h-24 ${isActive ? "bg-[#13ec80]/40 border-[#13ec80]/60" : "bg-earth/40 border-earth/60"} border-2 backdrop-blur-sm shadow-lg transform group-hover:scale-105 transition-transform duration-500`}
                               style={{ clipPath: "polygon(20% 0%, 100% 10%, 80% 100%, 0% 90%)" }}
                             ></div>
                           </div>
                           <div className="absolute top-3 right-3">
-                            <span className={`${isActive ? "bg-[#13ec80] text-[#0f392b]" : isPending ? "bg-[#5D4037] text-white" : "bg-gray-500 text-white"} text-[10px] font-bold px-2 py-1 rounded-full shadow-md uppercase tracking-wide`}>
+                            <span className={`${isActive ? "bg-[#13ec80] text-sidebar-bg" : isPending ? "bg-earth text-white" : "bg-gray-500 text-white"} text-[10px] font-bold px-2 py-1 rounded-full shadow-md uppercase tracking-wide`}>
                               {lease.status}
                             </span>
                           </div>
@@ -281,7 +281,7 @@ export default function LesseeDashboard() {
                           </div>
                           <div className="text-right">
                             <p className="text-xs text-gray-400">{isActive ? "Next Payment" : "Offer"}</p>
-                            <p className={`text-sm font-bold ${isActive ? "text-[#0f392b]" : "text-[#5D4037]"}`}>
+                            <p className={`text-sm font-bold ${isActive ? "text-sidebar-bg" : "text-earth"}`}>
                               {lease.next_payment ? `Ksh ${lease.next_payment.toLocaleString()}` : "—"}
                             </p>
                           </div>
@@ -291,9 +291,9 @@ export default function LesseeDashboard() {
                             {isPending ? "Action Required" : lease.end_date ? `Ends: ${new Date(lease.end_date).toLocaleDateString("en-KE", { month: "short", year: "numeric" })}` : "—"}
                           </span>
                           {isPending ? (
-                            <button className="px-3 py-1 bg-[#0f392b] text-white text-xs font-bold rounded-lg hover:bg-opacity-90">Review</button>
+                            <button className="px-3 py-1 bg-sidebar-bg text-white text-xs font-bold rounded-lg hover:bg-opacity-90">Review</button>
                           ) : (
-                            <button className="text-xs font-bold text-[#0f392b] hover:underline">Manage Lease</button>
+                            <button className="text-xs font-bold text-sidebar-bg hover:underline">Manage Lease</button>
                           )}
                         </div>
                       </div>
@@ -307,14 +307,14 @@ export default function LesseeDashboard() {
             <div className="bg-white border border-gray-200 shadow-soft rounded-2xl px-6 py-4">
               <div className="flex items-center justify-between mb-3">
                 <h3
-                  className="font-bold text-lg text-[#5D4037]"
+                  className="font-bold text-lg text-earth"
                   style={{ fontFamily: "Playfair Display, serif" }}
                 >
                   Inputs Quick-Shop
                 </h3>
                 <a
                   href="#"
-                  className="text-xs font-bold text-[#0f392b] hover:underline flex items-center gap-1"
+                  className="text-xs font-bold text-sidebar-bg hover:underline flex items-center gap-1"
                 >
                   View Full Shop{" "}
                   <span className="material-icons-round text-sm">
@@ -363,17 +363,17 @@ export default function LesseeDashboard() {
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-sm text-gray-800 leading-tight mb-1 truncate group-hover:text-[#0f392b] transition">
+                        <h4 className="font-bold text-sm text-gray-800 leading-tight mb-1 truncate group-hover:text-sidebar-bg transition">
                           {item.name}
                         </h4>
                         <p className="text-[10px] text-gray-400 mb-2">
                           {item.desc}
                         </p>
                         <div className="flex justify-between items-center">
-                          <span className="font-bold text-sm text-[#5D4037]">
+                          <span className="font-bold text-sm text-earth">
                             {item.price}
                           </span>
-                          <button className="w-7 h-7 rounded-full bg-white border border-gray-200 text-gray-600 flex items-center justify-center hover:bg-[#0f392b] hover:text-white hover:border-[#0f392b] transition shadow-sm">
+                          <button className="w-7 h-7 rounded-full bg-white border border-gray-200 text-gray-600 flex items-center justify-center hover:bg-sidebar-bg hover:text-white hover:border-sidebar-bg transition shadow-sm">
                             <span className="material-icons-round text-sm">
                               add
                             </span>
@@ -392,11 +392,11 @@ export default function LesseeDashboard() {
             <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] h-full">
               <div className="flex items-center gap-2 mb-6">
                 <span className="relative flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#0f392b] opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-[#0f392b]"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sidebar-bg opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-sidebar-bg"></span>
                 </span>
                 <h3
-                  className="font-bold text-lg text-[#5D4037]"
+                  className="font-bold text-lg text-earth"
                   style={{ fontFamily: "Playfair Display, serif" }}
                 >
                   Activity Pulse
@@ -415,10 +415,10 @@ export default function LesseeDashboard() {
                   <p className="ml-6 text-sm text-gray-400 py-4">No recent activity</p>
                 ) : (
                   activities.map((act, i) => {
-                    const dotColors = ["bg-[#0f392b]", "bg-[#5D4037]", "bg-blue-400", "bg-gray-400"];
+                    const dotColors = ["bg-sidebar-bg", "bg-earth", "bg-blue-400", "bg-gray-400"];
                     return (
                       <div key={act.id} className="ml-6 relative">
-                        <span className={`absolute -left-[31px] top-1 h-2.5 w-2.5 rounded-full ${dotColors[i % dotColors.length]} ring-4 ring-white`}></span>
+                        <span className={`absolute -left-7.75 top-1 h-2.5 w-2.5 rounded-full ${dotColors[i % dotColors.length]} ring-4 ring-white`}></span>
                         <span className="text-xs text-gray-400 block mb-1">
                           {act.time ? new Date(act.time).toLocaleString("en-KE", { dateStyle: "short", timeStyle: "short" }) : ""}
                         </span>
@@ -476,7 +476,7 @@ export default function LesseeDashboard() {
 
               {/* Active Leases */}
               <div>
-                <h3 className="text-sm font-bold text-[#5D4037] uppercase tracking-wider mb-3">Active Leases</h3>
+                <h3 className="text-sm font-bold text-earth uppercase tracking-wider mb-3">Active Leases</h3>
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100">
@@ -498,7 +498,7 @@ export default function LesseeDashboard() {
                         <td className="py-2.5">
                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${l.status?.toLowerCase() === "active" ? "text-[#047857] bg-emerald-50" : "text-amber-700 bg-amber-50"}`}>{l.status}</span>
                         </td>
-                        <td className="py-2.5 text-right font-bold text-[#0f392b]">{l.next_payment ? `Ksh ${l.next_payment.toLocaleString()}` : "—"}</td>
+                        <td className="py-2.5 text-right font-bold text-sidebar-bg">{l.next_payment ? `Ksh ${l.next_payment.toLocaleString()}` : "—"}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -507,15 +507,15 @@ export default function LesseeDashboard() {
 
               {/* AI Crop Recommendations */}
               <div>
-                <h3 className="text-sm font-bold text-[#5D4037] uppercase tracking-wider mb-3 flex items-center gap-2">
+                <h3 className="text-sm font-bold text-earth uppercase tracking-wider mb-3 flex items-center gap-2">
                   <span className="material-icons-round text-amber-500 text-base">auto_awesome</span>
                   AI Crop Recommendations
                 </h3>
-                <div className="bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-100 rounded-xl p-4">
+                <div className="bg-linear-to- from-emerald-50 to-green-50 border border-emerald-100 rounded-xl p-4">
                   <p className="text-xs text-gray-500 mb-3">Based on your current plots' soil data and regional climate history:</p>
                   <div className="flex flex-wrap gap-2">
                     {["Maize", "Wheat", "Avocado", "Pyrethrum"].map((crop) => (
-                      <span key={crop} className="inline-flex items-center bg-[#0f392b] text-emerald-100 px-3 py-1.5 rounded-full text-xs font-medium shadow-sm">
+                      <span key={crop} className="inline-flex items-center bg-sidebar-bg text-emerald-100 px-3 py-1.5 rounded-full text-xs font-medium shadow-sm">
                         <span className="material-icons-round text-[13px] mr-1.5 text-[#13ec80]">auto_awesome</span>
                         {crop}
                       </span>
@@ -535,7 +535,7 @@ export default function LesseeDashboard() {
               </button>
               <button
                 onClick={() => { window.print(); }}
-                className="px-5 py-2.5 text-sm bg-[#0f392b] text-white rounded-xl hover:bg-opacity-90 transition shadow-lg flex items-center gap-2"
+                className="px-5 py-2.5 text-sm bg-sidebar-bg text-white rounded-xl hover:bg-opacity-90 transition shadow-lg flex items-center gap-2"
               >
                 <span className="material-icons-round text-sm">download</span>
                 Download PDF

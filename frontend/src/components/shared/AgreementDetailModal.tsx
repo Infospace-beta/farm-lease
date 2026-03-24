@@ -167,7 +167,7 @@ export default function AgreementDetailModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Header ──────────────────────────────────────────────────── */}
-        <div className="bg-[#0f392b] px-6 py-5 flex items-start justify-between shrink-0">
+        <div className="bg-sidebar-bg px-6 py-5 flex items-start justify-between shrink-0">
           <div>
             <p className="text-[#13ec80] text-[10px] font-bold uppercase tracking-widest mb-1">
               Lease Agreement
@@ -244,7 +244,7 @@ export default function AgreementDetailModal({
               </div>
               <div className="flex items-center justify-between text-sm border-t border-slate-200 pt-3">
                 <span className="text-slate-500">Monthly Rent</span>
-                <span className="font-extrabold text-[#0f392b] text-base">
+                <span className="font-extrabold text-sidebar-bg text-base">
                   KES {rent.toLocaleString()}
                 </span>
               </div>
@@ -388,7 +388,7 @@ export default function AgreementDetailModal({
                 </div>
                 <button
                   onClick={() => { onClose(); onPaymentOpen(); }}
-                  className="shrink-0 bg-[#0f392b] text-white text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-[#1a5c42] transition-colors flex items-center gap-2"
+                  className="shrink-0 bg-sidebar-bg text-white text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-[#1a5c42] transition-colors flex items-center gap-2"
                 >
                   <span className="material-icons-round text-sm">account_balance_wallet</span>
                   Make First Payment
@@ -453,7 +453,7 @@ export default function AgreementDetailModal({
                 <button
                   onClick={handleOwnerSign}
                   disabled={signing || !sig.trim()}
-                  className="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white bg-[#0f392b] hover:bg-[#1a5c42] disabled:opacity-50 transition-colors"
+                  className="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white bg-sidebar-bg hover:bg-[#1a5c42] disabled:opacity-50 transition-colors"
                 >
                   {signing ? "Signing…" : "Sign Agreement"}
                 </button>

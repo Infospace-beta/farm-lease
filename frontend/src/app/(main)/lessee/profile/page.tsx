@@ -12,7 +12,7 @@ export default function ProfilePage() {
         title="Profile & Settings"
         subtitle="Manage your personal information, security and payment preferences"
       >
-        <button className="flex items-center gap-2 bg-[#0f392b] hover:bg-[#1c4a3a] text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow transition-colors">
+        <button className="flex items-center gap-2 bg-sidebar-bg hover:bg-[#1c4a3a] text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow transition-colors">
           <span className="material-icons-round text-lg">save</span>
           Save Changes
         </button>
@@ -40,7 +40,7 @@ export default function ProfilePage() {
               {/* Avatar Upload */}
               <div className="flex items-center gap-6 mb-8">
                 <div className="relative">
-                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#0f392b] to-[#1c4a3a] flex items-center justify-center text-[#13ec80] text-3xl font-extrabold shadow-md">
+                  <div className="w-20 h-20 rounded-2xl bg-linear-to- from-sidebar-bg to-[#1c4a3a] flex items-center justify-center text-[#13ec80] text-3xl font-extrabold shadow-md">
                     DM
                   </div>
                   <button className="absolute -bottom-1 -right-1 w-7 h-7 bg-white border border-gray-200 rounded-full shadow-md flex items-center justify-center hover:bg-gray-50 transition-colors">
@@ -65,7 +65,7 @@ export default function ProfilePage() {
               {/* Form Fields */}
               <div className="grid grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-xs font-bold text-[#5D4037] uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-bold text-earth uppercase tracking-wider mb-2">
                     First Name
                   </label>
                   <input
@@ -75,7 +75,7 @@ export default function ProfilePage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-[#5D4037] uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-bold text-earth uppercase tracking-wider mb-2">
                     Last Name
                   </label>
                   <input
@@ -85,7 +85,7 @@ export default function ProfilePage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-[#5D4037] uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-bold text-earth uppercase tracking-wider mb-2">
                     Email Address
                   </label>
                   <div className="relative">
@@ -100,7 +100,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-[#5D4037] uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-bold text-earth uppercase tracking-wider mb-2">
                     Phone Number
                   </label>
                   <div className="relative">
@@ -137,7 +137,7 @@ export default function ProfilePage() {
             </div>
             <div className="p-7 space-y-5">
               <div>
-                <label className="block text-xs font-bold text-[#5D4037] uppercase tracking-wider mb-2">
+                <label className="block text-xs font-bold text-earth uppercase tracking-wider mb-2">
                   Current Password
                 </label>
                 <div className="relative">
@@ -153,7 +153,7 @@ export default function ProfilePage() {
               </div>
               <div className="grid grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-xs font-bold text-[#5D4037] uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-bold text-earth uppercase tracking-wider mb-2">
                     New Password
                   </label>
                   <div className="relative">
@@ -168,7 +168,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-[#5D4037] uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-bold text-earth uppercase tracking-wider mb-2">
                     Confirm Password
                   </label>
                   <div className="relative">
@@ -252,7 +252,7 @@ export default function ProfilePage() {
                       +254 712 *** 890
                     </div>
                     <div className="flex items-center gap-1 mt-1">
-                      <span className="text-[10px] bg-[#13ec80] text-[#0f392b] px-2 py-0.5 rounded-full font-extrabold">
+                      <span className="text-[10px] bg-[#13ec80] text-sidebar-bg px-2 py-0.5 rounded-full font-extrabold">
                         Primary
                       </span>
                       <span className="text-[10px] bg-emerald-100 text-[#047857] px-2 py-0.5 rounded-full font-semibold">

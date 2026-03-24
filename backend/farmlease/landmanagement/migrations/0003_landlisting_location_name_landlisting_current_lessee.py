@@ -14,20 +14,38 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='landlisting',
-            name='location_name',
-            field=models.CharField(default='Unknown Location', max_length=255),
-        ),
-        migrations.AddField(
-            model_name='landlisting',
-            name='current_lessee',
-            field=models.ForeignKey(
-                blank=True,
-                null=True,
-                on_delete=django.db.models.deletion.SET_NULL,
-                related_name='rented_lands',
-                to=settings.AUTH_USER_MODEL
-            ),
+        migrations.SeparateDatabaseAndState(
+            database_operations=[
+                migrations.RunSQL(
+                    sql="""
+                    ALTER TABLE landmanagement_landlisting
+                        ADD COLUMN IF NOT EXISTS location_name varchar(255) NOT NULL DEFAULT 'Unknown Location';
+                    ALTER TABLE landmanagement_landlisting
+                        ADD COLUMN IF NOT EXISTS current_lessee_id bigint NULL;
+                    """,
+                    reverse_sql="""
+                    ALTER TABLE landmanagement_landlisting DROP COLUMN IF EXISTS current_lessee_id;
+                    ALTER TABLE landmanagement_landlisting DROP COLUMN IF EXISTS location_name;
+                    """,
+                ),
+            ],
+            state_operations=[
+                migrations.AddField(
+                    model_name='landlisting',
+                    name='location_name',
+                    field=models.CharField(default='Unknown Location', max_length=255),
+                ),
+                migrations.AddField(
+                    model_name='landlisting',
+                    name='current_lessee',
+                    field=models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='rented_lands',
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+            ],
         ),
     ]

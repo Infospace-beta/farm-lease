@@ -143,7 +143,7 @@ export default function PaymentModal({
           <button
             onClick={handlePay}
             disabled={loading}
-            className="px-5 py-2.5 rounded-xl text-sm font-bold bg-[#0f392b] hover:bg-[#1a4d3b] text-white disabled:opacity-60"
+            className="px-5 py-2.5 rounded-xl text-sm font-bold bg-sidebar-bg hover:bg-[#1a4d3b] text-white disabled:opacity-60"
           >
             {loading ? "Sending STK Push..." : "Pay via M-Pesa"}
           </button>

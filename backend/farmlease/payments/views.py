@@ -18,6 +18,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from contracts.models import LeaseAgreement
+from accounts.permissions import IsSystemAdmin
 from .escrow_utils import ensure_escrow_for_agreement, hold_payment_in_escrow, try_release_escrow
 from .models import EscrowAccount, Transaction
 from .mpesa_utils import MpesaClient
@@ -260,9 +261,12 @@ class ReleaseEscrowView(APIView):
 
 	permission_classes = [IsAuthenticated]
 
+	def _is_system_admin(self, user) -> bool:
+		return bool(getattr(user, 'is_staff', False) or getattr(user, 'role', None) == 'admin' or getattr(user, 'is_superuser', False))
+
 	def post(self, request, payment_id: int):
 		escrow = get_object_or_404(EscrowAccount, id=payment_id)
-		if request.user != escrow.agreement.owner and not request.user.is_superuser:
+		if request.user != escrow.agreement.owner and not self._is_system_admin(request.user):
 			return Response({'error': 'You are not allowed to release this escrow.'}, status=status.HTTP_403_FORBIDDEN)
 
 		released = try_release_escrow(escrow.agreement)
@@ -272,6 +276,120 @@ class ReleaseEscrowView(APIView):
 				status=status.HTTP_400_BAD_REQUEST,
 			)
 		return Response({'success': True, 'message': 'Escrow released to land owner.'}, status=status.HTTP_200_OK)
+
+
+class AdminEscrowListView(APIView):
+	"""Admin view: escrow accounts across the platform."""
+
+	permission_classes = [IsSystemAdmin]
+
+	def get(self, request):
+		escrows = (
+			EscrowAccount.objects.select_related(
+				'agreement',
+				'agreement__land',
+				'agreement__lessee',
+				'agreement__owner',
+			)
+			.order_by('-updated_at')
+		)
+
+		rows = []
+		total_held = Decimal('0')
+		total_released = Decimal('0')
+		pending_deposit = Decimal('0')
+
+		for e in escrows:
+			owner = e.agreement.owner if e.agreement else None
+			lessee = e.agreement.lessee if e.agreement else None
+			land = e.agreement.land if e.agreement else None
+			held_amount = e.held_amount
+			total_held += held_amount
+			total_released += (e.released_amount or Decimal('0'))
+			if not e.amount_received:
+				pending_deposit += (e.amount or Decimal('0'))
+
+			rows.append({
+				'id': e.id,
+				'agreement_id': e.agreement_id,
+				'land_title': getattr(land, 'title', None),
+				'owner_name': (f"{getattr(owner, 'first_name', '')} {getattr(owner, 'last_name', '')}".strip() or getattr(owner, 'email', None)) if owner else None,
+				'lessee_name': (f"{getattr(lessee, 'first_name', '')} {getattr(lessee, 'last_name', '')}".strip() or getattr(lessee, 'email', None)) if lessee else None,
+				'amount': e.amount,
+				'held_amount': held_amount,
+				'released_amount': e.released_amount,
+				'status': e.status,
+				'amount_received': bool(e.amount_received),
+				'lessee_agreed': bool(e.lessee_agreed),
+				'owner_signed': bool(e.owner_signed),
+				'can_be_released': bool(e.can_be_released and held_amount > 0),
+				'amount_received_at': e.amount_received_at.isoformat() if e.amount_received_at else None,
+				'released_at': e.released_at.isoformat() if e.released_at else None,
+				'updated_at': e.updated_at.isoformat() if e.updated_at else None,
+			})
+
+		return Response(
+			{
+				'summary': {
+					'total_held': total_held,
+					'total_released': total_released,
+					'pending_deposit': pending_deposit,
+				},
+				'escrows': rows,
+			},
+			status=status.HTTP_200_OK,
+		)
+
+
+class AdminWithdrawalRequestsView(APIView):
+	"""Admin view: list pending owner withdrawal requests."""
+
+	permission_classes = [IsSystemAdmin]
+
+	def get(self, request):
+		qs = (
+			Transaction.objects.filter(transaction_type='withdrawal', status='pending')
+			.select_related('user')
+			.order_by('-created_at')
+		)
+		rows = []
+		for t in qs:
+			u = t.user
+			rows.append({
+				'transaction_id': t.transaction_id,
+				'owner_id': u.id,
+				'owner_name': f"{u.first_name} {u.last_name}".strip() or u.email,
+				'owner_email': u.email,
+				'amount': t.amount,
+				'phone_number': t.phone_number,
+				'created_at': t.created_at.isoformat() if t.created_at else None,
+				'description': t.description,
+			})
+		return Response({'results': rows}, status=status.HTTP_200_OK)
+
+
+class AdminReleaseWithdrawalView(APIView):
+	"""Admin action: mark a pending withdrawal as released/completed."""
+
+	permission_classes = [IsSystemAdmin]
+
+	def post(self, request, transaction_id: str):
+		withdrawal = get_object_or_404(
+			Transaction,
+			transaction_id=transaction_id,
+			transaction_type='withdrawal',
+		)
+		if withdrawal.status != 'pending':
+			return Response({'detail': 'Withdrawal is not pending.'}, status=status.HTTP_400_BAD_REQUEST)
+
+		withdrawal.status = 'completed'
+		withdrawal.mpesa_result_code = withdrawal.mpesa_result_code or '0'
+		withdrawal.mpesa_result_desc = withdrawal.mpesa_result_desc or 'Released by admin'
+		withdrawal.description = (withdrawal.description or '') + ';released_by_admin=true'
+		withdrawal.updated_at = timezone.now()
+		withdrawal.save(update_fields=['status', 'mpesa_result_code', 'mpesa_result_desc', 'description', 'updated_at'])
+
+		return Response({'success': True, 'transaction_id': withdrawal.transaction_id, 'status': withdrawal.status}, status=status.HTTP_200_OK)
 
 
 class OwnerEscrowListView(APIView):
@@ -341,11 +459,11 @@ class OwnerEscrowListView(APIView):
 				'agreement_id': escrow.agreement_id,
 				'land_title': escrow.agreement.land.title,
 				'lessee_name': f"{escrow.agreement.lessee.first_name} {escrow.agreement.lessee.last_name}".strip() or escrow.agreement.lessee.email,
-				'amount': escrow.amount,
-				'held_amount': escrow.held_amount,
-				'released_amount': escrow.released_amount,
-				'deposited_date': escrow.amount_received_at,
-				'release_date': escrow.released_at,
+				'amount': float(escrow.amount or 0),
+				'held_amount': float(escrow.held_amount or 0),
+				'released_amount': float(escrow.released_amount or 0),
+				'deposited_date': escrow.amount_received_at.isoformat() if escrow.amount_received_at else None,
+				'release_date': escrow.released_at.isoformat() if escrow.released_at else None,
 				'status': uistatus,
 				'stages': stages,
 			})
@@ -353,9 +471,9 @@ class OwnerEscrowListView(APIView):
 		return Response(
 			{
 				'summary': {
-					'total_in_escrow': total_in_escrow,
-					'released_this_month': released_this_month,
-					'pending_deposit': pending_deposit,
+					'total_in_escrow': float(total_in_escrow or 0),
+					'released_this_month': float(released_this_month or 0),
+					'pending_deposit': float(pending_deposit or 0),
 				},
 				'escrows': rows,
 			},
@@ -469,11 +587,11 @@ def owner_revenue_summary(request):
 
 	return Response(
 		{
-			'total_revenue_ytd': total_revenue_ytd,
-			'monthly_revenue': monthly_revenue,
-			'in_escrow': in_escrow,
-			'pending_withdrawals': pending_withdrawals,
-			'available_for_withdrawal': available_for_withdrawal,
+			'total_revenue_ytd': float(total_revenue_ytd or 0),
+			'monthly_revenue': float(monthly_revenue or 0),
+			'in_escrow': float(in_escrow or 0),
+			'pending_withdrawals': float(pending_withdrawals or 0),
+			'available_for_withdrawal': float(available_for_withdrawal or 0),
 			'ytd_change_percent': 0.0,
 			'monthly_change_percent': 0.0,
 		},

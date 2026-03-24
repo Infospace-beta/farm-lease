@@ -215,7 +215,7 @@ function PaymentRow({ payment }: { payment: Payment }) {
     <div className="flex items-center justify-between gap-4 py-4 border-b border-slate-100 last:border-0">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
-          <span className="material-icons-round text-[#0f392b] text-lg">receipt_long</span>
+          <span className="material-icons-round text-sidebar-bg text-lg">receipt_long</span>
         </div>
         <div>
           <p className="text-sm font-bold text-slate-800">
@@ -232,7 +232,7 @@ function PaymentRow({ payment }: { payment: Payment }) {
         </div>
       </div>
       <div className="flex flex-col items-end gap-1.5">
-        <span className="text-sm font-extrabold text-[#0f392b]">
+        <span className="text-sm font-extrabold text-sidebar-bg">
           KES {Number(payment.amount).toLocaleString()}
         </span>
         <span className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${status.color}`}>
@@ -253,11 +253,11 @@ function ProgressBar({ stage }: { stage: number }) {
         return (
           <div key={label} className="flex-1 flex flex-col items-center gap-1">
             <div
-              className={`h-1.5 w-full rounded-full transition-all ${done ? "bg-[#16a34a]" : active ? "bg-[#13ec80]" : "bg-slate-200"
+              className={`h-1.5 w-full rounded-full transition-all ${done ? "bg-primary" : active ? "bg-[#13ec80]" : "bg-slate-200"
                 }`}
             />
             <span
-              className={`text-[9px] font-semibold hidden sm:block ${done ? "text-emerald-600" : active ? "text-[#16a34a]" : "text-slate-300"
+              className={`text-[9px] font-semibold hidden sm:block ${done ? "text-emerald-600" : active ? "text-primary" : "text-slate-300"
                 }`}
             >
               {label}
@@ -462,7 +462,7 @@ export default function LeasesPage() {
               </button>
               <Link
                 href="/lessee/browse"
-                className="bg-[#0f392b] text-white px-5 py-2 rounded-xl text-sm font-semibold"
+                className="bg-sidebar-bg text-white px-5 py-2 rounded-xl text-sm font-semibold"
               >
                 Browse Other Lands
               </Link>
@@ -478,7 +478,7 @@ export default function LeasesPage() {
       >
         <Link
           href="/lessee/browse"
-          className="flex items-center gap-2 bg-[#0f392b] hover:bg-[#1c4a3a] text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow transition-colors"
+          className="flex items-center gap-2 bg-sidebar-bg hover:bg-[#1c4a3a] text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow transition-colors"
         >
           <span className="material-icons-round text-lg">search</span>
           Browse Lands
@@ -493,7 +493,7 @@ export default function LeasesPage() {
               key={t}
               onClick={() => setTab(t as "leases" | "payments")}
               className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors capitalize ${tab === t
-                ? "border-[#0f392b] text-[#0f392b]"
+                ? "border-sidebar-bg text-sidebar-bg"
                 : "border-transparent text-slate-500 hover:text-slate-700"
                 }`}
             >
@@ -631,7 +631,7 @@ export default function LeasesPage() {
                 <div className="flex flex-col items-center py-10">
                   <span className="material-icons-round text-4xl text-slate-200 mb-2">cloud_off</span>
                   <p className="text-slate-500 text-sm mb-3">{paymentsError}</p>
-                  <button onClick={fetchPayments} className="bg-[#0f392b] text-white px-4 py-2 rounded-xl text-sm font-semibold">Retry</button>
+                  <button onClick={fetchPayments} className="bg-sidebar-bg text-white px-4 py-2 rounded-xl text-sm font-semibold">Retry</button>
                 </div>
               )}
 
@@ -712,7 +712,7 @@ export default function LeasesPage() {
                 <div className="bg-white rounded-2xl border border-red-100 p-8 text-center">
                   <span className="material-icons-round text-4xl text-red-200 mb-2 block">error_outline</span>
                   <p className="text-slate-500 font-medium mb-3">{error}</p>
-                  <button onClick={fetchAll} className="bg-[#0f392b] text-white text-sm font-semibold px-5 py-2 rounded-xl">Retry</button>
+                  <button onClick={fetchAll} className="bg-sidebar-bg text-white text-sm font-semibold px-5 py-2 rounded-xl">Retry</button>
                 </div>
               ) : loading ? (
                 [0, 1, 2].map((i) => (
@@ -732,7 +732,7 @@ export default function LeasesPage() {
                   <span className="material-icons-round text-5xl text-slate-200 block mb-3">description</span>
                   <p className="text-slate-500 font-semibold mb-1">No leases yet</p>
                   <p className="text-slate-400 text-sm mb-6">Browse available lands and send a lease request to get started.</p>
-                  <Link href="/lessee/browse" className="inline-flex items-center gap-2 bg-[#0f392b] text-white text-sm font-semibold px-6 py-2.5 rounded-xl">
+                  <Link href="/lessee/browse" className="inline-flex items-center gap-2 bg-sidebar-bg text-white text-sm font-semibold px-6 py-2.5 rounded-xl">
                     <span className="material-icons-round text-base">search</span>Browse Lands
                   </Link>
                 </div>
@@ -744,7 +744,7 @@ export default function LeasesPage() {
                   >
                     <div className="flex items-start justify-between gap-4 flex-wrap">
                       <div className="flex items-start gap-4 min-w-0">
-                        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#0f392b]/10 to-emerald-50 flex items-center justify-center shrink-0">
+                        <div className="w-14 h-14 rounded-xl bg-linear-to- from-sidebar-bg/10 to-emerald-50 flex items-center justify-center shrink-0">
                           <span className="material-icons-round text-[#047857] text-2xl">landscape</span>
                         </div>
                         <div className="min-w-0">
@@ -790,7 +790,7 @@ export default function LeasesPage() {
                           ) : (
                             <button
                               onClick={() => handleAction(item)}
-                              className={`text-xs font-bold px-5 py-2.5 rounded-xl text-white transition-colors flex items-center gap-2 ${item.stage === 5 ? "bg-[#16a34a] hover:bg-emerald-700" : "bg-[#0f392b] hover:bg-emerald-900"
+                              className={`text-xs font-bold px-5 py-2.5 rounded-xl text-white transition-colors flex items-center gap-2 ${item.stage === 5 ? "bg-primary hover:bg-emerald-700" : "bg-sidebar-bg hover:bg-emerald-900"
                                 }`}
                             >
                               {item.stage === 2 && <span className="material-icons-round text-sm">edit_note</span>}

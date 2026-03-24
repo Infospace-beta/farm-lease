@@ -104,10 +104,10 @@ function DealerCard({
   return (
     <div
       onClick={onClick}
-      className="group bg-white rounded-2xl border border-slate-200 hover:border-[#0f392b] hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden"
+      className="group bg-white rounded-2xl border border-slate-200 hover:border-sidebar-bg hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden"
     >
       {/* Header strip */}
-      <div className="h-24 bg-gradient-to-br from-[#0f392b] to-[#1a5c42] flex items-center justify-center relative">
+      <div className="h-24 bg-linear-to- from-sidebar-bg to-[#1a5c42] flex items-center justify-center relative">
         <span className="material-icons-round text-white/20 text-7xl select-none">
           {icon}
         </span>
@@ -124,7 +124,7 @@ function DealerCard({
       </div>
 
       <div className="p-4">
-        <h3 className="font-bold text-slate-800 text-sm mb-1 line-clamp-1 group-hover:text-[#0f392b] transition-colors">
+        <h3 className="font-bold text-slate-800 text-sm mb-1 line-clamp-1 group-hover:text-sidebar-bg transition-colors">
           {dealer.name}
         </h3>
         <div className="flex items-center gap-1 text-slate-500 text-xs mb-3">
@@ -134,11 +134,11 @@ function DealerCard({
 
         <div className="flex gap-2 mb-3">
           <div className="flex-1 bg-slate-50 rounded-xl p-2 text-center">
-            <div className="text-lg font-bold text-[#0f392b]">{dealer.productCount}</div>
+            <div className="text-lg font-bold text-sidebar-bg">{dealer.productCount}</div>
             <div className="text-[10px] text-slate-500">Products</div>
           </div>
           <div className="flex-1 bg-slate-50 rounded-xl p-2 text-center">
-            <div className="text-lg font-bold text-[#0f392b]">{dealer.categories.length}</div>
+            <div className="text-lg font-bold text-sidebar-bg">{dealer.categories.length}</div>
             <div className="text-[10px] text-slate-500">Categories</div>
           </div>
         </div>
@@ -159,7 +159,7 @@ function DealerCard({
           )}
         </div>
 
-        <button className="w-full bg-[#0f392b] group-hover:bg-[#0d2e22] text-white text-xs font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-1.5">
+        <button className="w-full bg-sidebar-bg group-hover:bg-[#0d2e22] text-white text-xs font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-1.5">
           <span className="material-icons-round text-base">storefront</span>
           Browse Products
         </button>
@@ -194,7 +194,7 @@ function ProductCard({
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 hover:shadow-lg hover:border-slate-300 transition-all duration-200 overflow-hidden flex flex-col group">
-      <div className="relative h-44 bg-gradient-to-br from-emerald-50 to-slate-50 flex items-center justify-center overflow-hidden">
+      <div className="relative h-44 bg-linear-to- from-emerald-50 to-slate-50 flex items-center justify-center overflow-hidden">
         {product.image ? (
           <img
             src={product.image}
@@ -202,7 +202,7 @@ function ProductCard({
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
         ) : (
-          <span className="material-icons-round text-[#0f392b]/15 text-7xl select-none">
+          <span className="material-icons-round text-sidebar-bg/15 text-7xl select-none">
             {icon}
           </span>
         )}
@@ -256,14 +256,14 @@ function ProductCard({
 
         <div className="flex items-center justify-between mt-auto">
           <div>
-            <span className="text-lg font-extrabold text-[#0f392b]">
+            <span className="text-lg font-extrabold text-sidebar-bg">
               Ksh {product.price.toLocaleString()}
             </span>
             <span className="text-[10px] text-slate-400 ml-1">/{product.unit}</span>
           </div>
 
           {qty > 0 ? (
-            <div className="flex items-center gap-1 bg-[#0f392b] rounded-xl px-2 py-1">
+            <div className="flex items-center gap-1 bg-sidebar-bg rounded-xl px-2 py-1">
               <button
                 onClick={onRemoveFromCart}
                 className="text-white hover:text-[#13ec80] transition-colors"
@@ -282,7 +282,7 @@ function ProductCard({
             <button
               onClick={onAddToCart}
               disabled={product.stock === 0}
-              className="flex items-center gap-1.5 bg-[#0f392b] hover:bg-[#0d2e22] disabled:opacity-40 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-colors"
+              className="flex items-center gap-1.5 bg-sidebar-bg hover:bg-[#0d2e22] disabled:opacity-40 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-colors"
             >
               <span className="material-icons-round text-sm">add_shopping_cart</span>
               Add
@@ -292,7 +292,7 @@ function ProductCard({
 
         <button
           onClick={onQuery}
-          className="mt-2 w-full border border-slate-200 text-slate-600 hover:border-[#0f392b] hover:text-[#0f392b] text-xs font-semibold py-2 rounded-xl transition-all flex items-center justify-center gap-1.5"
+          className="mt-2 w-full border border-slate-200 text-slate-600 hover:border-sidebar-bg hover:text-sidebar-bg text-xs font-semibold py-2 rounded-xl transition-all flex items-center justify-center gap-1.5"
         >
           <span className="material-icons-round text-sm">headset_mic</span>
           Ask Dealer
@@ -365,17 +365,17 @@ function CartDrawer({
             cartItems.map((p) => (
               <div key={p.id} className="flex gap-3 p-3 bg-slate-50 rounded-xl">
                 <div className="w-11 h-11 bg-white rounded-lg flex items-center justify-center border border-slate-100 shrink-0">
-                  <span className="material-icons-round text-[#0f392b]/30 text-2xl">
+                  <span className="material-icons-round text-sidebar-bg/30 text-2xl">
                     {DEALER_ICONS[p.category] ?? "inventory_2"}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-bold text-slate-800 truncate">{p.name}</p>
-                  <p className="text-xs text-[#0f392b] font-semibold">
+                  <p className="text-xs text-sidebar-bg font-semibold">
                     Ksh {(p.price * (cart[p.id] ?? 0)).toLocaleString()}
                   </p>
                 </div>
-                <div className="flex items-center gap-1 bg-[#0f392b] rounded-lg px-1.5 py-1 shrink-0">
+                <div className="flex items-center gap-1 bg-sidebar-bg rounded-lg px-1.5 py-1 shrink-0">
                   <button
                     onClick={() => onRemove(p.id)}
                     className="text-white hover:text-[#13ec80]"
@@ -401,11 +401,11 @@ function CartDrawer({
           <div className="border-t border-slate-100 p-5 space-y-3">
             <div className="flex justify-between text-sm font-bold text-slate-800">
               <span>Total</span>
-              <span className="text-[#0f392b]">Ksh {total.toLocaleString()}</span>
+              <span className="text-sidebar-bg">Ksh {total.toLocaleString()}</span>
             </div>
             <button
               onClick={onCheckout}
-              className="w-full bg-[#0f392b] hover:bg-[#0d2e22] text-white font-bold py-3 rounded-xl text-sm transition-colors"
+              className="w-full bg-sidebar-bg hover:bg-[#0d2e22] text-white font-bold py-3 rounded-xl text-sm transition-colors"
             >
               Proceed to Checkout
             </button>
@@ -441,7 +441,7 @@ function QueryModal({
       />
       <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-6">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-[#0f392b] rounded-xl flex items-center justify-center">
+          <div className="w-10 h-10 bg-sidebar-bg rounded-xl flex items-center justify-center">
             <span className="material-icons-round text-white">headset_mic</span>
           </div>
           <div>
@@ -474,7 +474,7 @@ function QueryModal({
               onChange={(e) => setMsg(e.target.value)}
               rows={4}
               placeholder="Ask about availability, pricing, delivery, bulk discounts..."
-              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#0f392b]/20 focus:border-[#0f392b] mb-4"
+              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-sidebar-bg/20 focus:border-sidebar-bg mb-4"
             />
             <div className="flex gap-3">
               <button
@@ -486,7 +486,7 @@ function QueryModal({
               <button
                 onClick={handleSend}
                 disabled={!msg.trim()}
-                className="flex-1 bg-[#0f392b] text-white py-2.5 rounded-xl text-sm font-bold disabled:opacity-50 hover:bg-[#0d2e22] transition-colors"
+                className="flex-1 bg-sidebar-bg text-white py-2.5 rounded-xl text-sm font-bold disabled:opacity-50 hover:bg-[#0d2e22] transition-colors"
               >
                 Send Query
               </button>
@@ -697,7 +697,7 @@ export default function ShopPage() {
 
       {/* Toast notification */}
       {toast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-[#0f392b] text-white px-6 py-3 rounded-2xl shadow-xl flex items-center gap-2 pointer-events-none">
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-sidebar-bg text-white px-6 py-3 rounded-2xl shadow-xl flex items-center gap-2 pointer-events-none">
           <span className="material-icons-round text-[#13ec80] text-lg">check_circle</span>
           <span className="text-sm font-semibold">{toast}</span>
         </div>
@@ -732,7 +732,7 @@ export default function ShopPage() {
               }}
               onFocus={() => globalSearch && setShowGlobalResults(true)}
               onBlur={() => setTimeout(() => setShowGlobalResults(false), 200)}
-              className="w-56 lg:w-64 pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0f392b]/20 focus:border-[#0f392b]"
+              className="w-56 lg:w-64 pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-bg/20 focus:border-sidebar-bg"
             />
           </div>
 
@@ -749,7 +749,7 @@ export default function ShopPage() {
                     }}
                     className="w-full flex items-start gap-3 px-4 py-3 hover:bg-slate-50 text-left transition-colors"
                   >
-                    <span className="material-icons-round text-[#0f392b]/40 text-xl mt-0.5 shrink-0">
+                    <span className="material-icons-round text-sidebar-bg/40 text-xl mt-0.5 shrink-0">
                       {DEALER_ICONS[p.category] ?? "inventory_2"}
                     </span>
                     <div className="flex-1 min-w-0">
@@ -775,11 +775,11 @@ export default function ShopPage() {
         {/* Cart button */}
         <button
           onClick={() => setShowCart((v) => !v)}
-          className="relative w-10 h-10 flex items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-[#0f392b] transition-colors"
+          className="relative w-10 h-10 flex items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 hover:border-sidebar-bg transition-colors"
         >
           <span className="material-icons-round text-[22px]">shopping_cart</span>
           {cartCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 bg-[#13ec80] text-[#0f392b] text-[10px] font-extrabold w-5 h-5 rounded-full flex items-center justify-center shadow">
+            <span className="absolute -top-1.5 -right-1.5 bg-[#13ec80] text-sidebar-bg text-[10px] font-extrabold w-5 h-5 rounded-full flex items-center justify-center shadow">
               {cartCount}
             </span>
           )}
@@ -816,7 +816,7 @@ export default function ShopPage() {
                   <select
                     value={county}
                     onChange={(e) => setCounty(e.target.value)}
-                    className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0f392b]/20"
+                    className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-sidebar-bg/20"
                   >
                     {KENYA_COUNTIES.map((c) => (
                       <option key={c}>{c}</option>
@@ -826,7 +826,7 @@ export default function ShopPage() {
                 {county !== "All Counties" && (
                   <button
                     onClick={() => setCounty("All Counties")}
-                    className="text-xs text-[#0f392b] font-semibold flex items-center gap-1 hover:underline"
+                    className="text-xs text-sidebar-bg font-semibold flex items-center gap-1 hover:underline"
                   >
                     <span className="material-icons-round text-sm">close</span>
                     Clear
@@ -863,7 +863,7 @@ export default function ShopPage() {
                   <p className="text-slate-500 text-sm mb-4">{error}</p>
                   <button
                     onClick={fetchProducts}
-                    className="bg-[#0f392b] text-white px-5 py-2 rounded-xl text-sm font-semibold"
+                    className="bg-sidebar-bg text-white px-5 py-2 rounded-xl text-sm font-semibold"
                   >
                     Retry
                   </button>
@@ -884,7 +884,7 @@ export default function ShopPage() {
                   </p>
                   <button
                     onClick={() => setCounty("All Counties")}
-                    className="text-[#0f392b] font-semibold text-sm border border-[#0f392b] px-5 py-2 rounded-xl hover:bg-[#0f392b] hover:text-white transition-colors"
+                    className="text-sidebar-bg font-semibold text-sm border border-sidebar-bg px-5 py-2 rounded-xl hover:bg-sidebar-bg hover:text-white transition-colors"
                   >
                     View All Dealers
                   </button>
@@ -913,7 +913,7 @@ export default function ShopPage() {
               <div className="flex items-center gap-3 mb-5 overflow-x-auto">
                 <button
                   onClick={backToDealers}
-                  className="flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-[#0f392b] bg-white border border-slate-200 px-3 py-2 rounded-xl hover:border-[#0f392b] transition-colors shrink-0"
+                  className="flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-sidebar-bg bg-white border border-slate-200 px-3 py-2 rounded-xl hover:border-sidebar-bg transition-colors shrink-0"
                 >
                   <span className="material-icons-round text-base">arrow_back</span>
                   All Dealers
@@ -926,8 +926,8 @@ export default function ShopPage() {
                       onClick={() => setCategory(cat)}
                       className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors shrink-0 ${
                         category === cat
-                          ? "bg-[#0f392b] text-white"
-                          : "bg-white border border-slate-200 text-slate-600 hover:border-[#0f392b] hover:text-[#0f392b]"
+                          ? "bg-sidebar-bg text-white"
+                          : "bg-white border border-slate-200 text-slate-600 hover:border-sidebar-bg hover:text-sidebar-bg"
                       }`}
                     >
                       {cat}
@@ -947,7 +947,7 @@ export default function ShopPage() {
                   </p>
                   <button
                     onClick={() => setCategory("All Categories")}
-                    className="mt-3 text-[#0f392b] font-semibold text-sm border border-[#0f392b] px-5 py-2 rounded-xl hover:bg-[#0f392b] hover:text-white transition-colors"
+                    className="mt-3 text-sidebar-bg font-semibold text-sm border border-sidebar-bg px-5 py-2 rounded-xl hover:bg-sidebar-bg hover:text-white transition-colors"
                   >
                     Show All Categories
                   </button>

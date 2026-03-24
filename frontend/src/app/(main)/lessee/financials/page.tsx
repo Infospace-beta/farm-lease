@@ -124,7 +124,7 @@ export default function FinancialsPage() {
                     <div key={d.month} className="flex-1 flex flex-col items-center justify-end gap-1">
                       {d.amount > 0 && <span className="text-[10px] font-bold text-[#047857]">{Math.round(d.amount / 1000)}k</span>}
                       <div
-                        className={`w-full rounded-t-xl transition-all ${i === monthlyChart.length - 1 ? "bg-[#0f392b]" : "bg-[#047857]/30 hover:bg-[#047857]/50"}`}
+                        className={`w-full rounded-t-xl transition-all ${i === monthlyChart.length - 1 ? "bg-sidebar-bg" : "bg-[#047857]/30 hover:bg-[#047857]/50"}`}
                         style={{ height: `${(d.amount / maxChart) * 160}px`, minHeight: d.amount > 0 ? "4px" : "0" }}
                       />
                       <span className="text-[10px] text-gray-400 mt-1">{d.month}</span>
@@ -139,7 +139,7 @@ export default function FinancialsPage() {
                 ) : [
                   { label: "Average Monthly", value: summary.avg >= 1000 ? `Ksh ${Math.round(summary.avg / 1000)}k` : `Ksh ${summary.avg.toLocaleString()}`, color: "text-gray-800" },
                   { label: "Total YTD", value: summary.total >= 1000 ? `Ksh ${Math.round(summary.total / 1000)}k` : `Ksh ${summary.total.toLocaleString()}`, color: "text-[#047857]" },
-                  { label: "Transactions", value: `${summary.count}`, color: "text-[#0f392b]" },
+                  { label: "Transactions", value: `${summary.count}`, color: "text-sidebar-bg" },
                 ].map((s) => (
                   <div key={s.label} className="text-center">
                     <div className={`text-base font-extrabold ${s.color}`}>{s.value}</div>
@@ -160,7 +160,7 @@ export default function FinancialsPage() {
               {error ? (
                 <div className="flex flex-col items-center py-12">
                   <p className="text-gray-500 text-sm">{error}</p>
-                  <button onClick={fetchPayments} className="mt-3 px-4 py-2 bg-[#0f392b] text-white text-xs font-semibold rounded-xl">Retry</button>
+                  <button onClick={fetchPayments} className="mt-3 px-4 py-2 bg-sidebar-bg text-white text-xs font-semibold rounded-xl">Retry</button>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -216,7 +216,7 @@ export default function FinancialsPage() {
           {/* Right Column */}
           <div className="col-span-12 lg:col-span-4 space-y-6">
             {/* Total Paid YTD */}
-            <div className="bg-gradient-to-br from-[#0f392b] to-[#1c4a3a] rounded-2xl p-6 text-white shadow-lg">
+            <div className="bg-linear-to- from-sidebar-bg to-[#1c4a3a] rounded-2xl p-6 text-white shadow-lg">
               <div className="flex items-center gap-2 mb-1">
                 <span className="material-icons-round text-[#13ec80] text-xl">account_balance_wallet</span>
                 <span className="text-sm font-medium text-[#13ec80]">Total Paid YTD</span>
@@ -258,7 +258,7 @@ export default function FinancialsPage() {
                     <div className="text-[10px] text-gray-500">+254 712 *** 890</div>
                   </div>
                 </div>
-                <span className="text-[10px] bg-[#13ec80] text-[#0f392b] px-2 py-0.5 rounded-full font-extrabold">Primary</span>
+                <span className="text-[10px] bg-[#13ec80] text-sidebar-bg px-2 py-0.5 rounded-full font-extrabold">Primary</span>
               </div>
               <button className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 hover:border-[#047857] text-gray-500 hover:text-[#047857] text-sm font-medium py-3 rounded-xl transition-all">
                 <span className="material-icons-round text-lg">add</span>

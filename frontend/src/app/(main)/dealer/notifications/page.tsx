@@ -40,14 +40,14 @@ function timeAgo(dateStr: string): string {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }
 
-type CategoryKey = "order" | "payment" | "inventory" | "dispute" | "system";
+type CategoryKey = "order" | "payment" | "inventory" | "system";
 
 function getCategoryKey(n: any): CategoryKey {
   const t = ((n.notification_type ?? n.type ?? n.category ?? n.title ?? "") as string).toLowerCase();
   if (t.includes("order") || t.includes("deliver")) return "order";
   if (t.includes("payment") || t.includes("mpesa") || t.includes("ksh")) return "payment";
   if (t.includes("stock") || t.includes("inventory") || t.includes("restock")) return "inventory";
-  if (t.includes("dispute") || t.includes("refund") || t.includes("complaint")) return "dispute";
+  // Refunds/complaints are deferred for future work.
   return "system";
 }
 
@@ -55,7 +55,6 @@ const CATEGORY_STYLE: Record<CategoryKey, { icon: string; iconBg: string; iconCo
   order: { icon: "check_circle", iconBg: "bg-green-100", iconColor: "text-green-600" },
   payment: { icon: "payments", iconBg: "bg-emerald-100", iconColor: "text-[#047857]" },
   inventory: { icon: "warning", iconBg: "bg-orange-100", iconColor: "text-orange-500" },
-  dispute: { icon: "gavel", iconBg: "bg-gray-100", iconColor: "text-gray-700" },
   system: { icon: "info", iconBg: "bg-blue-100", iconColor: "text-blue-500" },
 };
 
@@ -219,7 +218,7 @@ export default function NotificationsPage() {
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       {toast && (
-        <div className="fixed top-6 right-6 bg-[#0f392b] text-white text-sm px-4 py-3 rounded-xl shadow-xl z-50 flex items-center gap-2">
+        <div className="fixed top-6 right-6 bg-sidebar-bg text-white text-sm px-4 py-3 rounded-xl shadow-xl z-50 flex items-center gap-2">
           <span className="material-icons-round text-sm">check_circle</span>
           {toast}
         </div>

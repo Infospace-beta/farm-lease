@@ -67,7 +67,7 @@ export default function AnalyticsPage() {
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       {toast && (
-        <div className="fixed top-6 right-6 bg-[#0f392b] text-white text-sm px-4 py-3 rounded-xl shadow-xl z-50 flex items-center gap-2">
+        <div className="fixed top-6 right-6 bg-sidebar-bg text-white text-sm px-4 py-3 rounded-xl shadow-xl z-50 flex items-center gap-2">
           <span className="material-icons-round text-sm">check_circle</span>
           {toast}
         </div>
@@ -109,7 +109,7 @@ export default function AnalyticsPage() {
         </div>
         <button
           onClick={() => showToast("Report exported")}
-          className="flex px-4 py-2 text-sm bg-[#0f392b] text-white rounded-lg items-center gap-2 hover:opacity-90 shadow-lg shadow-[#0f392b]/20"
+          className="flex px-4 py-2 text-sm bg-sidebar-bg text-white rounded-lg items-center gap-2 hover:opacity-90 shadow-lg shadow-sidebar-bg/20"
         >
           <span className="material-icons-round text-sm">download</span>
           Export Report
@@ -167,7 +167,7 @@ export default function AnalyticsPage() {
                   Revenue
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded-full bg-[#5D4037]" />
+                  <span className="w-3 h-3 rounded-full bg-earth" />
                   Orders
                 </span>
               </div>
@@ -232,11 +232,11 @@ export default function AnalyticsPage() {
                 />
               </svg>
               {/* Tooltip */}
-              <div className="absolute top-0 left-[calc(50%-60px)] bg-[#0f392b] text-white text-[10px] py-1.5 px-3 rounded-lg pointer-events-none shadow-xl">
+              <div className="absolute top-0 left-[calc(50%-60px)] bg-sidebar-bg text-white text-[10px] py-1.5 px-3 rounded-lg pointer-events-none shadow-xl">
                 <p className="font-bold">Aug 15</p>
                 <p>Rev: Ksh 150k</p>
                 <p>Ord: 42</p>
-                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#0f392b] rotate-45" />
+                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-sidebar-bg rotate-45" />
               </div>
               <div className="flex justify-between text-[10px] text-gray-400 font-medium">
                 <span>Aug 01</span>
@@ -308,7 +308,7 @@ export default function AnalyticsPage() {
               </div>
               <div className="flex justify-between items-center text-xs">
                 <span className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded-full bg-[#5D4037]" />
+                  <span className="w-3 h-3 rounded-full bg-earth" />
                   Store Pick-up
                 </span>
                 <span className="font-bold text-gray-700">35%</span>
@@ -329,7 +329,7 @@ export default function AnalyticsPage() {
             <p className="text-xs text-gray-400 mb-5">
               Sales across key counties
             </p>
-            <div className="relative bg-gradient-to-br from-emerald-50 to-gray-100 rounded-2xl h-48 overflow-hidden flex items-center justify-center">
+            <div className="relative bg-linear-to- from-emerald-50 to-gray-100 rounded-2xl h-48 overflow-hidden flex items-center justify-center">
               <span className="material-icons-round text-[80px] text-gray-200">
                 map
               </span>

@@ -43,7 +43,7 @@ export default function DealerProfilePage() {
   return (
     <div className="flex-1 overflow-y-auto p-4 lg:p-8">
       {toast && (
-        <div className="fixed top-6 right-6 bg-[#0f392b] text-white text-sm px-4 py-3 rounded-xl shadow-xl z-50 flex items-center gap-2">
+        <div className="fixed top-6 right-6 bg-sidebar-bg text-white text-sm px-4 py-3 rounded-xl shadow-xl z-50 flex items-center gap-2">
           <span className="material-icons-round text-sm">check_circle</span>
           {toast}
         </div>
@@ -94,7 +94,7 @@ export default function DealerProfilePage() {
             {/* Store Identity Card */}
             <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 text-center">
               <div className="relative inline-block mb-4">
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#0f392b] to-[#047857] flex items-center justify-center text-white text-3xl font-bold">
+                <div className="w-24 h-24 rounded-full bg-linear-to- from-sidebar-bg to-[#047857] flex items-center justify-center text-white text-3xl font-bold">
                   GH
                 </div>
                 <button

@@ -154,7 +154,7 @@ export default function NewLeaseRequestPage() {
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       {/* Toast */}
       {toast && (
-        <div className="fixed top-6 right-6 z-50 flex items-center gap-2 bg-[#0f392b] text-white text-sm px-5 py-3 rounded-2xl shadow-xl animate-fade-in">
+        <div className="fixed top-6 right-6 z-50 flex items-center gap-2 bg-sidebar-bg text-white text-sm px-5 py-3 rounded-2xl shadow-xl animate-fade-in">
           <span className="material-icons-round text-base">check_circle</span>
           {toast}
         </div>
@@ -555,7 +555,7 @@ export default function NewLeaseRequestPage() {
               <button
                 onClick={handleSubmit}
                 disabled={submitting}
-                className="w-full flex items-center justify-center gap-2 bg-[#0f392b] hover:bg-[#1c4a3a] disabled:opacity-60 text-white text-sm font-bold py-3 px-5 rounded-xl shadow-lg shadow-[#0f392b]/20 transition-all mb-3"
+                className="w-full flex items-center justify-center gap-2 bg-sidebar-bg hover:bg-[#1c4a3a] disabled:opacity-60 text-white text-sm font-bold py-3 px-5 rounded-xl shadow-lg shadow-sidebar-bg/20 transition-all mb-3"
               >
                 {submitting ? (
                   <>

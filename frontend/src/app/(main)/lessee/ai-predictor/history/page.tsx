@@ -1,62 +1,43 @@
+"use client";
+
 import Link from "next/link";
 import LesseePageHeader from "@/components/lessee/LesseePageHeader";
 
-const historyData = [
-  {
-    date: "Oct 24, 2023",
-    time: "10:42 AM",
-    mode: "Regional Data",
-    query: "Nakuru, Rift Valley",
-    crop: "Arabica Coffee",
-    icon: "coffee",
-    match: "94%",
-    matchColor: "text-[#0f392b]",
-  },
-  {
-    date: "Oct 20, 2023",
-    time: "03:15 PM",
-    mode: "Manual Entry",
-    query: "pH 6.2, N:High, P:Med",
-    querySub: "Soil Sample #4021",
-    crop: "Hybrid Maize 614",
-    icon: "grain",
-    match: "89%",
-    matchColor: "text-[#0f392b]",
-  },
-  {
-    date: "Oct 12, 2023",
-    time: "09:30 AM",
-    mode: "Regional Data",
-    query: "Trans-Nzoia County",
-    crop: "Hass Avocado",
-    icon: "nutrition",
-    match: "76%",
-    matchColor: "text-orange-500",
-  },
-  {
-    date: "Sep 28, 2023",
-    time: "11:15 AM",
-    mode: "Regional Data",
-    query: "Kiambu, Central",
-    crop: "Macadamia Nuts",
-    icon: "forest",
-    match: "91%",
-    matchColor: "text-[#0f392b]",
-  },
-  {
-    date: "Sep 15, 2023",
-    time: "02:45 PM",
-    mode: "Manual Entry",
-    query: "pH 5.5, N:Low, P:High",
-    querySub: "Soil Sample #3892",
-    crop: "Purple Tea",
-    icon: "emoji_food_beverage",
-    match: "85%",
-    matchColor: "text-[#0f392b]",
-  },
-];
+import { useEffect, useState } from "react";
+import { lesseeApi } from "@/lib/services/api";
+
+type HistoryItem = {
+  id: number;
+  created_at: string;
+  mode?: string;
+  query?: string;
+  top_crop?: string;
+  match?: number | null;
+};
 
 export default function AIPredictorHistoryPage() {
+  const [items, setItems] = useState<HistoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await lesseeApi.predictionHistory();
+        const data = res.data;
+        const results: HistoryItem[] = Array.isArray(data) ? data : (data?.results ?? []);
+        if (mounted) setItems(results);
+      } catch {
+        if (mounted) setItems([]);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       {/* Header */}
@@ -71,7 +52,7 @@ export default function AIPredictorHistoryPage() {
           >
             Predictor
           </Link>
-          <button className="px-4 py-2 bg-[#0f392b] text-white rounded text-xs font-bold uppercase tracking-wide shadow-sm">
+          <button className="px-4 py-2 bg-sidebar-bg text-white rounded text-xs font-bold uppercase tracking-wide shadow-sm">
             History
           </button>
         </div>
@@ -100,7 +81,7 @@ export default function AIPredictorHistoryPage() {
                 <input
                   type="text"
                   placeholder="Search by crop, region..."
-                  className="pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#0f392b] w-60 shadow-sm"
+                  className="pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-sidebar-bg w-60 shadow-sm"
                 />
               </div>
               <div className="relative">
@@ -110,10 +91,10 @@ export default function AIPredictorHistoryPage() {
                 <input
                   type="text"
                   placeholder="Filter by date"
-                  className="pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#0f392b] w-48 shadow-sm"
+                  className="pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-sidebar-bg w-48 shadow-sm"
                 />
               </div>
-              <button className="flex items-center gap-2 px-4 py-2.5 bg-[#0f392b] text-white rounded-xl text-sm font-medium hover:bg-[#0a261c] transition shadow-lg">
+              <button className="flex items-center gap-2 px-4 py-2.5 bg-sidebar-bg text-white rounded-xl text-sm font-medium hover:bg-[#0a261c] transition shadow-lg">
                 <span className="material-icons-round text-sm">download</span>
                 Export CSV
               </button>
@@ -134,56 +115,75 @@ export default function AIPredictorHistoryPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {historyData.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                {loading ? (
+                  <tr>
+                    <td colSpan={6} className="py-10 text-center text-sm text-gray-400">
+                      Loading history…
+                    </td>
+                  </tr>
+                ) : items.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-10 text-center text-sm text-gray-400">
+                      No prediction history yet.
+                    </td>
+                  </tr>
+                ) : items.map((item) => {
+                  const dt = item.created_at ? new Date(item.created_at) : null;
+                  const date = dt ? dt.toLocaleDateString("en-KE", { year: "numeric", month: "short", day: "2-digit" }) : "—";
+                  const time = dt ? dt.toLocaleTimeString("en-KE", { hour: "2-digit", minute: "2-digit" }) : "—";
+
+                  const normalizedMode = (item.mode || "").toLowerCase();
+                  const modeLabel = normalizedMode === "regional" ? "Regional Data" : "Manual Entry";
+                  const crop = item.top_crop || "—";
+                  const matchNum = typeof item.match === "number" ? item.match : null;
+                  const matchText = matchNum === null ? "—" : `${matchNum}%`;
+                  const matchColor = matchNum !== null && matchNum < 80 ? "text-orange-500" : "text-sidebar-bg";
+
+                  return (
+                  <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                     <td className="py-5 pr-6">
                       <p className="text-sm font-semibold text-gray-800">
-                        {item.date}
+                        {date}
                       </p>
-                      <p className="text-xs text-gray-400">{item.time}</p>
+                      <p className="text-xs text-gray-400">{time}</p>
                     </td>
                     <td className="py-5 pr-6">
                       <span
-                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${item.mode === "Regional Data"
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${modeLabel === "Regional Data"
                           ? "bg-blue-50 text-blue-700"
                           : "bg-purple-50 text-purple-700"
                           }`}
                       >
                         <span className="material-icons-round text-[12px]">
-                          {item.mode === "Regional Data" ? "public" : "edit"}
+                          {modeLabel === "Regional Data" ? "public" : "edit"}
                         </span>
-                        {item.mode}
+                        {modeLabel}
                       </span>
                     </td>
                     <td className="py-5 pr-6">
                       <p className="text-sm text-gray-700 font-medium">
-                        {item.query}
+                        {item.query || "—"}
                       </p>
-                      {item.querySub && (
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          {item.querySub}
-                        </p>
-                      )}
                     </td>
                     <td className="py-5 pr-6">
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-[#0f392b]/10 flex items-center justify-center text-[#0f392b] shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-sidebar-bg/10 flex items-center justify-center text-sidebar-bg shrink-0">
                           <span className="material-icons-round text-sm">
-                            {item.icon}
+                            grain
                           </span>
                         </div>
                         <span className="text-sm font-semibold text-gray-800">
-                          {item.crop}
+                          {crop}
                         </span>
                       </div>
                     </td>
                     <td className="py-5 pr-6 text-center">
-                      <span className={`text-sm font-bold ${item.matchColor}`}>
-                        {item.match}
+                      <span className={`text-sm font-bold ${matchColor}`}>
+                        {matchText}
                       </span>
                     </td>
                     <td className="py-5 text-right">
-                      <button className="inline-flex items-center gap-1 text-xs font-bold text-[#0f392b] hover:underline">
+                      <button className="inline-flex items-center gap-1 text-xs font-bold text-sidebar-bg hover:underline">
                         View Full Report
                         <span className="material-icons-round text-sm">
                           arrow_forward
@@ -191,7 +191,8 @@ export default function AIPredictorHistoryPage() {
                       </button>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

@@ -1,176 +1,168 @@
 #!/usr/bin/env python
-"""
-Direct test of M-Pesa STK Push without going through Django.
-This helps identify exactly what Safaricom is rejecting.
-"""
-import os
-import sys
-import django
+"""Direct test of M-Pesa Daraja STK Push using this repo's Django settings.
 
-# Setup Django
-sys.path.insert(0, '/home/samdev652/farm-lease/backend/farmlease')
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'farmlease.settings')
-django.setup()
+Use this to quickly distinguish:
+- DNS / outbound HTTPS issues (can't reach Safaricom)
+- OAuth credential issues (invalid consumer key/secret)
+- STK push payload/permissions issues
+"""
+
+from __future__ import annotations
 
 import base64
-import requests
 import json
+import os
+import socket
+import sys
 from datetime import datetime
-from django.conf import settings
+from pathlib import Path
 
-print("\n" + "="*70)
+import django
+import requests
+
+
+def _mask(value: str, *, prefix: int = 4, suffix: int = 2) -> str:
+    if not value:
+        return "(missing)"
+    if len(value) <= prefix + suffix:
+        return "***"
+    return f"{value[:prefix]}***{value[-suffix:]}"
+
+
+def _resolve_host(host: str) -> list[str]:
+    try:
+        infos = socket.getaddrinfo(host, 443, proto=socket.IPPROTO_TCP)
+        return sorted({info[4][0] for info in infos})
+    except Exception:
+        return []
+
+
+BASE_DIR = Path(__file__).resolve().parent
+DJANGO_DIR = BASE_DIR / "farmlease"
+sys.path.insert(0, str(DJANGO_DIR))
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "farmlease.settings")
+django.setup()
+
+from django.conf import settings  # noqa: E402
+
+
+print("\n" + "=" * 70)
 print("M-PESA STK PUSH DIRECT TEST")
-print("="*70 + "\n")
+print("=" * 70 + "\n")
 
-# Read config
-config = settings.MPESA_CONFIG
+cfg = getattr(settings, "MPESA_CONFIG", {})
 
-print("📋 CONFIGURATION:")
-print(f"  Consumer Key: {config['CONSUMER_KEY'][:20]}...")
-print(f"  Consumer Secret: {config['CONSUMER_SECRET'][:20]}...")
-print(f"  Shortcode: {config['BUSINESS_SHORT_CODE']}")
-print(f"  Environment: {config['ENVIRONMENT']}")
-print(f"  Auth URL: {config['AUTH_URL']}")
-print(f"  STK Push URL: {config['STK_PUSH_URL']}")
-print(f"  Callback URL: {config['CALLBACK_URL']}")
+required = ["CONSUMER_KEY", "CONSUMER_SECRET", "SHORTCODE", "PASSKEY", "ENVIRONMENT"]
+missing = [k for k in required if not str(cfg.get(k, "")).strip()]
+if missing:
+    print("Missing required MPESA_CONFIG keys:", ", ".join(missing))
+    print("Set them in backend/.env then restart your server/shell.")
+    sys.exit(2)
 
-# Step 1: Get access token
-print("\n" + "="*70)
-print("STEP 1: Getting Access Token from Safaricom...")
-print("="*70)
+env = str(cfg.get("ENVIRONMENT", "sandbox")).strip().lower()
+base_url = "https://api.safaricom.co.ke" if env == "production" else "https://sandbox.safaricom.co.ke"
+auth_url = f"{base_url}/oauth/v1/generate?grant_type=client_credentials"
+stk_url = f"{base_url}/mpesa/stkpush/v1/processrequest"
+
+print("CONFIGURATION:")
+print(f"  Environment: {env}")
+print(f"  Base URL: {base_url}")
+print(f"  Consumer Key: {_mask(str(cfg.get('CONSUMER_KEY', '')))}")
+print(f"  Consumer Secret: {_mask(str(cfg.get('CONSUMER_SECRET', '')))}")
+print(f"  Shortcode: {cfg.get('SHORTCODE')}")
+print(f"  Callback URL: {cfg.get('CALLBACK_URL') or '(not set)'}")
+print(f"  Auth URL: {auth_url}")
+print(f"  STK Push URL: {stk_url}")
+
+host = "api.safaricom.co.ke" if env == "production" else "sandbox.safaricom.co.ke"
+resolved = _resolve_host(host)
+print("\nDNS CHECK:")
+print(f"  Host: {host}")
+print(f"  Resolved IPs: {resolved or '(resolution failed)'}")
+
+print("\n" + "=" * 70)
+print("STEP 1: Getting Access Token...")
+print("=" * 70)
 
 try:
-    auth_string = f"{config['CONSUMER_KEY']}:{config['CONSUMER_SECRET']}"
-    auth_bytes = auth_string.encode('utf-8')
-    auth_base64 = base64.b64encode(auth_bytes).decode('utf-8')
-    
-    headers = {
-        'Authorization': f'Basic {auth_base64}',
-    }
-    
-    print(f"\n📤 Auth Request:")
-    print(f"   URL: {config['AUTH_URL']}")
-    print(f"   Auth Header: Basic {auth_base64[:30]}...")
-    
-    response = requests.get(
-        config['AUTH_URL'],
-        headers=headers,
-        timeout=30
+    r = requests.get(
+        auth_url,
+        auth=(str(cfg["CONSUMER_KEY"]), str(cfg["CONSUMER_SECRET"])),
+        timeout=20,
     )
-    
-    print(f"\n📥 Auth Response:")
-    print(f"   Status: {response.status_code}")
-    print(f"   Body: {response.text}")
-    
-    if response.status_code != 200:
-        print(f"\n❌ ERROR: Could not get access token!")
-        print(f"   This means your credentials might be invalid.")
-        print(f"   Check Consumer Key and Secret in .env file.")
-        sys.exit(1)
-    
-    data = response.json()
-    access_token = data.get('access_token')
-    print(f"\n✅ Success! Token: {access_token[:30]}...")
-    
-except Exception as e:
-    print(f"\n❌ Auth Error: {str(e)}")
+    print(f"Status: {r.status_code}")
+    print(f"Body: {r.text}")
+    r.raise_for_status()
+    access_token = r.json().get("access_token")
+    if not access_token:
+        raise ValueError("No access_token in response")
+    print(f"Token: {_mask(access_token, prefix=6, suffix=4)}")
+except Exception as exc:
+    print(f"Auth Error: {exc!r}")
     sys.exit(1)
 
-# Step 2: Prepare STK Push
-print("\n" + "="*70)
+print("\n" + "=" * 70)
 print("STEP 2: Preparing STK Push Request...")
-print("="*70)
+print("=" * 70)
 
-phone_number = "254712345678"  # Test phone
-amount = 100
+phone_number = "254712345678"  # Test number format
+amount = 1
 agreement_id = 1
-timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
 
-# Create password
-business_shortcode = config['BUSINESS_SHORT_CODE']
-passkey = config['PASSKEY']
-password_string = f"{business_shortcode}{passkey}{timestamp}"
-password_base64 = base64.b64encode(password_string.encode('utf-8')).decode('utf-8')
+password_source = f"{cfg['SHORTCODE']}{cfg['PASSKEY']}{timestamp}"
+password = base64.b64encode(password_source.encode("utf-8")).decode("utf-8")
 
 payload = {
-    "BusinessShortCode": business_shortcode,
-    "Password": password_base64,
+    "BusinessShortCode": str(cfg["SHORTCODE"]),
+    "Password": password,
     "Timestamp": timestamp,
     "TransactionType": "CustomerPayBillOnline",
-    "Amount": amount,
+    "Amount": int(amount),
     "PartyA": phone_number,
-    "PartyB": business_shortcode,
+    "PartyB": str(cfg["SHORTCODE"]),
     "PhoneNumber": phone_number,
-    "CallBackURL": config['CALLBACK_URL'],
+    "CallBackURL": str(cfg.get("CALLBACK_URL") or ""),
     "AccountReference": f"LEASE-{agreement_id}",
     "TransactionDesc": "Test payment",
 }
 
-print(f"\n📋 STK Push Payload:")
+print("Payload:")
 print(json.dumps(payload, indent=2))
 
-# Step 3: Send STK Push
-print("\n" + "="*70)
-print("STEP 3: Sending STK Push to Safaricom...")
-print("="*70)
+print("\n" + "=" * 70)
+print("STEP 3: Sending STK Push...")
+print("=" * 70)
 
 try:
-    headers = {
-        'Authorization': f'Bearer {access_token}',
-        'Content-Type': 'application/json',
-    }
-    
-    print(f"\n📤 STK Push Request:")
-    print(f"   URL: {config['STK_PUSH_URL']}")
-    print(f"   Headers: {{'Authorization': 'Bearer ...', 'Content-Type': 'application/json'}}")
-    print(f"   Payload: {json.dumps(payload, indent=6)}")
-    
-    response = requests.post(
-        config['STK_PUSH_URL'],
+    r = requests.post(
+        stk_url,
+        headers={"Authorization": f"Bearer {access_token}"},
         json=payload,
-        headers=headers,
-        timeout=30
+        timeout=25,
     )
-    
-    print(f"\n📥 STK Push Response:")
-    print(f"   Status Code: {response.status_code}")
-    print(f"   Status: {'✅ SUCCESS' if response.status_code == 200 else '❌ FAILED'}")
-    print(f"   Headers: {dict(response.headers)}")
-    print(f"   Body (Raw): {response.text}")
-    
+    print(f"Status: {r.status_code}")
+    print(f"Body: {r.text}")
     try:
-        json_response = response.json()
-        print(f"   Body (JSON): {json.dumps(json_response, indent=2)}")
-    except:
-        print(f"   (Could not parse as JSON)")
-    
-    if response.status_code == 200:
-        print(f"\n✅ STK Push successful!")
-        data = response.json()
-        print(f"   CheckoutRequestID: {data.get('CheckoutRequestID')}")
-        print(f"   ResponseCode: {data.get('ResponseCode')}")
-        print(f"   CustomerMessage: {data.get('CustomerMessage')}")
-    else:
-        print(f"\n❌ STK Push failed!")
-        print(f"   Safaricom returned status {response.status_code}")
-        
-        if response.status_code == 500:
-            print("\n   💡 This usually means:")
-            print("      1. Shortcode 174379 is NOT activated for STK Push")
-            print("      2. Callback URL is not whitelisted")
-            print("      3. Your app doesn't have STK Push permission")
-            print("\n   ➡️  Fix: Go to Safaricom Developer Portal > Your App > Enable STK Push")
-        elif response.status_code == 400:
-            print("\n   💡 This usually means:")
-            print("      1. Invalid payload format")
-            print("      2. Missing required fields")
-            print("      3. Invalid phone number format")
-            
-except Exception as e:
-    print(f"\n❌ STK Push Error: {str(e)}")
-    import traceback
-    traceback.print_exc()
+        data = r.json()
+    except Exception:
+        data = None
 
-print("\n" + "="*70)
+    if r.status_code >= 400:
+        print("STK push failed.")
+        if data:
+            print("Parsed JSON:")
+            print(json.dumps(data, indent=2))
+        sys.exit(1)
+
+    if data:
+        print("Parsed JSON:")
+        print(json.dumps(data, indent=2))
+    print("STK push request submitted.")
+except Exception as exc:
+    print(f"STK Push Error: {exc!r}")
+    raise
+
+print("\n" + "=" * 70)
 print("TEST COMPLETE")
-print("="*70 + "\n")
+print("=" * 70 + "\n")
