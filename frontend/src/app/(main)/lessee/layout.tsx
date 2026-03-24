@@ -6,7 +6,14 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/providers";
 import FarmBot from "@/components/shared/FarmBot";
 
-const navItems = [
+type NavItem = {
+  href: string;
+  icon: string;
+  label: string;
+  badge?: string;
+};
+
+const navItems: NavItem[] = [
   { href: "/lessee/dashboard", icon: "dashboard", label: "Dashboard" },
   { href: "/lessee/discover", icon: "explore", label: "Discover" },
   { href: "/lessee/leases", icon: "folder_shared", label: "My Leases" },

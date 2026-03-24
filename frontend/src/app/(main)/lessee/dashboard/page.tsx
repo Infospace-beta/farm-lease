@@ -37,7 +37,8 @@ export default function LesseeDashboard() {
         setStatsLoading(true);
         const [dashRes, leasesRes, notifRes] = await Promise.all([
           lesseeApi.dashboard().catch(() => ({ data: null })),
-          lesseeApi.myLeases().catch(() => ({ data: [] })),
+          // Use agreements as the source of "active leases" cards
+          lesseeApi.myAgreements({ status: "active" }).catch(() => ({ data: [] })),
           lesseeApi.notifications({ page: 1 }).catch(() => ({ data: { results: [] } })),
         ]);
 
@@ -54,18 +55,26 @@ export default function LesseeDashboard() {
           ? leasesRes.data
           : (leasesRes.data?.results ?? []);
         setLeases(
-          leasesData.slice(0, 4).map((l: Record<string, unknown>) => {
-            const land = (l.land ?? {}) as Record<string, unknown>;
+          leasesData.slice(0, 4).map((a: Record<string, unknown>) => {
+            const land = (a.land ?? a.land_details ?? {}) as Record<string, unknown>;
+            const owner = (a.owner ?? {}) as Record<string, unknown>;
             return {
-              id: l.id as number,
-              land_title: (l.land_title ?? land.title ?? "Land Plot") as string,
-              land_location: (l.land_location ?? land.location ?? "") as string,
-              land_area: l.land_area ? Number(l.land_area) : undefined,
-              land_soil: (l.land_soil ?? land.soil_type ?? "") as string,
-              owner_name: (l.owner_name ?? land.owner_name ?? "Land Owner") as string,
-              next_payment: l.next_payment_amount ? Number(l.next_payment_amount) : undefined,
-              status: (l.status ?? "Active") as string,
-              end_date: (l.end_date ?? "") as string,
+              id: a.id as number,
+              land_title: (land.title ?? (a.title as string) ?? "Land Plot") as string,
+              land_location: (land.location ?? (land.location_name as string) ?? "") as string,
+              land_area:
+                land.area_acres != null
+                  ? Number(land.area_acres)
+                  : a.land_area
+                    ? Number(a.land_area)
+                    : undefined,
+              land_soil: (land.soil_type ?? (land.soil as string) ?? "") as string,
+              owner_name:
+                ((owner.first_name as string) ?? (a.owner_name as string) ?? "Land Owner") as string,
+              next_payment: a.next_payment_amount ? Number(a.next_payment_amount) : undefined,
+              status: (a.status ?? "Active") as string,
+              end_date: (a.end_date ?? a.agreed_end_date ?? "") as string,
+              image: (land.cover_image ?? land.image ?? a.image) as string | undefined,
             };
           })
         );
